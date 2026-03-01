@@ -1037,12 +1037,12 @@ class LiveTradingSystem:
                 
                 daily_change = current_balance - self.start_balance
                 
-                print(f"\n{'='*50}")
-                print(f"🧠 NEXT LEVEL TRADING - LIVE TRADING STATUS")
-                print(f"{'='*50}")
-                print(f"💰 Balance: ${current_balance:.2f}")
-                print(f"📈 Daily P&L: ${daily_change:.2f} (Start: ${self.start_balance:.2f})")
-                print(f"📊 Trades Today: {self.trades_today}")
+                logger.info(f"\n{'='*50}")
+                logger.info(f"🧠 NEXT LEVEL TRADING - LIVE TRADING STATUS")
+                logger.info(f"{'='*50}")
+                logger.info(f"💰 Balance: ${current_balance:.2f}")
+                logger.info(f"📈 Daily P&L: ${daily_change:.2f} (Start: ${self.start_balance:.2f})")
+                logger.info(f"📊 Trades Today: {self.trades_today}")
                 
                 # Show Individual Trailing Status (Summary)
                 ticket_states = self.grid_manager.profit_ctrl.ticket_states
@@ -1050,20 +1050,20 @@ class LiveTradingSystem:
                     active_locks = [s['lock'] for s in ticket_states.values() if s['lock'] > 0]
                     if active_locks:
                         max_lock = max(active_locks)
-                        print(f"🛡️  PROTECTION: {len(active_locks)} Trades Trailing (Max Lock: ${max_lock:.1f})")
+                        logger.info(f"🛡️  PROTECTION: {len(active_locks)} Trades Trailing (Max Lock: ${max_lock:.1f})")
 
-                print(f"🎯 AI Memories: {len(self.ai_brain.memories)}")
-                print(f"⏰ Last Update: {datetime.now().strftime('%H:%M:%S')}")
-                print(f"📂 Reports Path: {self.reports_dir.absolute()}")
+                logger.info(f"🎯 AI Memories: {len(self.ai_brain.memories)}")
+                logger.info(f"⏰ Last Update: {datetime.now().strftime('%H:%M:%S')}")
+                logger.info(f"📂 Reports Path: {self.reports_dir.absolute()}")
                 
                 positions = self.broker.get_positions()
                 if positions:
-                    print(f"📋 Open Positions: {len(positions)}")
+                    logger.info(f"📋 Open Positions: {len(positions)}")
                     for pos in positions:
-                        print(f"  {pos['symbol']}: {pos['type']} ${pos['profit']:.2f}")
+                        logger.info(f"  {pos['symbol']}: {pos['type']} ${pos['profit']:.2f}")
                 else:
-                    print(f"📋 Open Positions: 0")
-                print(f"{'='*50}")
+                    logger.info(f"📋 Open Positions: 0")
+                logger.info(f"{'='*50}")
                 
         except Exception as e:
             logger.error(f"Status display error: {e}")
@@ -1184,10 +1184,6 @@ class LiveTradingSystem:
                     # Monitor ALL active positions across ALL symbols/strategies
                     all_positions = self.broker.get_positions()
                     if await self.grid_manager.profit_ctrl.monitor_grand_basket(all_positions, trigger_usd=5.0):
-                        print(f"\n{'!'*50}")
-                        print(f"🏁 GRAND BASKET TRAILING EXIT TRIGGERED!")
-                        print(f"💰 Closing all trades to secure profit...")
-                        print(f"{'!'*50}\n")
                         logger.warning("🏁 GRAND BASKET TRAILING EXIT TRIGGERED! Closing everything.")
                         await self._close_all_universe()
                         # Reset Layer 3 baseline after Layer 2 exit with FRESH equity
@@ -1197,10 +1193,6 @@ class LiveTradingSystem:
                     # 4. LAYER 3: Equity Milestone Monitor ($100 Target)
                     if acc:
                         if await self.grid_manager.profit_ctrl.monitor_equity_milestone(acc.equity, target_increase=100.0):
-                            print(f"\n{'#'*50}")
-                            print(f"🏆 EQUITY MILESTONE HIT (+$100)!")
-                            print(f"💰 Securing account-level profit...")
-                            print(f"{'#'*50}\n")
                             logger.success("🏆 EQUITY MILESTONE HIT! Closing Universe.")
                             await self._close_all_universe()
                             # Reset with FRESH equity
