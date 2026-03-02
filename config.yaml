@@ -1,5 +1,5 @@
 grid:
-  lot_size: 0.01
+  lot_size: 0.03
   mode: BOTH
   profit_target_pct: 0.25
   profit_target_usd: 20

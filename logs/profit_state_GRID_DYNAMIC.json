@@ -1,1 +1,1 @@
-{"ticket_states": {}, "grand_basket_state": {"peak": 0.0, "lock": 0.0}, "equity_milestone_state": {"baseline_equity": 593.03}}
+{"ticket_states": {"857300739": {"peak": 0.16, "lock": 0.0}}, "grand_basket_state": {"peak": 0.0, "lock": 0.0}, "equity_milestone_state": {"baseline_equity": 4997.12, "peak": 0.0, "lock": 0.0, "hits": 1}}

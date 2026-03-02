@@ -19,12 +19,12 @@ class SmartTrailingHandler:
             (2.0, 1.5),   # Level 3: $1.5 lock
             (5.0, 3.5),   # Level 4: $3.5 lock
             (10.0, 7.5),  # Level 5: $7.5 lock
-            (20.0, 16.5)  # Level 6: $16.5 lock
+            (20.0, 16.0)  # Level 6: $16.0 lock (80% of $20)
         ]
         
         # Beyond $25: We trail at 80% of Peak Profit
         self.floating_trail_pct = 0.80
-        self.floating_trigger = 25.0
+        self.floating_trigger = 20.0
         
         # State for each side
         self.states = {
@@ -47,9 +47,10 @@ class SmartTrailingHandler:
             
         state = self.states[side]
         
-        # Initialize peak if it doesn't exist
+        # Initialize peak if it doesn't exist — start at 0.0 not profit
+        # (profit may be negative on first call, which would corrupt peak)
         if 'peak' not in state:
-            state['peak'] = profit
+            state['peak'] = 0.0
         
         # 1. Update Absolute Peak
         if profit > state['peak']:
@@ -74,7 +75,7 @@ class SmartTrailingHandler:
 
         if new_lock > current_lock:
             state['current_lock'] = new_lock
-            logger.info(f"🛡️ [{side}] LOCK UPDATED: Profit ${profit:.2f}. New Lock: ${new_lock:.2f} (Peak: ${state['peak']:.2f})")
+            logger.info(f"🛡️ [{side}] LOCK UPDATED: Profit {profit:.2f}. New Lock: {new_lock:.2f} (Peak: {state['peak']:.2f})")
             self.save_state()
 
         # 4. Trailing Exit (Profit falls below current lock)
@@ -83,7 +84,7 @@ class SmartTrailingHandler:
         final_lock = state.get('current_lock', 0.0)
         if final_lock > 0 and profit < final_lock:
             if profit >= 0.05:
-                logger.info(f"📉 [{side}] TRAILING EXIT: Profit dropped to ${profit:.2f} (Lock: ${final_lock:.2f}). Closing!")
+                logger.info(f"📉 [{side}] TRAILING EXIT: Profit dropped to {profit:.2f} (Lock: {final_lock:.2f}). Closing!")
                 self.reset(side)
                 return 'CLOSE'
             else:

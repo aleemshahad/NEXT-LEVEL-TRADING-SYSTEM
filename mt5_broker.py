@@ -4,6 +4,7 @@ import os
 import asyncio
 from typing import Dict, List, Optional
 from loguru import logger
+import time
 
 class MT5Broker:
     """MetaTrader 5 Broker Interface"""
@@ -12,7 +13,7 @@ class MT5Broker:
         self.config = config
         self.connected = False
         
-    async def connect(self) -> bool:
+    async def connect(self, login: int = None, password: str = None, server: str = None) -> bool:
         """Connect to MT5 with robust retries and session clearing"""
         try:
             # Force close any hung sessions first
@@ -35,9 +36,9 @@ class MT5Broker:
                 return False
                 
             # Login with credentials
-            login = self.config.get('login') or int(os.getenv('MT5_LOGIN', 0))
-            password = self.config.get('password') or os.getenv('MT5_PASSWORD')
-            server = self.config.get('server') or os.getenv('MT5_SERVER')
+            login = login or self.config.get('login') or int(os.getenv('MT5_LOGIN', 0))
+            password = password or self.config.get('password') or os.getenv('MT5_PASSWORD')
+            server = server or self.config.get('server') or os.getenv('MT5_SERVER')
             
             logger.info(f"Logging into {server} (Account: {login})...")
             if login and password and server:
@@ -79,9 +80,33 @@ class MT5Broker:
             self.connected = False
             return False
 
+    async def is_market_open(self, symbol: str) -> bool:
+        """Check if market is currently open for trading"""
+        try:
+            mt5.symbol_select(symbol, True)
+            info = mt5.symbol_info(symbol)
+            if not info: return False
+            
+            # 1. Check if trading is disabled by broker
+            if info.trade_mode == mt5.SYMBOL_TRADE_MODE_DISABLED:
+                return False
+                
+            # 2. Weekend Check (Standard for Forex/Gold)
+            # 5 = Saturday, 6 = Sunday
+            from datetime import datetime
+            if datetime.now().weekday() >= 5:
+                # Except for Crypto which trades 24/7
+                if not any(x in symbol.upper() for x in ['BTC', 'ETH', 'SOL', 'CRYPTO']):
+                    return False
+            
+            return True
+        except:
+            return False
+
     def get_market_data(self, symbol: str, timeframe: str = "M5", count: int = 500) -> pd.DataFrame:
         """Get market data from MT5"""
         try:
+            mt5.symbol_select(symbol, True)
             # Map timeframe
             tf_map = {
                 "M1": mt5.TIMEFRAME_M1,
@@ -122,17 +147,18 @@ class MT5Broker:
             if result.retcode == mt5.TRADE_RETCODE_DONE:
                 return result
 
-            # Retryable Errors
-            # 10006 = Rejection, 10018 = Market Closed (sometimes temporary), 10027 = Too many requests
-            if result.retcode in [10006, 10018, 10027, 10044]:
-                logger.warning(f"⚠️ Trade Retry ({i+1}/{max_retries}): {result.comment} (Code {result.retcode}). Retrying in 0.5s...")
-                await asyncio.sleep(0.5)
+            if result.retcode in [10006, 10027]:
+                if i == 0:  # Log only once per order attempt — no spam
+                    logger.warning(f"⚠️ Order queued (code {result.retcode}). Retrying silently...")
+                # 10027 = Too Many Requests — keep sleep minimal for fast execution
+                delay = 0.1 if result.retcode == 10027 else 0.01
+                await asyncio.sleep(delay)
                 continue
             
             # Terminal Errors (Balance, Invalid Price handled by caller, etc.)
             return result
 
-        return mt5.order_send(request) # Last try
+        return None  # All retries exhausted
 
     async def place_pending_order(self, symbol: str, order_type: int, volume: float, price: float, magic: int) -> Dict:
         """Place a pending limit order with retry logic"""
@@ -157,11 +183,13 @@ class MT5Broker:
                 "magic": magic,
                 "comment": "GRID_ENTRY",
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_RETURN,
+                "type_filling": self._get_filling_mode(symbol),
             }
             
             result = await self._send_with_retry(request)
-            
+            if result is None:
+                return {'success': False, 'error': 'Connection Lost'}
+                
             # Auto-Retry for INVALID_PRICE (Stop Level violation)
             if result.retcode == 10015:
                 logger.warning(f"⚠️ INVALID_PRICE for {symbol} at {price}. Applying buffer and retrying...")
@@ -170,7 +198,9 @@ class MT5Broker:
                 request["price"] -= buffer
                 result = await self._send_with_retry(request)
 
-            if result.retcode in [mt5.TRADE_RETCODE_MARKET_CLOSED, 10044]:
+            if result is None:
+                return {'success': False, 'error': 'Connection Lost after retry'}
+            if result.retcode in [mt5.TRADE_RETCODE_MARKET_CLOSED, 10044, 10017, 10018]:
                 return {'success': False, 'error': 'MARKET_CLOSED', 'retcode': result.retcode}
             
             if result.retcode != mt5.TRADE_RETCODE_DONE:
@@ -200,11 +230,12 @@ class MT5Broker:
             return False
 
     async def cancel_all_pendings(self, symbol: str, magic: Optional[int] = None):
-        """Cancel pending orders for a specific symbol"""
+        """Cancel pending orders for a specific symbol in PARALLEL"""
         try:
             orders = mt5.orders_get(symbol=symbol)
             if orders is None: return
             
+            tasks = []
             for o in orders:
                 if magic is not None and o.magic != magic:
                     continue
@@ -213,9 +244,10 @@ class MT5Broker:
                     "action": mt5.TRADE_ACTION_REMOVE,
                     "order": o.ticket
                 }
-                result = await self._send_with_retry(request)
-                if result.retcode in [mt5.TRADE_RETCODE_MARKET_CLOSED, 10044]:
-                    return 
+                tasks.append(self._send_with_retry(request))
+            
+            if tasks:
+                await asyncio.gather(*tasks)
             
             filter_str = f" (Magic: {magic})" if magic else ""
             logger.info(f"🧹 Cleaned pending orders for {symbol}{filter_str}")
@@ -223,32 +255,41 @@ class MT5Broker:
             logger.error(f"Error canceling pendings: {e}")
 
     async def close_all_side(self, symbol: str, side: str, magic: int = None):
-        """Close all positions for a specific side (BUY/SELL)"""
+        """Close all positions of a specific side in PARALLEL for speed"""
         try:
-            positions = mt5.positions_get(symbol=symbol)
-            if not positions:
-                return
+            raw_positions = mt5.positions_get(symbol=symbol)
+            if raw_positions is None: return
             
-            for pos in positions:
-                pos_side = 'BUY' if pos.type == mt5.POSITION_TYPE_BUY else 'SELL'
-                if pos_side == side and (magic is None or pos.magic == magic):
-                    action = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
-                    price = mt5.symbol_info_tick(symbol).bid if pos.type == mt5.POSITION_TYPE_BUY else mt5.symbol_info_tick(symbol).ask
-                    
+            target_type = mt5.POSITION_TYPE_BUY if side == 'BUY' else mt5.POSITION_TYPE_SELL
+            
+            # Fetch tick ONCE for all positions to minimize latency
+            tick = mt5.symbol_info_tick(symbol)
+            if not tick:
+                logger.error(f"Failed to fetch tick for {symbol}. Cannot close positions.")
+                return
+
+            tasks = []
+            for p in raw_positions:
+                if p.type == target_type and (magic is None or p.magic == magic):
+                    close_price = tick.bid if p.type == mt5.POSITION_TYPE_BUY else tick.ask
                     request = {
                         "action": mt5.TRADE_ACTION_DEAL,
+                        "position": p.ticket,
                         "symbol": symbol,
-                        "volume": pos.volume,
-                        "type": action,
-                        "position": pos.ticket,
-                        "price": price,
-                        "deviation": 20,
-                        "magic": pos.magic,
-                        "comment": "CLOSE_GRID",
+                        "volume": p.volume,
+                        "type": mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY,
+                        "price": close_price,
+                        "deviation": 100, # Increased deviation (1.00 for Gold) to accept slippage and avoid rejections
+                        "magic": p.magic,
+                        "comment": "PARALLEL_CLOSE",
                         "type_time": mt5.ORDER_TIME_GTC,
-                        "type_filling": mt5.ORDER_FILLING_IOC,
+                        "type_filling": self._get_filling_mode(symbol),
                     }
-                    await self._send_with_retry(request)
+                    tasks.append(self._send_with_retry(request))
+            
+            if tasks:
+                logger.info(f"⚡ Closing {len(tasks)} {side} positions in parallel for {symbol}...")
+                await asyncio.gather(*tasks)
         except Exception as e:
             logger.error(f"Error closing side {side}: {e}")
 
@@ -268,22 +309,60 @@ class MT5Broker:
                 "magic": 234000,
                 "comment": "NEXT_LEVEL_BRAIN",
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_filling": self._get_filling_mode(symbol),
             }
             if stop_loss: request["sl"] = stop_loss
             if take_profit: request["tp"] = take_profit
             
-            # Simple sync retry
+            # Fast sync retry loop
             for i in range(10):
                 result = mt5.order_send(request)
+                if result is None:
+                    time.sleep(0.01) # 10ms
+                    continue
                 if result.retcode == mt5.TRADE_RETCODE_DONE:
                     return {'success': True, 'ticket': result.order, 'price': result.price, 'volume': result.volume}
-                if result.retcode in [10006, 10027]:
-                    time.sleep(0.5)
+                if result.retcode in [10006, 10027, 10044]:
+                    time.sleep(0.01) # 10ms
                     continue
                 break
 
-            return {'success': False, 'error': f'Order failed: {result.retcode}'}
+            return {'success': False, 'error': f'Order failed: {result.retcode if result else "Internal Error"}'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    async def place_market_order(self, symbol: str, action: str, volume: float,
+                                  stop_loss: float = None, take_profit: float = None) -> Dict:
+        """Place a market order asynchronously (for ICT SMC strategy)"""
+        try:
+            tick = mt5.symbol_info_tick(symbol)
+            if not tick:
+                return {'success': False, 'error': 'No tick data'}
+            
+            order_type = mt5.ORDER_TYPE_BUY if action == "BUY" else mt5.ORDER_TYPE_SELL
+            price = tick.ask if action == "BUY" else tick.bid
+            
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": volume,
+                "type": order_type,
+                "price": price,
+                "deviation": 20,
+                "magic": 234000,
+                "comment": "NEXT_LEVEL_BRAIN",
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": self._get_filling_mode(symbol),
+            }
+            if stop_loss: request["sl"] = stop_loss
+            if take_profit: request["tp"] = take_profit
+            
+            result = await self._send_with_retry(request)
+            if result is None:
+                return {'success': False, 'error': 'Connection Lost'}
+            if result.retcode == mt5.TRADE_RETCODE_DONE:
+                return {'success': True, 'ticket': result.order, 'price': result.price, 'volume': result.volume}
+            return {'success': False, 'error': f'Code {result.retcode}: {result.comment}'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
@@ -305,14 +384,16 @@ class MT5Broker:
                 "type": action,
                 "position": pos.ticket,
                 "price": price,
-                "deviation": 20,
+                "deviation": 50,
                 "magic": pos.magic,
                 "comment": "CLOSE_INDIVIDUAL",
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_filling": self._get_filling_mode(pos.symbol),
             }
             
             result = await self._send_with_retry(request)
+            if result is None:
+                return {'success': False, 'error': 'Connection Lost'}
             if result.retcode != mt5.TRADE_RETCODE_DONE:
                 return {'success': False, 'error': f'Code {result.retcode}: {result.comment}'}
             
@@ -336,6 +417,8 @@ class MT5Broker:
                     'price_open': pos.price_open,
                     'price_current': pos.price_current,
                     'profit': pos.profit,
+                    'swap': pos.swap,
+                    'commission': getattr(pos, 'commission', 0.0),
                     'magic': pos.magic,
                     'time': pd.to_datetime(pos.time, unit='s')
                 }
@@ -369,3 +452,30 @@ class MT5Broker:
         except Exception as e:
             logger.error(f"Error getting available slots: {e}")
             return 0
+
+    def _get_filling_mode(self, symbol: str) -> int:
+        """Detect correct filling mode for the symbol/broker"""
+        try:
+            symbol_info = mt5.symbol_info(symbol)
+            if not symbol_info:
+                return mt5.ORDER_FILLING_IOC
+            
+            filling_mode = symbol_info.filling_mode
+            if filling_mode & mt5.SYMBOL_FILLING_FOK:
+                return mt5.ORDER_FILLING_FOK
+            elif filling_mode & mt5.SYMBOL_FILLING_IOC:
+                return mt5.ORDER_FILLING_IOC
+            else:
+                return mt5.ORDER_FILLING_RETURN
+        except:
+            return mt5.ORDER_FILLING_IOC
+
+    def get_active_magic_numbers(self) -> set:
+        """Layer 4 Helper: Return all unique magic numbers from live MT5 positions."""
+        try:
+            positions = mt5.positions_get()
+            if not positions:
+                return set()
+            return {p.magic for p in positions}
+        except:
+            return set()
