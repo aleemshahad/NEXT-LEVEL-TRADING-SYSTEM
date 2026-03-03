@@ -19,8 +19,9 @@ class ProfitController:
         self.trailing = SmartTrailingHandler()
         self.ticket_states = {}
         self.grand_basket_state = {'peak': 0.0, 'lock': 0.0}
-        self.equity_milestone_state = {'baseline_equity': 0.0}
+        self.equity_milestone_state = {'baseline_equity': 0.0, 'peak': 0.0, 'lock': 0.0, 'hits': 0}
         self._last_log_time = 0
+        self.unit = "$" # Default
         
         # Persistence setup
         safe_name = "".join([c if c.isalnum() else "_" for c in strategy_name])
@@ -36,19 +37,29 @@ class ProfitController:
                     # Convert string keys back to int tickets
                     self.ticket_states = {int(k): v for k, v in data.get('ticket_states', {}).items()}
                     self.grand_basket_state = data.get('grand_basket_state', {'peak': 0.0, 'lock': 0.0})
-                    self.equity_milestone_state = data.get('equity_milestone_state', {'baseline_equity': 0.0})
+                    self.equity_milestone_state = data.get('equity_milestone_state', {'baseline_equity': 0.0, 'hits': 0})
                     logger.info(f"💾 {self.strategy_name} recovered {len(self.ticket_states)} trade states + Milestone logic from disk.")
         except Exception as e:
             logger.error(f"Failed to load profit state: {e}")
 
-    def _save_state(self, active_tickets: Optional[List[int]] = None):
-        """Save peaks and locks to disk. If active_tickets provided, prune closed ones."""
+    def _save_state(self, force: bool = False):
+        """Save peaks and locks to disk with throttling to avoid micro-delays."""
         try:
+            # Throttle: Only save if forced or every 5 seconds
+            now = time.time()
+            if not force and now - getattr(self, '_last_disk_save', 0) < 5:
+                return
+            
             self.state_file.parent.mkdir(parents=True, exist_ok=True)
             
-            # Prune states for tickets that are no longer active
-            if active_tickets is not None:
-                self.ticket_states = {k: v for k, v in self.ticket_states.items() if k in active_tickets}
+            # Smart Pruning
+            active_mt5_positions = mt5.positions_get()
+            if active_mt5_positions is not None:
+                all_active_tickets = {p.ticket for p in active_mt5_positions}
+                # Use list() to avoid dictionary size change during iteration
+                for k in list(self.ticket_states.keys()):
+                    if k not in all_active_tickets:
+                        del self.ticket_states[k]
 
             data = {
                 'ticket_states': self.ticket_states,
@@ -57,17 +68,20 @@ class ProfitController:
             }
             with open(self.state_file, 'w') as f:
                 json.dump(data, f)
+            self._last_disk_save = now
         except Exception as e:
             logger.error(f"Failed to save profit state: {e}")
 
-    async def check_basket_profit(self, symbol: str, buy_magic: int, sell_magic: int, target_usd: float, balance: float) -> bool:
+    async def check_basket_profit(self, symbol: str, buy_magic: int, sell_magic: int, target_usd: float, positions: List[dict] = None) -> bool:
         """
         Check combined profit of BUY and SELL sides and close if target_usd is reached.
         """
         if target_usd <= 0:
             return False
 
-        positions = self.broker.get_positions()
+        if positions is None:
+            positions = self.broker.get_positions()
+            
         grid_positions = [p for p in positions if p['symbol'] == symbol and p.get('magic') in (buy_magic, sell_magic)]
         
         if not grid_positions:
@@ -78,7 +92,7 @@ class ProfitController:
         # Periodic logging
         now = time.time()
         if now - self._last_log_time > 10:
-            logger.info(f"📊 {self.strategy_name} | Combined Profit: ${total_profit:.2f} / Target: ${target_usd:.2f}")
+            logger.info(f"📊 {self.strategy_name} | Combined Profit: {total_profit:.2f} {self.unit} / Target: {target_usd:.2f} {self.unit}")
             self._last_log_time = now
 
         if total_profit >= target_usd:
@@ -92,35 +106,46 @@ class ProfitController:
             
         return False
 
-    async def monitor_trailing(self, symbol: str, buy_magic: int, sell_magic: int) -> dict:
+    async def monitor_trailing(self, symbol: str, buy_magic: int, sell_magic: int, positions: List = None) -> dict:
         """
         Monitor BUY and SELL sides independently for trailing profit.
         Returns a dict indicating if closures happened.
         """
         results = {'BUY': False, 'SELL': False}
         
-        raw_positions = mt5.positions_get(symbol=symbol)
-        if raw_positions is None:
-            return results
+        # Use provided positions or fetch fresh if none
+        if positions is None:
+            raw_positions = mt5.positions_get(symbol=symbol)
+            if raw_positions is None: return results
+            # Wrap in list to ensure iteration works
+            positions = list(raw_positions)
+
+        # Helper to get attributes from either object or dict
+        def get_val(p, key, default=0.0):
+            if hasattr(p, key): return getattr(p, key)
+            if isinstance(p, dict): return p.get(key, default)
+            return default
 
         # Check BUY side
-        buy_pos = [item for item in raw_positions if item.type == mt5.POSITION_TYPE_BUY and item.magic == buy_magic]
+        buy_pos = [p for p in positions if get_val(p, 'symbol') == symbol and get_val(p, 'type') in (mt5.POSITION_TYPE_BUY, 'BUY') and get_val(p, 'magic') == buy_magic]
         if buy_pos:
-            buy_profit = sum(p.profit + getattr(p, 'commission', 0.0) + p.swap for p in buy_pos)
+            buy_profit = sum(get_val(p, 'profit') + get_val(p, 'commission') + get_val(p, 'swap') for p in buy_pos)
             action = self.trailing.check_profit('BUY', buy_profit)
             if action == 'CLOSE':
                 logger.info(f"🛡️ [{self.strategy_name}] BUY Trail Exit hit. Closing all BUY positions!")
+                print("\n*** LAYER 2 (Side Basket) Profit Booked for BUY Side! ***\n")
                 await self.broker.close_all_side(symbol, 'BUY', buy_magic)
                 await self.broker.cancel_all_pendings(symbol, buy_magic)
                 results['BUY'] = True
 
         # Check SELL side
-        sell_pos = [item for item in raw_positions if item.type == mt5.POSITION_TYPE_SELL and item.magic == sell_magic]
+        sell_pos = [p for p in positions if get_val(p, 'symbol') == symbol and get_val(p, 'type') in (mt5.POSITION_TYPE_SELL, 'SELL') and get_val(p, 'magic') == sell_magic]
         if sell_pos:
-            sell_profit = sum(p.profit + getattr(p, 'commission', 0.0) + p.swap for p in sell_pos)
+            sell_profit = sum(get_val(p, 'profit') + get_val(p, 'commission') + get_val(p, 'swap') for p in sell_pos)
             action = self.trailing.check_profit('SELL', sell_profit)
             if action == 'CLOSE':
                 logger.info(f"🛡️ [{self.strategy_name}] SELL Trail Exit hit. Closing all SELL positions!")
+                print("\n*** LAYER 2 (Side Basket) Profit Booked for SELL Side! ***\n")
                 await self.broker.close_all_side(symbol, 'SELL', sell_magic)
                 await self.broker.cancel_all_pendings(symbol, sell_magic)
                 results['SELL'] = True
@@ -131,8 +156,8 @@ class ProfitController:
             buy_lock = self.trailing.get_lock('BUY')
             sell_lock = self.trailing.get_lock('SELL')
             if buy_pos or sell_pos:
-                buy_info = f"${buy_profit:.2f} (Lock: ${buy_lock:.2f})" if buy_pos else "Inactive"
-                sell_info = f"${sell_profit:.2f} (Lock: ${sell_lock:.2f})" if sell_pos else "Inactive"
+                buy_info = f"{buy_profit:.2f} {self.unit} (Lock: {buy_lock:.2f} {self.unit})" if buy_pos else "Inactive"
+                sell_info = f"{sell_profit:.2f} {self.unit} (Lock: {sell_lock:.2f} {self.unit})" if sell_pos else "Inactive"
                 logger.info(f"🔍 [{self.strategy_name}] Trail Trace | BUY: {buy_info} | SELL: {sell_info}")
                 self._last_log_time = now
 
@@ -148,34 +173,38 @@ class ProfitController:
         
         for pos in positions:
             ticket = pos.ticket
-            volume = pos.volume
-            multiplier = max(1.0, volume / 0.01) # Scale factor based on base 0.01 lot
+            # BUG FIX: Remove lot size scaling as per user request.
+            # Trailing starts at $0.25 and locks $0.10 regardless of lot size.
+            multiplier = 1.0 
             
             pnl = pos.profit + getattr(pos, 'commission', 0.0) + pos.swap
             
             if ticket not in self.ticket_states:
-                self.ticket_states[ticket] = {'peak': pnl, 'lock': 0.0}
+                # BUG FIX: Initialize peak at 0.0 not pnl.
+                # If trade starts in loss (pnl < 0), a negative peak would
+                # corrupt all threshold comparisons until profit is reached.
+                self.ticket_states[ticket] = {'peak': 0.0, 'lock': 0.0}
             
             state = self.ticket_states[ticket]
             if pnl > state['peak']: state['peak'] = pnl
 
-            # Scaled Target and Thresholds
-            scaled_target = per_trade_target * multiplier
-            
-            # ── HYBRID LOGIC ─────────────────────────────────────────────
-            # 1. Hard Take Profit: Scaled hit → INSTANT close
-            if pnl >= scaled_target:
-                logger.info(f"💰 Ticket {ticket} Hard TP Hit: PnL ${pnl:.2f} >= ${scaled_target:.2f} (Lot: {volume})")
+            # ── FIXED USD LOGIC (Regardless of Lot Size) ──────────────────
+            # 1. Hard Take Profit: Only for Bot Trades (Magic != 0)
+            # Manual trades are trailed but NOT closed at choti-machli profit targets.
+            scaled_target = per_trade_target 
+            if getattr(pos, 'magic', 0) != 0 and pnl >= scaled_target:
+                logger.info(f"💰 Ticket {ticket} Hard TP Hit: PnL {pnl:.2f} {self.unit} >= {scaled_target:.2f} {self.unit}")
+                print(f"\n*** LAYER 1 (Individual Trade) Hard TP Profit Booked! Ticket: {ticket} ***\n")
                 to_close.append(pos)
                 if ticket in self.ticket_states:
                     del self.ticket_states[ticket]
                 continue
 
-            # 2. Micro-Trailing: scaled to lot size
+            # 2. Micro-Trailing: Fixed USD Levels
             micro_levels = [
-                (0.25 * multiplier, 0.10 * multiplier),
-                (0.50 * multiplier, 0.25 * multiplier),
-                (0.75 * multiplier, 0.50 * multiplier),
+                (0.25, 0.10), # Start trailing at $0.25, lock $0.10
+                (0.50, 0.25), # At $0.50 profit, lock $0.25
+                (0.75, 0.50), # At $0.75 profit, lock $0.50
             ]
 
             new_lock = state['lock']
@@ -187,20 +216,22 @@ class ProfitController:
                     else:
                         break
 
-            # Floating trail for large movers (Scaled trigger)
-            scaled_floating_trigger = 25.0 * multiplier
-            if state['peak'] >= scaled_floating_trigger and pnl > 0:
-                floating_lock = state['peak'] * 0.8
+            # ── UNLIMITED FLOATING TRAIL (New Logic) ──────────────────
+            # Once profit crosses $1.00, we switch to 80% Peak Profit Lock.
+            # This allows trades to run to $10, $100, etc. without limits.
+            if state['peak'] >= 1.0 and pnl > 0:
+                floating_lock = state['peak'] * 0.80
                 if floating_lock > new_lock:
                     new_lock = floating_lock
 
             state['lock'] = new_lock
 
             # Exit logic (with strict NO LOSS GUARD)
-            min_exit_profit = 0.10 * multiplier # Minimum $0.10 profit buffer
+            min_exit_profit = 0.01 # Just ensure it's slightly positive for safety
             if new_lock > 0 and pnl < new_lock:
                 if pnl >= min_exit_profit:
-                    logger.info(f"💰 Ticket {ticket} Trail Exit: PnL ${pnl:.2f} < Lock ${new_lock:.2f}. Closing!")
+                    logger.info(f"💰 Ticket {ticket} Trail Exit: PnL {pnl:.2f} {self.unit} < Lock {new_lock:.2f} {self.unit}. Closing!")
+                    print(f"\n*** LAYER 1 (Individual Trade) Trail Exit Profit Booked! Ticket: {ticket} ***\n")
                     to_close.append(pos)
                     if ticket in self.ticket_states:
                         del self.ticket_states[ticket]
@@ -209,26 +240,29 @@ class ProfitController:
                     # We hold for better exit or hard TP
                     pass
 
-        # Sync states to disk (cleanup closed, save updated)
-        active_tickets = [p.ticket for p in positions]
-        self._save_state(active_tickets)
+        # Sync states to disk
+        self._save_state()
         
         return to_close
 
-    async def monitor_grand_basket(self, positions: list, trigger_usd: float = 5.0) -> bool:
+    async def monitor_grand_basket(self, positions: list, trigger_usd: float = 20.0) -> bool:
         """
         Monitor total profit of ALL active positions across ALL symbols/strategies.
-        Starts trailing once combined profit >= trigger_usd ($5.0).
+        Starts trailing once combined profit >= trigger_usd ($20.0).
         """
         if not positions:
-            if hasattr(self, 'grand_basket_state'):
-                self.grand_basket_state = {'peak': 0.0, 'lock': 0.0}
+            # BUG FIX: Do NOT hard-reset peak/lock on empty list.
+            # Positions may temporarily vanish due to broker lag/refresh.
+            # Only reset if trailing was never activated (lock == 0).
+            if hasattr(self, 'grand_basket_state') and self.grand_basket_state:
+                if self.grand_basket_state.get('lock', 0.0) == 0.0:
+                    self.grand_basket_state = {'peak': 0.0, 'lock': 0.0}
             return False
 
-        if not hasattr(self, 'grand_basket_state'):
+        if not hasattr(self, 'grand_basket_state') or self.grand_basket_state is None:
             self.grand_basket_state = {'peak': 0.0, 'lock': 0.0}
 
-        total_profit = sum(p.get('profit', 0.0) + p.get('commission', 0.0) + p.get('swap', 0.0) for p in positions)
+        total_profit = sum(p.profit + getattr(p, 'commission', 0.0) + p.swap for p in positions)
         state = self.grand_basket_state
 
         # Activate trailing when trigger hit
@@ -240,12 +274,13 @@ class ProfitController:
             new_lock = state['peak'] * 0.8
             if new_lock > state['lock']:
                 state['lock'] = new_lock
-                logger.info(f"🛡️  GRAND BASKET LOCK: Total Profit ${total_profit:.2f} (Inc. Fees). New Lock: ${new_lock:.2f}")
+                logger.info(f"🛡️  GRAND BASKET LOCK: Total Profit {total_profit:.2f} {self.unit} (Inc. Fees). New Lock: {new_lock:.2f} {self.unit}")
 
         # Check for trailing exit (with NO LOSS GUARD)
         if state['lock'] > 0 and total_profit < state['lock']:
             if total_profit >= 1.0: # Ensure at least $1 total profit for global exit
-                logger.info(f"🚀 GRAND BASKET EXIT: Combined Profit ${total_profit:.2f} < Lock ${state['lock']:.2f}. Closing Universe!")
+                logger.info(f"🚀 GRAND BASKET EXIT: Combined Profit {total_profit:.2f} {self.unit} < Lock {state['lock']:.2f} {self.unit}. Closing Universe!")
+                print("\n*** LAYER 2 (Grand Basket) Profit Booked! All Trades Closing. ***\n")
                 self.grand_basket_state = {'peak': 0.0, 'lock': 0.0}
                 self._save_state() # Save reset state
                 return True
@@ -253,10 +288,11 @@ class ProfitController:
                 # Profit dropped too fast, don't close in loss or near-zero
                 pass
 
-        # Save state periodically to disk
-        if time.time() - getattr(self, '_last_basket_save', 0) > 30:
-            self._save_state([p['ticket'] for p in positions if 'ticket' in p])
-            self._last_basket_save = time.time()
+        # Save state to disk on any lock/peak update
+        # (Disk I/O is throttled to 5s inside _save_state automatically)
+        if total_profit >= trigger_usd or state['lock'] > 0:
+            self._save_state()
+
 
         return False
 
@@ -270,37 +306,114 @@ class ProfitController:
         state = self.equity_milestone_state
         if state['baseline_equity'] <= 0:
             state['baseline_equity'] = current_equity
+            state['peak'] = 0.0
+            state['lock'] = 0.0
             self._save_state()
-            logger.info(f"🎯 Milestone Baseline Set: ${current_equity:.2f}. Target: ${current_equity + target_increase:.2f}")
+            logger.info(f"🎯 Milestone Baseline Set: {current_equity:.2f} {self.unit}. Target: {current_equity + target_increase:.2f} {self.unit}")
             return False
 
-        target_equity = state['baseline_equity'] + target_increase
-        
-        # Periodic log (Every 60 seconds, independent of other monitors)
-        now = time.time()
-        if now - getattr(self, '_last_milestone_log', 0) > 60:
-            diff = current_equity - state['baseline_equity']
-            logger.info(f"📊 Milestone Track | Current: ${current_equity:.2f} | Baseline: ${state['baseline_equity']:.2f} | Progress: ${diff:.2f}/$100")
-            self._last_milestone_log = now
+        profit = current_equity - state['baseline_equity']
 
-        # Update dashboard bridge file
+        # --- Layer 3: Multi-Tier Progressive Trailing Logic (Mazboot Version) ---
+        # ─────────────────────────────────────────────────────────────────────
+        #  Tier 1: $100–$130  → Lock = peak - 8% of target      (conservative)
+        #  Tier 2: $130–$180  → Lock = 80% of peak              (moderate)
+        #  Tier 3: $180–$250  → Lock = 86% of peak              (tight)
+        #  Tier 4: $250+      → Lock = 92% of peak              (very tight)
+        #
+        #  Rules:
+        #   • NO hard floor — lock follows pure tier percentage
+        #   • Lock NEVER retreats — only moves up (ratchet principle)
+        #   • Every new peak → lock recalculates and tries to advance
+        # ─────────────────────────────────────────────────────────────────────
+        if profit >= target_increase:
+            peak = state.get('peak', 0.0)
+
+            # First time hitting target
+            if peak <= 0.0:
+                state['peak'] = profit
+                state['lock'] = 0.0  # No hard floor — pure tier trailing from here
+                logger.info(
+                    f"🏆 [LAYER 3] MILESTONE HIT! {target_increase:.2f} {self.unit} secured. "
+                    f"Multi-tier trailing ACTIVATED."
+                )
+                peak = profit
+
+            # Update peak (ratchet up only)
+            if profit > peak:
+                state['peak'] = profit
+                peak = profit
+
+            # ── Determine lock based on progressive tier ─────────────────
+            T = target_increase  # shorthand
+
+            if peak < T * 1.30:
+                # Tier 1: Conservative — still near target, use buffer
+                buffer = T * 0.08       # 8% of target (e.g. $8 for $100 target)
+                new_lock = peak - buffer
+                tier_label = "T1 (Conservative)"
+
+            elif peak < T * 1.80:
+                # Tier 2: Moderate — lock at 80% of peak
+                new_lock = peak * 0.80
+                tier_label = "T2 (Moderate 80%)"
+
+            elif peak < T * 2.50:
+                # Tier 3: Tight — lock at 86% of peak
+                new_lock = peak * 0.86
+                tier_label = "T3 (Tight 86%)"
+
+            else:
+                # Tier 4: Very Tight — lock at 92% of peak (ekdum mazboot)
+                new_lock = peak * 0.92
+                tier_label = "T4 (Very Tight 92%)"
+
+            # Apply lock (ratchet — only advance, never retreat)
+            if new_lock > state['lock']:
+                old_lock = state['lock']
+                state['lock'] = new_lock
+                logger.info(
+                    f"🛡️  [LAYER 3] {tier_label} | "
+                    f"Peak: {peak:.2f} | Lock: {old_lock:.2f} → {new_lock:.2f} {self.unit} | "
+                    f"Protecting {(new_lock/peak*100):.1f}% of peak"
+                )
+
+        # Update dashboard bridge file (Throttled to 1s)
         try:
-            progress_file = Path("logs/milestone_progress.json")
-            progress_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(progress_file, 'w') as f:
-                json.dump({
-                    'current': current_equity,
-                    'baseline': state['baseline_equity'],
-                    'target': target_equity,
-                    'progress': current_equity - state['baseline_equity'],
-                    'target_inc': target_increase,
-                    'timestamp': time.time()
-                }, f)
+            now = time.time()
+            if now - getattr(self, '_last_bridge_update', 0) > 1:
+                progress_file = Path("logs/milestone_progress.json")
+                progress_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(progress_file, 'w') as f:
+                    json.dump({
+                        'current': current_equity,
+                        'baseline': state['baseline_equity'],
+                        'target': state['baseline_equity'] + target_increase,
+                        'progress': profit,
+                        'target_inc': target_increase,
+                        'lock': state.get('lock', 0.0),
+                        'peak': state.get('peak', 0.0),
+                        'hits': state.get('hits', 0),
+                        'unit': self.unit,
+                        'timestamp': time.time()
+                    }, f)
+                self._last_bridge_update = now
         except: pass
 
-        if current_equity >= target_equity:
-            logger.info(f"🚀 EQUITY MILESTONE HIT! Equity ${current_equity:.2f} >= Target ${target_equity:.2f}. Closing Universe!")
-            # Reset will be handled by the caller or specialized method
+        # ── Exit Logic: Profit dropped below the lock → CLOSE ────────────
+        if state.get('lock', 0.0) > 0 and profit < state['lock']:
+            locked = state['lock']
+            peak_at_exit = state.get('peak', locked)
+            logger.info(
+                f"🚀 [LAYER 3] MILESTONE SECURED! "
+                f"Profit {profit:.2f} < Lock {locked:.2f} {self.unit}. "
+                f"(Peak was {peak_at_exit:.2f}) — Closing Universe!"
+            )
+            print(f"\n*** LAYER 3 (Account Equity) Profit Booked! Secured: {locked:.2f} {self.unit} ***\n")
+            state['hits'] = state.get('hits', 0) + 1
+            state['peak'] = 0.0
+            state['lock'] = 0.0
+            self._save_state(force=True)
             return True
 
         return False
@@ -309,8 +422,10 @@ class ProfitController:
         """Set a new baseline for the next $100 milestone cycle"""
         if current_equity > 0:
             self.equity_milestone_state['baseline_equity'] = current_equity
+            self.equity_milestone_state['peak'] = 0.0
+            self.equity_milestone_state['lock'] = 0.0
             self._save_state()
-            logger.info(f"🔄 Milestone Baseline RESET to ${current_equity:.2f}")
+            logger.info(f"🔄 Milestone Baseline RESET to {current_equity:.2f} {self.unit}")
 
             # Clear dashboard bridge file on reset
             try:
@@ -322,15 +437,27 @@ class ProfitController:
                             'baseline': current_equity,
                             'target': current_equity + 100.0,
                             'progress': 0.0,
+                            'lock': 0.0,
+                            'hits': self.equity_milestone_state.get('hits', 0),
                             'target_inc': 100.0,
+                            'unit': self.unit,
                             'timestamp': time.time()
                         }, f)
             except: pass
 
     def reset(self, side: str = 'BOTH'):
         self.trailing.reset(side)
-        if side == 'BOTH': 
+        if side == 'BOTH':
             self.ticket_states = {}
             self.grand_basket_state = {'peak': 0.0, 'lock': 0.0}
-            self.equity_milestone_state = {'baseline_equity': 0.0}
+            # BUG FIX: Preserve 'hits' across resets (session counter).
+            # Also explicitly reset peak and lock so stale state file
+            # values cannot be reloaded on next startup.
+            hits = self.equity_milestone_state.get('hits', 0)
+            self.equity_milestone_state = {
+                'baseline_equity': 0.0,
+                'peak': 0.0,
+                'lock': 0.0,
+                'hits': hits
+            }
             self._save_state()

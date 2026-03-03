@@ -1,35 +1,23 @@
 """
-🧠 NEXT LEVEL TRADING SYSTEM — Desktop Command Center
+🧠 NEXT LEVEL BRAIN — Desktop Command Center
 Standalone desktop trading software
-Created by: Aleem Shahzad
+Created by: Aleem Shahzad | AI Partner: Claude (Anthropic)
 
 Run:   python brain_app.py
-Build: pyinstaller --onefile --windowed --icon=TRADINGSYSTEM.ico --name="NEXT LEVEL TRADING SYSTEM" brain_app.py
+Build: pyinstaller --onefile --windowed --icon=brain.ico --name="NEXT LEVEL BRAIN" brain_app.py
 """
 
-import MetaTrader5 as mt5
-import pandas as pd
-import numpy as np
-import yaml
-import json
-import threading
-import subprocess
-import os
-import sys
-import time
-import logging
-from datetime import datetime, timedelta
-from pathlib import Path
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import messagebox, scrolledtext, ttk
-from PIL import Image
-import plotly.graph_objects as go
-import plotly.io as pio
-
-# Setup local logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("BrainApp")
+from tkinter import messagebox, scrolledtext
+import subprocess
+import sys
+import os
+import json
+import threading
+import time
+from pathlib import Path
+from datetime import datetime, timedelta
 
 # ─── Project Root ────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.resolve()
@@ -87,52 +75,26 @@ class OutputRedirector:
             pass
 
 
-class NextLevelTRADINGSYSTEMApp(ctk.CTk):
+class NextLevelBrainApp(ctk.CTk):
     """Main Desktop Application."""
 
     def __init__(self):
         super().__init__()
 
         # ── Window Setup ──
-        self.title("🧠 NEXT LEVEL TRADING SYSTEM  — Command Center")
+        self.title("🧠 NEXT LEVEL BRAIN — Command Center")
         self.geometry("1280x780")
         self.minsize(1000, 650)
         self.configure(fg_color=COLORS["bg_dark"])
 
         # Try to set icon
-        icon_path = PROJECT_ROOT / "TRADING SYSTEM .ico"
+        icon_path = PROJECT_ROOT / "brain.ico"
         if icon_path.exists():
             self.iconbitmap(str(icon_path))
 
         # ── State ──
         self.running_processes = {}
         self.current_page = "dashboard"
-        self.is_trading = False
-        self.live_process = None
-        self.live_output = None
-        
-        # ── Dashboard State (Merged from live_dashboard.py) ──
-        self.dash_running = True
-        self.trade_history = []
-        self.metrics = {
-            'total_trades': 0, 'win_rate': 0.0, 'total_pnl': 0.0,
-            'profit_factor': 0.0, 'max_drawdown': 0.0
-        }
-        self.session_stats_file = Path("logs/dashboard_session_stats.json")
-        self.accumulated_seconds = self._load_session_stats()
-        self.dash_start_time = time.time()
-
-        # MT5 State
-        self.mt5_initialized = False
-        self.live_positions_data = []
-        self.trade_history_data = []
-        self.live_positions_tree = None
-        self.trade_history_tree = None
-        self.metric_ui_labels = {} # Holds UI references
-        self.dash_cards = {}
-        
-        # Start Dashboard Update Thread
-        threading.Thread(target=self._dashboard_update_loop, daemon=True).start()
 
         # ── Build UI ──
         self._build_sidebar()
@@ -141,23 +103,6 @@ class NextLevelTRADINGSYSTEMApp(ctk.CTk):
 
         # ── On Close ──
         self.protocol("WM_DELETE_WINDOW", self._on_close)
-
-    def _load_session_stats(self):
-        try:
-            if self.session_stats_file.exists():
-                with open(self.session_stats_file, 'r') as f:
-                    return json.load(f).get('accumulated_seconds', 0)
-        except Exception: pass
-        return 0
-
-    def _save_session_stats(self):
-        try:
-            self.session_stats_file.parent.mkdir(parents=True, exist_ok=True)
-            current_session = time.time() - self.dash_start_time
-            total = self.accumulated_seconds + current_session
-            with open(self.session_stats_file, 'w') as f:
-                json.dump({'accumulated_seconds': total}, f)
-        except Exception: pass
 
     # ═══════════════════════════════════════════════════════════════════════════
     # SIDEBAR
@@ -174,7 +119,7 @@ class NextLevelTRADINGSYSTEMApp(ctk.CTk):
         logo_frame.pack(pady=(28, 5), padx=16)
 
         ctk.CTkLabel(logo_frame, text="🧠", font=("Segoe UI Emoji", 40)).pack()
-        ctk.CTkLabel(logo_frame, text="NEXT LEVEL\nTRADING SYSTEM ",
+        ctk.CTkLabel(logo_frame, text="NEXT LEVEL\nBRAIN",
                      font=("Segoe UI", 18, "bold"),
                      text_color=COLORS["accent_blue"]).pack(pady=(5, 0))
         ctk.CTkLabel(logo_frame, text="Command Center",
@@ -191,6 +136,7 @@ class NextLevelTRADINGSYSTEMApp(ctk.CTk):
             ("🔑  Account", "account"),
             ("📊  Backtesting", "backtesting"),
             ("🔴  Live Trading", "live_trading"),
+            ("🌐  Intelligence", "intelligence"),
             ("🧹  Orders", "orders"),
             ("⚙️  Settings", "settings"),
             ("📜  Logs", "logs"),
@@ -331,7 +277,7 @@ class NextLevelTRADINGSYSTEMApp(ctk.CTk):
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _launch_terminal(self, script, title="NEXT LEVEL TRADING SYSTEM "):
+    def _launch_terminal(self, script, title="NEXT LEVEL BRAIN"):
         """Launch script in new CMD window."""
         try:
             cmd = f'start "{title}" cmd /k "cd /d {PROJECT_ROOT} && python {script}"'
@@ -369,7 +315,7 @@ class NextLevelTRADINGSYSTEMApp(ctk.CTk):
         env_path = PROJECT_ROOT / ".env"
         if not env_path.exists():
             # Create a basic .env if it doesn't exist
-            content = "# NEXT LEVEL TRADING SYSTEM  - Environment Variables\n"
+            content = "# NEXT LEVEL BRAIN - Environment Variables\n"
         else:
             content = env_path.read_text(encoding="utf-8", errors="replace")
 
@@ -397,7 +343,7 @@ class NextLevelTRADINGSYSTEMApp(ctk.CTk):
     # ═══════════════════════════════════════════════════════════════════════════
 
     def _page_dashboard(self):
-        self._make_title(self.scroll, "🧠 NEXT LEVEL TRADING SYSTEM ",
+        self._make_title(self.scroll, "🧠 NEXT LEVEL BRAIN",
                          "Yahan se sab kuch control karein — Backtesting, Live Trading, Intelligence")
 
         # Stats row
@@ -622,11 +568,8 @@ else:
         # Symbol
         ctk.CTkLabel(row1, text="🪙 Symbol", font=("Segoe UI", 11),
                      text_color=COLORS["text_secondary"]).pack(side="left", padx=(0, 8))
-        self.bt_symbol = ctk.CTkComboBox(row1, values=[
-            "XAUUSDm", "XAGUSDm", "EURUSDm", "GBPUSDm", "USDJPYm", "USDCHFm",
-            "AUDUSDm", "NZDUSDm", "USDCADm", "EURGBPm", "EURJPYm", "GBPJPYm",
-            "BTCUSDm", "ETHUSDm", "USOILm", "UKOILm", "NASDAQ", "SP500m"
-        ], width=160, fg_color=COLORS["bg_input"])
+        self.bt_symbol = ctk.CTkComboBox(row1, values=["XAUUSDm", "BTCUSDm", "EURUSDm", "GBPUSDm", "USDJPYm", "ETHUSDm", "XAGUSDm"],
+                                          width=140, fg_color=COLORS["bg_input"])
         self.bt_symbol.pack(side="left", padx=(0, 20))
         self.bt_symbol.set("XAUUSDm")
 
@@ -758,202 +701,111 @@ else:
     # ═══════════════════════════════════════════════════════════════════════════
 
     def _page_live_trading(self):
-        self._make_title(self.scroll, "🔴 Live Performance & Control",
-                         "Real-time metrics, positions, and strategy controls in one place")
+        self._make_title(self.scroll, "🔴 Live Trading System",
+                         "Strategy choose karein aur nayi window mein trading start karein")
 
-        # 1. TOP METRICS STRIP
-        metrics_strip = ctk.CTkFrame(self.scroll, fg_color="transparent")
-        metrics_strip.pack(fill="x", padx=24, pady=(0, 10))
-        
-        # Summary Metrics Row
-        m_keys = [
-            ("Total Trades", "total_trades"), ("Win Rate", "win_rate"),
-            ("Total P&L", "total_pnl"), ("Profit Factor", "p_factor"), ("Max DD", "max_dd")
-        ]
-        sum_card = ctk.CTkFrame(metrics_strip, fg_color=COLORS["bg_card"], corner_radius=12, border_width=1, border_color=COLORS["border"])
-        sum_card.pack(fill="x")
-        
-        self.metric_ui_labels = {}
-        for i, (label, key) in enumerate(m_keys):
-            f = ctk.CTkFrame(sum_card, fg_color="transparent")
-            f.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-            ctk.CTkLabel(f, text=label, font=("Segoe UI", 11), text_color=COLORS["text_secondary"]).pack()
-            l = ctk.CTkLabel(f, text="--", font=("Consolas", 15, "bold"), text_color=COLORS["text_primary"])
-            l.pack()
-            self.metric_ui_labels[key] = l
+        # Setup card
+        card = self._make_card(self.scroll)
+        ctk.CTkLabel(card, text="🎯 Trading Setup",
+                     font=("Segoe UI", 14, "bold"),
+                     text_color=COLORS["text_primary"]).pack(anchor="w", padx=16, pady=(14, 10))
 
-        # 2. MAIN HUB (Setup & Session Metrics)
-        hub_frame = ctk.CTkFrame(self.scroll, fg_color="transparent")
-        hub_frame.pack(fill="x", padx=24, pady=10)
-        hub_frame.columnconfigure(0, weight=2) # Setup
-        hub_frame.columnconfigure(1, weight=3) # Real-time Cards
+        row1 = ctk.CTkFrame(card, fg_color="transparent")
+        row1.pack(fill="x", padx=16, pady=4)
 
-        # --- A. SETUP CARD ---
-        setup_card = ctk.CTkFrame(hub_frame, fg_color=COLORS["bg_card"], corner_radius=14, border_width=1, border_color=COLORS["border"])
-        setup_card.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-        
-        ctk.CTkLabel(setup_card, text="🎯 Strategy Control", font=("Segoe UI", 14, "bold")).pack(anchor="w", padx=16, pady=(12, 10))
-        
-        s_row = ctk.CTkFrame(setup_card, fg_color="transparent")
-        s_row.pack(fill="x", padx=16, pady=4)
-        ctk.CTkLabel(s_row, text="Strategy:", font=("Segoe UI", 11)).pack(side="left", padx=(0, 8))
-        self.live_strategy = ctk.CTkComboBox(s_row, values=["Grid BUY ONLY", "Grid SELL ONLY", "Grid BOTH", "ICT SMC"], width=170)
-        self.live_strategy.pack(side="left")
+        ctk.CTkLabel(row1, text="🎯 Strategy", font=("Segoe UI", 11),
+                     text_color=COLORS["text_secondary"]).pack(side="left", padx=(0, 8))
+        self.live_strategy = ctk.CTkComboBox(
+            row1, values=["Grid BUY ONLY", "Grid SELL ONLY", "Grid BOTH", "ICT SMC"],
+            width=200, fg_color=COLORS["bg_input"])
+        self.live_strategy.pack(side="left", padx=(0, 20))
         self.live_strategy.set("Grid BUY ONLY")
 
-        t_row = ctk.CTkFrame(setup_card, fg_color="transparent")
-        t_row.pack(fill="x", padx=16, pady=4)
-        ctk.CTkLabel(t_row, text="Timeframe:", font=("Segoe UI", 11)).pack(side="left", padx=(0, 6))
-        self.live_tf = ctk.CTkComboBox(t_row, values=["M1", "M3", "M5", "M15", "M30", "H1", "H4", "D1"], width=80)
-        self.live_tf.pack(side="left", padx=(0, 12))
+        ctk.CTkLabel(row1, text="⏰ Timeframe", font=("Segoe UI", 11),
+                     text_color=COLORS["text_secondary"]).pack(side="left", padx=(0, 8))
+        self.live_tf = ctk.CTkComboBox(row1, values=["M1", "M3", "M5", "M15", "M30", "H1", "H4", "D1"],
+                                        width=100, fg_color=COLORS["bg_input"])
+        self.live_tf.pack(side="left")
         self.live_tf.set("M1")
-        
-        ctk.CTkLabel(t_row, text="Symbol:", font=("Segoe UI", 11)).pack(side="left", padx=(0, 6))
-        syms = ["XAUUSDm", "XAGUSDm", "EURUSDm", "GBPUSDm", "USDJPYm", "USDCHFm", "AUDUSDm", "NZDUSDm", "USDCADm", "EURGBPm", "EURJPYm", "GBPJPYm", "BTCUSDm", "ETHUSDm"]
-        self.live_symbol = ctk.CTkComboBox(t_row, values=syms, width=110)
-        self.live_symbol.pack(side="left", padx=(0, 10))
-        self.live_symbol.set("XAUUSDm")
 
-        ctk.CTkLabel(t_row, text="Lot Size:", font=("Segoe UI", 11)).pack(side="left", padx=(0, 6))
-        self.live_lots = ctk.CTkComboBox(t_row, values=["0.01", "0.05", "0.10", "0.50", "1.00"], width=80)
-        self.live_lots.pack(side="left")
-        self.live_lots.set("0.05")
+        row2 = ctk.CTkFrame(card, fg_color="transparent")
+        row2.pack(fill="x", padx=16, pady=(8, 4))
 
-        btn_row = ctk.CTkFrame(setup_card, fg_color="transparent")
-        btn_row.pack(fill="x", padx=16, pady=(15, 12))
-        self.live_start_btn = ctk.CTkButton(btn_row, text="🚀 START BOT", height=38, fg_color=COLORS["accent_green"], command=self._start_live_trading)
-        self.live_start_btn.pack(side="left", expand=True, padx=(0, 5))
-        self.live_stop_btn = ctk.CTkButton(btn_row, text="🛑 STOP BOT", height=38, fg_color=COLORS["btn_danger"], command=self._stop_live_trading, state="disabled")
-        self.live_stop_btn.pack(side="left", expand=True, padx=(5, 0))
+        config = self._load_config()
+        symbols = config.get("symbols", ["XAUUSDm"])
 
-        # --- B. PORTFOLIO CARDS ---
-        card_grid = ctk.CTkFrame(hub_frame, fg_color="transparent")
-        card_grid.grid(row=0, column=1, sticky="nsew")
-        card_grid.columnconfigure((0,1,2), weight=1)
+        ctk.CTkLabel(row2, text="🪙 Symbol", font=("Segoe UI", 11),
+                     text_color=COLORS["text_secondary"]).pack(side="left", padx=(0, 8))
+        self.live_symbol = ctk.CTkComboBox(row2, values=symbols, width=140,
+                                            fg_color=COLORS["bg_input"])
+        self.live_symbol.pack(side="left")
+        self.live_symbol.set(symbols[0])
 
-        self.dash_cards = {}
-        c_items = [
-            ("BALANCE", "bal", "#ffffff"), ("EQUITY", "eq", "#00e676"),
-            ("SESSION PNL", "pnl", "#00e676"), ("MARGIN", "mar", "#03a9f4"),
-            ("SESSION TIME", "dur", "#ffeb3b"), ("MILESTONE", "mil", "#e91e63")
-        ]
-        for idx, (label, key, color) in enumerate(c_items):
-            c = ctk.CTkFrame(card_grid, fg_color=COLORS["bg_card"], corner_radius=10, border_width=1, border_color=COLORS["border"])
-            c.grid(row=idx//3, column=idx%3, padx=4, pady=4, sticky="nsew")
-            ctk.CTkLabel(c, text=label, font=("Segoe UI", 9, "bold"), text_color=COLORS["text_muted"]).pack(pady=(8, 0))
-            v = ctk.CTkLabel(c, text="$0.00", font=("Consolas", 18, "bold"), text_color=color)
-            v.pack(pady=(0, 8))
-            self.dash_cards[key] = v
+        # Warning
+        warn = ctk.CTkFrame(card, fg_color="#1c1917", corner_radius=10,
+                             border_width=1, border_color="#854d0e")
+        warn.pack(fill="x", padx=16, pady=10)
+        ctk.CTkLabel(warn, text="⚠️  Live Trading nayi terminal window mein start hogi. Band karne ke liye Ctrl+C dabayein.",
+                     font=("Segoe UI", 11), text_color="#fbbf24",
+                     wraplength=600).pack(padx=12, pady=10)
 
-        # 3. TABBED SECTION (Positions / History)
-        tab_card = self._make_card(self.scroll)
-        self.live_tabs = ctk.CTkTabview(tab_card, height=350, fg_color="transparent")
-        self.live_tabs.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        tab_pos = self.live_tabs.add("💹 ACTIVE POSITIONS")
-        tab_hist = self.live_tabs.add("� ALL TRADES HISTORY")
-        
-        # Positions Tree (Using standard Tkinter Treeview for performance data lists)
-        st = ttk.Style()
-        st.theme_use("clam")
-        st.configure("Treeview", background=COLORS["bg_card"], foreground="white", fieldbackground=COLORS["bg_card"], borderwidth=0, font=("Segoe UI", 10))
-        st.configure("Treeview.Heading", background=COLORS["bg_input"], foreground="white", font=("Segoe UI", 10, "bold"))
-        
-        self.pos_tree = ttk.Treeview(tab_pos, columns=("tk", "sym", "side", "lots", "entry", "profit"), show="headings")
-        for col, head in zip(self.pos_tree["columns"], ["Ticket", "Symbol", "Side", "Lots", "Entry", "Profit ($)"]):
-            self.pos_tree.heading(col, text=head)
-            self.pos_tree.column(col, anchor="center", width=80)
-        self.pos_tree.pack(fill="both", expand=True)
+        # Launch button
+        ctk.CTkButton(card, text="🚀  START LIVE TRADING",
+                      font=("Segoe UI", 16, "bold"), height=50,
+                      fg_color="#dc2626", hover_color="#b91c1c",
+                      corner_radius=12,
+                      command=self._start_live_trading).pack(padx=16, pady=(4, 14))
 
-        self.hist_tree = ttk.Treeview(tab_hist, columns=("time", "sym", "side", "lots", "profit", "comment"), show="headings")
-        for col, head in zip(self.hist_tree["columns"], ["Time", "Symbol", "Side", "Lots", "Profit", "Comment"]):
-            self.hist_tree.heading(col, text=head)
-            self.hist_tree.column(col, anchor="center", width=80)
-        self.hist_tree.pack(fill="both", expand=True)
-
-        # Footer Button strip
-        footer = ctk.CTkFrame(self.scroll, fg_color="transparent")
-        footer.pack(fill="x", padx=24, pady=(5, 20))
-        
-        ctk.CTkButton(footer, text="🧹 DELETE ALL PENDINGS", fg_color="#7c2d12", width=180, command=self._delete_all_pendings).pack(side="left", padx=5)
-        ctk.CTkButton(footer, text="🔄 RESET PERFORMANCE", fg_color="#1e3a8a", width=180, command=self._reset_dashboard).pack(side="left", padx=5)
-        ctk.CTkButton(footer, text="📁 Session Reports", fg_color="transparent", border_width=1, width=180, command=lambda: os.startfile(PROJECT_ROOT / "logs" / "live_reports")).pack(side="right", padx=5)
+        # Live Dashboard button
+        card2 = self._make_card(self.scroll)
+        ctk.CTkLabel(card2, text="📈 Live Portfolio Dashboard",
+                     font=("Segoe UI", 14, "bold"),
+                     text_color=COLORS["text_primary"]).pack(anchor="w", padx=16, pady=(14, 6))
+        ctk.CTkLabel(card2, text="Real-time positions, equity, trade history monitor",
+                     font=("Segoe UI", 11), text_color=COLORS["text_muted"]).pack(anchor="w", padx=16)
+        ctk.CTkButton(card2, text="📈  Open Live Dashboard",
+                      font=("Segoe UI", 13, "bold"), height=42,
+                      fg_color=COLORS["accent_green"], hover_color="#15803d",
+                      corner_radius=10,
+                      command=lambda: self._launch_terminal("live_dashboard.py", "Live Dashboard")).pack(
+                          padx=16, pady=(10, 14))
 
     def _start_live_trading(self):
-        if self.is_trading: return
-
         strategy = self.live_strategy.get()
         tf = self.live_tf.get()
         symbol = self.live_symbol.get()
-        lots = self.live_lots.get()
+
+        strat_map = {"Grid BUY ONLY": "Grid BUY ONLY", "Grid SELL ONLY": "Grid SELL ONLY",
+                     "Grid BOTH": "Grid Both", "ICT SMC": "ICT SMC"}
+        strat = strat_map.get(strategy, strategy)
 
         helper = PROJECT_ROOT / "_auto_live.py"
         code = f'''
-import sys, os, asyncio, MetaTrader5 as mt5
+import sys, os, asyncio
 sys.path.insert(0, r"{PROJECT_ROOT}")
 os.chdir(r"{PROJECT_ROOT}")
+from pathlib import Path
+for d in ["logs","charts","models"]: Path(d).mkdir(exist_ok=True)
 from live_trading import LiveTradingSystem
+
+print("=" * 60)
+print("🧠 NEXT LEVEL BRAIN - LIVE TRADING")
+print("=" * 60)
+print(f"Symbol: {symbol}")
+print(f"Strategy: {strat}")
+print(f"Timeframe: {tf}")
+print("=" * 60)
+print()
 
 system = LiveTradingSystem()
 system.symbols = ["{symbol}"]
-system.strategy = "{strategy}"
+system.strategy = "{strat}"
 system.timeframe = "{tf}"
-# Override lot size if feasible through system logic or config
-system.fixed_lot = {lots} 
 asyncio.run(system.run())
 '''
         helper.write_text(code, encoding="utf-8")
-        
-        # Start bot in background
-        self.is_trading = True
-        self.live_start_btn.configure(state="disabled")
-        self.live_stop_btn.configure(state="normal")
-        
-        def worker():
-            self.live_output.clear()
-            self.live_output.append(f"▶ System starting for {symbol}...\n")
-            try:
-                self.live_process = subprocess.Popen(
-                    [sys.executable, "-u", str(helper)],
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                    cwd=str(PROJECT_ROOT),
-                    env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"},
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-                    encoding="utf-8", errors="replace",
-                )
-                for line in self.live_process.stdout:
-                    if self.live_output: 
-                        self.live_output.append(line)
-                
-                self.live_process.wait()
-            except Exception as e:
-                if self.live_output: self.live_output.append(f"\n❌ Process Error: {e}\n")
-            finally:
-                self.is_trading = False
-                if hasattr(self, 'live_start_btn') and self.live_start_btn.winfo_exists():
-                    self.live_start_btn.configure(state="normal")
-                    self.live_stop_btn.configure(state="disabled")
-                if self.live_output: self.live_output.append("\n🛑 Bot stopped.\n")
-
-        threading.Thread(target=worker, daemon=True).start()
-
-    def _stop_live_trading(self):
-        if not self.is_trading or not self.live_process:
-            return
-            
-        try:
-            self.live_output.append("\n⏳ Sending shutdown signal...\n")
-            # In Windows, we usually just kill, but we can try generic terminate
-            self.live_process.terminate()
-            time.sleep(1)
-            if self.live_process.poll() is None:
-                self.live_process.kill()
-        except:
-            pass
-        
-        self.is_trading = False
-        self.live_start_btn.configure(state="normal")
-        self.live_stop_btn.configure(state="disabled")
+        self._launch_terminal("_auto_live.py", f"Live Trading — {symbol} — {strat}")
+        messagebox.showinfo("Live Trading", f"✅ Trading started!\n\nSymbol: {symbol}\nStrategy: {strat}\nTimeframe: {tf}\n\nNayi terminal window check karein.")
 
     # ═══════════════════════════════════════════════════════════════════════════
     # PAGE: INTELLIGENCE
@@ -1343,187 +1195,7 @@ mt5.shutdown()
             try: tmp.unlink()
             except: pass
 
-        self.dash_running = False
-        mt5.shutdown()
         self.destroy()
-
-    def _delete_all_pendings(self):
-        if not messagebox.askyesno("Confirm", "Baqi tamam active positions aur pending orders khatam kar dein?"):
-            return
-            
-        closed = 0
-        cancelled = 0
-        
-        positions = mt5.positions_get()
-        if positions:
-            for p in positions:
-                sym_info = mt5.symbol_info(p.symbol)
-                if not sym_info: continue
-                
-                order_type = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
-                price = mt5.symbol_info_tick(p.symbol).bid if p.type == mt5.POSITION_TYPE_BUY else mt5.symbol_info_tick(p.symbol).ask
-                
-                req = {
-                    "action": mt5.TRADE_ACTION_DEAL,
-                    "symbol": p.symbol, "volume": p.volume, "type": order_type,
-                    "position": p.ticket, "price": price, "deviation": 50,
-                    "magic": p.magic, "comment": "GUI_CLOSE_ALL",
-                    "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC
-                }
-                res = mt5.order_send(req)
-                if res and res.retcode == mt5.TRADE_RETCODE_DONE: closed += 1
-
-        orders = mt5.orders_get()
-        if orders:
-            for o in orders:
-                res = mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
-                if res and res.retcode == mt5.TRADE_RETCODE_DONE: cancelled += 1
-                
-        messagebox.showinfo("Done", f"Closed: {closed} positions\nCancelled: {cancelled} pending orders.")
-
-    # ═══════════════════════════════════════════════════════════════════════════
-    # DASHBOARD LOGIC (CORE)
-    # ═══════════════════════════════════════════════════════════════════════════
-
-    def _dashboard_update_loop(self):
-        """Background loop to fetch dashboard data without blocking GUI"""
-        if not mt5.initialize():
-            print("MT5 initialization failed for dashboard thread")
-            return
-
-        while self.dash_running:
-            try:
-                # Check if window still exists before proceeding
-                if not self.winfo_exists(): break
-                
-                # Fetch data
-                acc = mt5.account_info()
-                positions = mt5.positions_get()
-                
-                from_date = datetime.now() - timedelta(days=30)
-                deals = mt5.history_deals_get(from_date, datetime.now() + timedelta(days=1))
-                
-                # Filter by reset point
-                reset_ts = 0
-                reset_file = Path("logs/dashboard_reset.json")
-                if reset_file.exists():
-                    try:
-                        with open(reset_file, 'r') as f:
-                            reset_ts = json.load(f).get('reset_timestamp', 0)
-                    except: pass
-                
-                valid_deals = [d for d in deals if d.entry == 1 and d.time > reset_ts] if deals else []
-                
-                # Update UI elements via .after to ensure thread safety
-                # We use a helper to check if widget is still valid
-                def update_if_ready(a=acc, p=positions, d=valid_deals):
-                    try:
-                        if self.winfo_exists():
-                            self._update_dash_ui(a, p, d)
-                    except: pass
-
-                self.after(0, update_if_ready)
-                
-                time.sleep(1) 
-            except (RuntimeError, tk.TclError):
-                break # Application is likely closing
-            except Exception as e:
-                print(f"Dashboard thread error: {e}")
-                time.sleep(5)
-
-    def _update_dash_ui(self, acc, positions, deals):
-        """Update the dashboard widgets with new data"""
-        if not hasattr(self, 'dash_cards'): return # Safety check
-        
-        # --- A. TOP STRIP METRICS ---
-        profits = [d.profit + d.commission + d.swap for d in deals]
-        win_rate = (len([p for p in profits if p > 0]) / len(profits)) if profits else 0
-        total_pnl = sum(profits)
-        gross_profit = sum([p for p in profits if p > 0])
-        gross_loss = abs(sum([p for p in profits if p <= 0]))
-        p_factor = gross_profit / gross_loss if gross_loss > 0 else (float('inf') if gross_profit > 0 else 0)
-        
-        # Update Metric Labels safely
-        for label_id, value in [('total_trades', str(len(deals))), 
-                                ('win_rate', f"{win_rate:.1%}"),
-                                ('total_pnl', f"${total_pnl:,.2f}"),
-                                ('p_factor', f"{p_factor:.2f}")]:
-            if label_id in self.metric_ui_labels:
-                clr = ("#10b981" if total_pnl >= 0 else "#ef4444") if label_id == 'total_pnl' else COLORS["text_primary"]
-                self.metric_ui_labels[label_id].configure(text=value, text_color=clr)
-
-        # --- B. PORTFOLIO CARDS ---
-        if acc:
-            self.dash_cards['bal'].configure(text=f"${acc.balance:,.2f}")
-            self.dash_cards['eq'].configure(text=f"${acc.equity:,.2f}")
-            margin_pct = f"{acc.margin_level:.1f}%" if acc.margin_level else "0%"
-            self.dash_cards['mar'].configure(text=margin_pct)
-        
-        # Session PNL (Last 24h)
-        now_ts = datetime.now().timestamp()
-        s_pnl = sum([d.profit + d.commission + d.swap for d in deals if (now_ts - d.time) < 86400])
-        self.dash_cards['pnl'].configure(text=f"${s_pnl:,.2f}", text_color=("#10b981" if s_pnl >= 0 else "#ef4444"))
-        
-        # Timer
-        total_sec = int(self.accumulated_seconds + (time.time() - self.dash_start_time))
-        h, r = divmod(total_sec, 3600); m, s = divmod(r, 60)
-        self.dash_cards['dur'].configure(text=f"{h:02d}:{m:02d}:{s:02d}")
-
-        # Milestone
-        try:
-            m_file = Path("logs/milestone_progress.json")
-            if m_file.exists():
-                with open(m_file, 'r') as f:
-                    m_data = json.load(f)
-                    progress = m_data.get('progress', 0.0)
-                    target = m_data.get('target_inc', 100.0)
-                    self.dash_cards['mil'].configure(text=f"${progress:.2f} / ${target:.0f}")
-        except: pass
-
-        # --- C. TREES ---
-        # Current Positions
-        if hasattr(self, 'pos_tree') and self.pos_tree.winfo_exists():
-            for i in self.pos_tree.get_children(): self.pos_tree.delete(i)
-            if positions:
-                for p in positions:
-                    side = "BUY" if p.type == mt5.POSITION_TYPE_BUY else "SELL"
-                    self.pos_tree.insert("", "end", values=(p.ticket, p.symbol, side, p.volume, p.price_open, f"{p.profit:.2f}"))
-
-        # History
-        if hasattr(self, 'hist_tree') and self.hist_tree.winfo_exists():
-            # Only redraw if deal count changed or randomly every X loops
-            if len(deals) != len(self.hist_tree.get_children()):
-                for i in self.hist_tree.get_children(): self.hist_tree.delete(i)
-                # Sort by time desc
-                sorted_deals = sorted(deals, key=lambda x: x.time, reverse=True)[:50]
-                for d in sorted_deals:
-                    t_str = datetime.fromtimestamp(d.time).strftime('%H:%M:%S')
-                    side = "BUY" if d.type == mt5.DEAL_TYPE_BUY else "SELL"
-                    self.hist_tree.insert("", "end", values=(t_str, d.symbol, side, d.volume, f"{d.profit:.2f}", d.comment))
-
-    def _reset_dashboard(self):
-        if not messagebox.askyesno("Confirm", "Are you sure you want to RESET all performance metrics and the session timer?"):
-            return
-        
-        # Signal global reset
-        try:
-            r_file = Path("logs/dashboard_reset.json")
-            r_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(r_file, 'w') as f:
-                json.dump({'reset_timestamp': datetime.now().timestamp()}, f)
-            
-            # Reset timer
-            self.accumulated_seconds = 0
-            self.dash_start_time = time.time()
-            self._save_session_stats()
-            
-            # Clean milestone if exists
-            m_file = Path("logs/milestone_progress.json")
-            if m_file.exists(): m_file.unlink()
-            
-            messagebox.showinfo("Reset", "✅ Performance Reset Complete!")
-        except Exception as e:
-            messagebox.showerror("Error", f"Reset failed: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1531,5 +1203,5 @@ mt5.shutdown()
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    app = NextLevelTRADINGSYSTEMApp()
+    app = NextLevelBrainApp()
     app.mainloop()

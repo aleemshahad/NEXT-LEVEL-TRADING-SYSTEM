@@ -19,8 +19,9 @@ class GridRecycler:
     - Result: Infinite recycling of profits on small market oscillations.
     """
 
-    def __init__(self, broker, config: Dict):
+    def __init__(self, broker, config: Dict, profit_controller=None):
         self.broker = broker
+        self.profit_ctrl = profit_controller or ProfitController(broker, "Recycler")
         
         grid_cfg = config.get('grid', {})
         self.spacing = grid_cfg.get('spacing', 1.0)          # Distance between levels ($)
@@ -33,8 +34,6 @@ class GridRecycler:
         self.magic_buy = 20001
         self.magic_sell = 20002
         self.mode = "BUY_ONLY"   # BUY_ONLY / SELL_ONLY / BOTH
-        
-        self.profit_ctrl = ProfitController(broker, "Recycler")
         
         self._last_log_time = 0
         self.state_file = Path("logs/recycler_state.json")
@@ -102,7 +101,7 @@ class GridRecycler:
     # Core Update Loop
     # ─────────────────────────────────────────────────────────────────────────
 
-    async def update(self, symbol: str, current_price: float):
+    async def update(self, symbol: str, current_price: float, positions: List = None, orders: List = None):
         """Monitor positions and manage the grid levels."""
         try:
             if not hasattr(self, 'active_grids') or symbol not in self.active_grids:
@@ -113,37 +112,42 @@ class GridRecycler:
             if not symbol_info:
                 return
 
-            # 1. Get current state from Broker
-            all_positions = self.broker.get_positions()
-            recycler_positions = [p for p in all_positions if p['symbol'] == symbol and p['magic'] in (self.magic_buy, self.magic_sell)]
-            
-            # Map items to MT5 objects for individual monitor_individual_trailing
-            # Actually ProfitController uses raw positions from mt5.positions_get internally if we want, 
-            # but monitor_individual_trailing takes a list of positions.
-            # Convert dict positions back to objects or just use mt5.positions_get for the update logic.
-            raw_positions = mt5.positions_get(symbol=symbol)
-            if raw_positions is None: raw_positions = []
-            recycler_objs = [p for p in raw_positions if p.magic in (self.magic_buy, self.magic_sell)]
+            # Helper to get values from either object or dict
+            def _get_val(p, k, default=0):
+                if hasattr(p, k): return getattr(p, k)
+                if isinstance(p, dict): return p.get(k, default)
+                return default
 
-            all_orders = mt5.orders_get(symbol=symbol)
-            if all_orders is None: all_orders = []
-            active_pendings = [o for o in all_orders if o.magic in (self.magic_buy, self.magic_sell)]
+            # 1. Update Grid Positions (Raw objects or dicts)
+            if positions is None:
+                raw_positions = mt5.positions_get(symbol=symbol)
+                if raw_positions is None: raw_positions = []
+                recycler_objs = [p for p in raw_positions if p.magic in (self.magic_buy, self.magic_sell)]
+            else:
+                recycler_objs = [p for p in positions if _get_val(p, 'symbol') == symbol and _get_val(p, 'magic') in (self.magic_buy, self.magic_sell)]
+
+            if orders is None:
+                all_orders = mt5.orders_get(symbol=symbol)
+                if all_orders is None: all_orders = []
+                active_pendings = [o for o in all_orders if o.magic in (self.magic_buy, self.magic_sell)]
+            else:
+                active_pendings = [o for o in orders if _get_val(o, 'symbol') == symbol and _get_val(o, 'magic') in (self.magic_buy, self.magic_sell)]
 
             # 2. Maintain Grid Depth (Expansion & Rolling)
             for side in ['BUY', 'SELL']:
                 if self.mode != "BOTH" and side != self.mode.replace("_ONLY", ""):
                     continue
                     
-                # BTC Optimization: Use $50 spacing instead of default $1 for Bitcoin
-                spacing = 50.0 if "BTC" in symbol.upper() else self.spacing
-
+                side_pendings = {round(_get_val(o, 'price_open'), 2): o for o in active_pendings if (_get_val(o, 'magic') == self.magic_buy if side == 'BUY' else _get_val(o, 'magic') == self.magic_sell)}
+                side_positions = {round(_get_val(p, 'price_open'), 2): p for p in recycler_objs if (_get_val(p, 'magic') == self.magic_buy if side == 'BUY' else _get_val(p, 'magic') == self.magic_sell)}
+                
                 # SNAP ANCHOR: Round to nearest whole spacing (e.g. $1 increments)
-                anchor = round(current_price / spacing) * spacing
+                anchor = round(current_price / self.spacing) * self.spacing
                 
                 # A. MAINTAIN GRID: Fill levels relative to anchor
-                # We maintain a window of [batch_size] orders centered away from market
+                # We maintain a window of [batch_size] orders centered $1 away from market
                 for i in range(1, self.batch_size + 1):
-                    level_price = anchor - (i * spacing) if side == 'BUY' else anchor + (i * spacing)
+                    level_price = anchor - (i * self.spacing) if side == 'BUY' else anchor + (i * self.spacing)
                     level_price = round(round(level_price / symbol_info.trade_tick_size) * symbol_info.trade_tick_size, symbol_info.digits)
                     r_price = round(level_price, 2)
                     
@@ -159,31 +163,20 @@ class GridRecycler:
                     await self.broker.place_pending_order(symbol, order_type, self.lot_size, level_price, magic)
 
                 # B. PRUNE: Remove far-away orders to save slots
-                limit_dist = (self.batch_size + 10) * spacing
+                limit_dist = (self.batch_size + 10) * self.spacing
                 for p_price, order in side_pendings.items():
                     if abs(p_price - anchor) > limit_dist:
                         await self.broker.cancel_order(order.ticket)
 
-            # 3. Check each position for profit target & trailing via ProfitController
-            to_close = await self.profit_ctrl.monitor_individual_trailing(recycler_objs, self.per_trade_profit)
-            
-            for pos in to_close:
-                side = 'BUY' if pos.type == mt5.POSITION_TYPE_BUY else 'SELL'
-                entry_price = pos.price_open
-                
-                logger.info(f"💰 Recycler: {side} @ {entry_price:.3f} trailing closed via ProfitController.")
-                
-                # Close the position
-                closed = await self._close_position(symbol, pos)
-                if closed:
-                    await asyncio.sleep(0.2)
-                    await self._recycle_level(symbol, entry_price, side, symbol_info)
+            # 3. Individual closures are now handled by Turbo Loop (100Hz) in LiveTradingSystem for zero slippage.
+            # GridRecycler.update now only manages the grid maintenance (orders).
+            pass
                 
             # Periodic logging for Recycler status
             now = time.time()
             if now - self._last_log_time > 10:
                 open_count = len(recycler_objs)
-                total_pnl = sum(p.profit + getattr(p, 'commission', 0.0) + p.swap for p in recycler_objs)
+                total_pnl = sum(_get_val(p, 'profit') + _get_val(p, 'commission') + _get_val(p, 'swap') for p in recycler_objs)
                 if open_count > 0:
                     logger.info(f"🔄 Recycler Status | Symbols: {symbol} | Open: {open_count} | Net PnL: ${total_pnl:.2f}")
                 self._last_log_time = now
