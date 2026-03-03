@@ -1,4 +1,4 @@
-# 🧠 NEXT LEVEL BRAIN - Strategy Working Flow (Roman Urdu)
+# 🧠 NEXT LEVEL TRADING SYSTEM - Strategy Working Flow (Roman Urdu)
 
 Yeh presentation hamari trading strategy ke kaam karnay ka treeka (workflow) samjhati hai.
 
