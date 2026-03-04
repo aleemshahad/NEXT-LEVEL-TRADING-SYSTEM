@@ -1,3 +1,4 @@
+import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk, messagebox
 import MetaTrader5 as mt5
@@ -9,28 +10,45 @@ import time
 import os
 import json
 from pathlib import Path
-from dotenv import load_dotenv
-# Charting removed to replace with Calculator
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from liquidity_engine import LiquidityEngine
+try:
+    import winsound
+except ImportError:
+    winsound = None
 
-# Load environment variables
-load_dotenv()
+# --- Theme & Colors ---
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
 
-class LivePortfolioDashboard:
+COLORS = {
+    "bg_dark": "#0D0D0D",
+    "bg_card": "#1A1A1A",
+    "neon_green": "#00FF7F",
+    "neon_blue": "#1E90FF",
+    "neon_red": "#FF4500",
+    "neon_yellow": "#FFFF00",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#B0B0B0",
+    "border": "#2A2A2A",
+    "glass_bg": "#121212",
+    "glass_highlight": "#252525",
+    "bsl_color": "#00FF7F",
+    "ssl_color": "#FF4500",
+}
+
+class LivePortfolioDashboard(ctk.CTk):
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("NEXT LEVEL - LIVE PERFORMANCE & CONTROL")
-        self.root.geometry("1200x850")
-        self.root.configure(bg='#0a0a0a') # Deeper Dark Background
-        
-        self.style = ttk.Style()
-        self.style.theme_use('clam')
-        self._setup_styles()
+        super().__init__()
+        self.title("🧠 NEXT LEVEL BRAIN - LIVE PERFORMANCE & CONTROL")
+        self.geometry("1300x910")
+        self.configure(fg_color=COLORS["bg_dark"])
         
         self.running = True
         self.magic_buy = 777001
         self.magic_sell = 777002
-        self.history_days = 30 # Track last 30 days by default
-        self.reset_timestamp, self.session_max_drawdown, self.start_balance = self._load_reset_config()
+        self.history_days = 30
         
         self.trade_history = []
         self.metrics = {
@@ -40,1059 +58,787 @@ class LivePortfolioDashboard:
             'profit_factor': 0.0,
             'max_drawdown': 0.0
         }
-        self.equity_history = self._load_chart_history() # Load persistent history
-        self._last_chart_append = 0
+        self.last_hits = -1 
         
+        self.unit = "$"
+        self.active_symbol = "XAUUSDm"
+        
+        self.session_stats_file = Path("logs/dashboard_session_stats.json")
+        self.accumulated_seconds = self._load_session_stats()
+        self.start_time = None 
+        self._last_history_update = 0 
+        
+        # --- Liquidity Intelligence Engine ---
+        self.liq_engine = LiquidityEngine(self.active_symbol)
+        self.liq_engine.start()
+        
+        self._setup_styles()
         self._create_widgets()
         
         # Start background update thread
         self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
         self.update_thread.start()
         
-        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+        # Start high-frequency timer tick (Every 1 second)
+        self._tick_timer()
+        
+        self.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+    def _load_session_stats(self):
+        try:
+            if self.session_stats_file.exists():
+                with open(self.session_stats_file, 'r') as f:
+                    return json.load(f).get('accumulated_seconds', 0)
+        except Exception: pass
+        return 0
+
+    def _save_session_stats(self):
+        try:
+            self.session_stats_file.parent.mkdir(parents=True, exist_ok=True)
+            current_session = (time.time() - self.start_time) if self.start_time else 0
+            total = self.accumulated_seconds + current_session
+            with open(self.session_stats_file, 'w') as f:
+                json.dump({'accumulated_seconds': total}, f)
+        except Exception: pass
 
     def _setup_styles(self):
-        self.style.configure("TFrame", background="#0a0a0a")
-        self.style.configure("Card.TFrame", background="#151515", relief="flat", borderwidth=0)
-        self.style.configure("TLabel", background="#151515", foreground="#ffffff", font=('Segoe UI', 10))
-        self.style.configure("Header.TLabel", background="#0a0a0a", foreground="#00e676", font=('Segoe UI', 16, 'bold'))
-        self.style.configure("Stat.TLabel", background="#151515", foreground="#00e676", font=('Consolas', 22, 'bold')) # Bigger, Neon Green
-        self.style.configure("Metric.TLabel", background="#151515", foreground="#8b949e", font=('Segoe UI', 10))
-        self.style.configure("Ticker.TLabel", background="#050505", foreground="#00e676", font=('Consolas', 11, 'italic'))
-        
-        # Treeview styles
-        self.style.configure("Treeview", 
-                           background="#151515", 
-                           foreground="white", 
-                           fieldbackground="#151515",
-                           rowheight=28,
-                           font=('Segoe UI', 10))
-        self.style.map("Treeview", background=[('selected', '#3d3d3d')])
-        self.style.configure("Treeview.Heading", background="#212121", foreground="white", font=('Segoe UI', 10, 'bold'))
-        
-        # Treeview tags for coloring
-        self.pos_tree_tags = {
-            'profit': {'foreground': '#00e676'},
-            'loss': {'foreground': '#ff5252'}
-        }
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview", 
+                        background=COLORS["bg_card"], 
+                        foreground="white", 
+                        fieldbackground=COLORS["bg_card"],
+                        rowheight=35,
+                        font=('Segoe UI', 10),
+                        borderwidth=0)
+        style.map("Treeview", background=[('selected', '#3d3d3d')])
+        style.configure("Treeview.Heading", 
+                        background="#212121", 
+                        foreground="white", 
+                        font=('Segoe UI', 10, 'bold'),
+                        borderwidth=0)
 
     def _create_widgets(self):
-        # Main Container
-        main_frame = ttk.Frame(self.root, padding="15")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # 1. Sticky Header
+        self.header = ctk.CTkFrame(self, height=80, fg_color=COLORS["bg_dark"], corner_radius=0)
+        self.header.pack(fill=tk.X, side=tk.TOP, padx=0, pady=0)
+        
+        self.header_bg = ctk.CTkFrame(self.header, fg_color="#151515", height=78, corner_radius=0)
+        self.header_bg.pack(fill=tk.X, padx=0, pady=(0, 2))
+        
+        title_frame = ctk.CTkFrame(self.header_bg, fg_color="transparent")
+        title_frame.pack(side=tk.LEFT, padx=30)
+        
+        ctk.CTkLabel(title_frame, text="🧠", font=("Segoe UI Emoji", 32)).pack(side=tk.LEFT, padx=(0, 10))
+        ctk.CTkLabel(title_frame, text="NEXT LEVEL BRAIN", font=("Segoe UI", 22, "bold"), text_color=COLORS["neon_green"]).pack(side=tk.LEFT)
+        
+        # Indicators & Icons
+        self.right_header = ctk.CTkFrame(self.header_bg, fg_color="transparent")
+        self.right_header.pack(side=tk.RIGHT, padx=30)
+        
+        # System Active Pulse
+        self.pulse_canvas = tk.Canvas(self.right_header, width=30, height=30, bg="#151515", highlightthickness=0)
+        self.pulse_canvas.pack(side=tk.LEFT, padx=5)
+        self.pulse_circle = self.pulse_canvas.create_oval(7, 7, 23, 23, fill=COLORS["neon_green"], outline="")
+        self._animate_pulse()
+        
+        self.status_label = ctk.CTkLabel(self.right_header, text="SYSTEM ACTIVE", font=("Segoe UI", 11, "bold"), text_color=COLORS["neon_green"])
+        self.status_label.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # Icons
+        for icon in ["⚙️", "🔔", "📊", "💻"]:
+            ctk.CTkLabel(self.right_header, text=icon, font=("Segoe UI Emoji", 18), cursor="hand2").pack(side=tk.LEFT, padx=10)
+            
+        # Clock
+        self.clock_label = ctk.CTkLabel(self.right_header, text="00:00:00", font=("Consolas", 14, "bold"), text_color=COLORS["text_secondary"])
+        self.clock_label.pack(side=tk.LEFT, padx=(20, 0))
 
-        # 1. Header
-        header_frame = ttk.Frame(main_frame, style="TFrame")
-        header_frame.pack(fill=tk.X, pady=(0, 15))
+        # Main Scrollable Content (Using Tabs)
+        self.tab_view = ctk.CTkTabview(self, fg_color="transparent")
+        self.tab_view.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
-        title = tk.Label(header_frame, text="NEXT LEVEL - LIVE PERFORMANCE", 
-                        bg="#0a0a0a", fg="#00e676", font=('Segoe UI', 22, 'bold'))
-        title.pack(side=tk.LEFT)
+        self.tab_performance = self.tab_view.add("📈 PERFORMANCE")
+        self.tab_intelligence = self.tab_view.add("🧠 MARKET INTELLIGENCE")
         
-        self.status_label = tk.Label(header_frame, text="● SYSTEM ACTIVE", bg="#0a0a0a", 
-                                   fg="#00e676", font=('Segoe UI', 10, 'bold'))
-        self.status_label.pack(side=tk.RIGHT)
+        # --- TAB: PERFORMANCE ---
+        self.main_container = ctk.CTkScrollableFrame(self.tab_performance, fg_color="transparent")
+        self.main_container.pack(fill=tk.BOTH, expand=True)
 
-        # 2. Performance Summary Metrics (Restored)
-        perf_container = ttk.Frame(main_frame, style="Card.TFrame", padding="15")
-        perf_container.pack(fill=tk.X, pady=10)
+        # 2. Stats Section (Cards)
+        stats_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
+        stats_frame.pack(fill=tk.X, pady=10)
         
-        metrics_list = [
-            ("Total Trades", "total_trades"),
-            ("Win Rate", "win_rate"),
-            ("Total P&L", "total_pnl"),
-            ("Profit Factor", "profit_factor"),
-            ("Max Drawdown", "max_drawdown")
+        self.stat_cards = {}
+        metrics_meta = [
+            ("TOTAL TRADES", "total_trades", COLORS["text_primary"]),
+            ("WIN RATE", "win_rate", COLORS["neon_green"]),
+            ("TOTAL P&L", "total_pnl", COLORS["neon_green"]),
+            ("PROFIT FACTOR", "profit_factor", COLORS["neon_blue"]),
+            ("MAX DRAWDOWN", "max_drawdown", COLORS["neon_red"])
         ]
         
-        self.metric_labels = {}
-        for i, (label, key) in enumerate(metrics_list):
-            m_frame = ttk.Frame(perf_container, style="Card.TFrame")
-            m_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            
-            ttk.Label(m_frame, text=f"{label}:", font=('Segoe UI', 10, 'bold')).pack(side=tk.LEFT, padx=5)
-            self.metric_labels[key] = ttk.Label(m_frame, text="--", style="Stat.TLabel")
-            self.metric_labels[key].pack(side=tk.LEFT, padx=5)
+        for i, (label, key, color) in enumerate(metrics_meta):
+            card = ScrollableStatCard(stats_frame, label, color)
+            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+            self.stat_cards[key] = card
 
-        # 3. Portfolio Summary Cards (Real-time)
-        summary_container = ttk.Frame(main_frame, style="TFrame")
-        summary_container.pack(fill=tk.X, pady=10)
+        # 3. Portfolio Summary Cards
+        summary_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
+        summary_frame.pack(fill=tk.X, pady=10)
         
-        self.cards = {}
-        items = [
-            ("STARTING BALANCE", "start_val", "#ffffff"),
-            ("ACCOUNT BALANCE", "balance_val", "#ffffff"),
-            ("FLOATING EQUITY", "equity_val", "#58a6ff"),
-            ("SESSION PNL", "session_val", "#00e676"),
-            ("MAX FLOATING (-) $", "drawdown_val", "#ff5252"),
-            ("MARGIN LEVEL", "margin_val", "#03a9f4")
+        self.summary_cards = {}
+        summary_meta = [
+            ("ACCOUNT BALANCE", "balance_val", COLORS["text_primary"]),
+            ("FLOATING EQUITY", "equity_val", COLORS["neon_green"]),
+            ("SESSION PNL", "session_val", COLORS["neon_green"]),
+            ("FREE MARGIN", "margin_val", COLORS["neon_blue"]),
+            ("SESSION TIME", "duration_val", COLORS["neon_yellow"])
         ]
         
-        for i, (label, key, color) in enumerate(items):
-            card = ttk.Frame(summary_container, style="Card.TFrame", padding="15")
-            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3)
-            
-            ttk.Label(card, text=label, font=('Segoe UI', 9, 'bold'), foreground="#8b949e").pack(anchor=tk.CENTER)
-            self.cards[key] = tk.Label(card, text="$0.00", bg="#151515", 
-                                      fg=color, font=('Consolas', 18, 'bold')) # Balanced size for 6 cards
-            self.cards[key].pack(anchor=tk.CENTER, pady=5)
-            
-        # 3.5 Grid & Trailing Status Card (NEW)
-        grid_container = ttk.Frame(main_frame, style="Card.TFrame", padding="15")
-        grid_container.pack(fill=tk.X, pady=10)
-        
-        ttk.Label(grid_container, text="🕸️ GRID & TRAILING MONITOR", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,10))
-        
-        status_sub_frame = ttk.Frame(grid_container, style="Card.TFrame")
-        status_sub_frame.pack(fill=tk.X)
-        
-        self.grid_cards = {}
-        grid_items = [
-            ("GRID MODE", "grid_mode", "#ffffff"),
-            ("PROGRESS", "grid_progress", "#ffffff"),
-            ("PEAK PROFIT", "peak_val", "#00e676"),
-            ("TRAILING LOCK", "lock_val", "#ff5252")
-        ]
-        
-        for label, key, color in grid_items:
-            f = ttk.Frame(status_sub_frame, style="Card.TFrame")
-            f.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            ttk.Label(f, text=label, font=('Segoe UI', 8, 'bold'), foreground="#888888").pack(anchor=tk.CENTER)
-            self.grid_cards[key] = tk.Label(f, text="--", bg="#151515", fg=color, font=('Consolas', 14, 'bold'))
-            self.grid_cards[key].pack(anchor=tk.CENTER)
+        for i, (label, key, color) in enumerate(summary_meta):
+            card = SummaryCard(summary_frame, label, color)
+            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+            self.summary_cards[key] = card
 
-        # 4. Content Area: Three Columns (Active Trades | Performance Curve | Live Risk Monitor)
-        self.content_frame = ttk.Frame(main_frame, style="TFrame")
-        self.content_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        # 4. Milestone Progress
+        milestone_frame = ctk.CTkFrame(self.main_container, fg_color=COLORS["bg_card"], corner_radius=12, border_width=1, border_color=COLORS["border"])
+        milestone_frame.pack(fill=tk.X, pady=10, padx=5)
         
-        # Left Column: Active Positions (32%)
-        self.left_col = ttk.Frame(self.content_frame, style="Card.TFrame", padding=10)
-        self.left_col.place(relx=0, rely=0, relwidth=0.32, relheight=1)
+        ctk.CTkLabel(milestone_frame, text="EQUITY MILESTONE PROGRESS", font=("Segoe UI", 11, "bold"), text_color=COLORS["text_secondary"]).pack(anchor=tk.W, padx=20, pady=(15, 5))
         
-        ttk.Label(self.left_col, text="💹 ACTIVE POSITIONS", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,5))
+        prog_container = ctk.CTkFrame(milestone_frame, fg_color="transparent")
+        prog_container.pack(fill=tk.X, padx=20, pady=(0, 20))
         
-        self.pos_tree = ttk.Treeview(self.left_col, columns=("symbol", "side", "lots", "profit"), show="headings")
+        self.milestone_progress = ctk.CTkProgressBar(prog_container, height=12, progress_color=COLORS["neon_green"], fg_color="#333333")
+        self.milestone_progress.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 20))
+        self.milestone_progress.set(0)
+        
+        self.milestone_text = ctk.CTkLabel(prog_container, text="0.00 / 100.00", font=("Consolas", 14, "bold"), text_color=COLORS["neon_green"])
+        self.milestone_text.pack(side=tk.RIGHT)
+
+        # 5. Middle Section: Table vs Small Chart
+        middle_frame = ctk.CTkFrame(self.main_container, fg_color="transparent")
+        middle_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # Left: Positions Table
+        table_container = ctk.CTkFrame(middle_frame, fg_color=COLORS["bg_card"], corner_radius=12, border_width=1, border_color=COLORS["border"])
+        table_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+        
+        ctk.CTkLabel(table_container, text="💹 ACTIVE POSITIONS", font=("Segoe UI", 12, "bold")).pack(anchor=tk.W, padx=20, pady=15)
+        
+        self.pos_tree = ttk.Treeview(table_container, columns=("ticket", "symbol", "side", "lots", "price", "profit"), show="headings")
+        self.pos_tree.heading("ticket", text="Ticket")
         self.pos_tree.heading("symbol", text="Symbol")
         self.pos_tree.heading("side", text="Side")
         self.pos_tree.heading("lots", text="Lots")
-        self.pos_tree.heading("profit", text="Profit ($)")
-        for col in ("symbol", "side", "lots", "profit"):
-            self.pos_tree.column(col, anchor=tk.CENTER, width=65)
-        self.pos_tree.pack(fill=tk.BOTH, expand=True)
+        self.pos_tree.heading("price", text="Entry")
+        self.pos_tree.heading("profit", text="Profit")
+        for col in ("ticket", "symbol", "side", "lots", "price", "profit"):
+            self.pos_tree.column(col, anchor=tk.CENTER, width=80)
+        self.pos_tree.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
         
-        # Middle Column: Equity Performance Curve (34%)
-        self.mid_col = ttk.Frame(self.content_frame, style="Card.TFrame", padding=10)
-        self.mid_col.place(relx=0.33, rely=0, relwidth=0.34, relheight=1)
+        # Right: Mini Live Chart
+        chart_container = ctk.CTkFrame(middle_frame, fg_color=COLORS["bg_card"], width=350, corner_radius=12, border_width=1, border_color=COLORS["border"])
+        chart_container.pack(side=tk.RIGHT, fill=tk.BOTH, padx=5)
+        chart_container.pack_propagate(False)
         
-        ttk.Label(self.mid_col, text="📈 PERFORMANCE CURVE (EQUITY)", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,5))
-        self.chart_canvas = tk.Canvas(self.mid_col, bg="#0d1117", highlightthickness=0)
-        self.chart_canvas.pack(fill=tk.BOTH, expand=True)
+        ctk.CTkLabel(chart_container, text="📊 PERFORMANCE CURVE", font=("Segoe UI", 12, "bold")).pack(anchor=tk.W, padx=20, pady=15)
         
-        # Right Column: Live Risk Monitor (32%)
-        self.right_col = ttk.Frame(self.content_frame, style="Card.TFrame", padding=15)
-        self.right_col.place(relx=0.68, rely=0, relwidth=0.32, relheight=1)
+        self.fig, self.ax = plt.subplots(figsize=(4, 3), dpi=90)
+        self.fig.patch.set_facecolor(COLORS["bg_card"])
+        self.ax.set_facecolor(COLORS["bg_card"])
+        self.ax.tick_params(colors='white', labelsize=8)
+        for spine in self.ax.spines.values(): spine.set_edgecolor(COLORS["border"])
         
-        ttk.Label(self.right_col, text="🛡️ LIVE RISK & EXPOSURE MONITOR", font=('Segoe UI', 11, 'bold'), foreground="#ffa726").pack(anchor=tk.W, pady=(0,15))
-        
-        calc_inner = ttk.Frame(self.right_col, style="Card.TFrame")
-        calc_inner.pack(fill=tk.BOTH, expand=True)
-        
-        # Live Data Section
-        stats_frame = ttk.Frame(calc_inner, style="Card.TFrame")
-        stats_frame.pack(fill=tk.X, pady=5)
-        
-        self.live_price_label = tk.Label(stats_frame, text="LIVE PRICE: --", bg="#151515", fg="#ffffff", font=('Consolas', 11, 'bold'))
-        self.live_price_label.pack(anchor=tk.W)
-        
-        self.net_lots_label = tk.Label(stats_frame, text="NET EXPOSURE: --", bg="#151515", fg="#ffffff", font=('Consolas', 11, 'bold'))
-        self.net_lots_label.pack(anchor=tk.W)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=chart_container)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        self.floating_pnl_label = tk.Label(stats_frame, text="CURRENT PNL: --", bg="#151515", fg="#00e676", font=('Consolas', 11, 'bold'))
-        self.floating_pnl_label.pack(anchor=tk.W)
-        
-        ttk.Label(calc_inner, text="--- TOTAL PNL IF MARKET MOVES AGAINST YOU ---", font=('Segoe UI', 8, 'bold'), foreground="#888888").pack(pady=(15,10))
-        
-        self.proj_cards = {}
-        # Scenarios: Price move in Dollars (e.g. Gold -1, -2 etc)
-        # We'll label them as Pips but show the $ impact clearly
-        scenarios = [
-            ("$10 Move (1000 Pips)", 1000),
-            ("$20 Move (2000 Pips)", 2000),
-            ("$50 Move (5000 Pips)", 5000),
-            ("$100 Move (10000 Pips)", 10000),
-            ("$150 Move (15000 Pips)", 15000)
-        ]
-        
-        for label, pips in scenarios:
-            f = ttk.Frame(calc_inner, style="Card.TFrame")
-            f.pack(fill=tk.X, pady=4)
-            ttk.Label(f, text=label, font=('Segoe UI', 9), foreground="#cccccc").pack(side=tk.LEFT)
-            self.proj_cards[pips] = tk.Label(f, text="$0.00", bg="#151515", fg="#ff5252", font=('Consolas', 12, 'bold'))
-            self.proj_cards[pips].pack(side=tk.RIGHT)
+        # --- TAB: MARKET INTELLIGENCE ---
+        self._create_intelligence_widgets()
 
-        # Remove the previous horizontal risk_calc_frame if it exists to clean up
-        # Note: Previous risk_calc_frame was at footer, we'll hide it to focus on this one
+        # Bottom Actions
+        footer = ctk.CTkFrame(self, height=60, fg_color=COLORS["bg_card"], corner_radius=0)
+        footer.pack(fill=tk.X, side=tk.BOTTOM)
         
-        # Configure tags for pos_tree
-        self.pos_tree.tag_configure('profit', foreground='#00e676')
-        self.pos_tree.tag_configure('loss', foreground='#ff5252')
+        ctk.CTkButton(footer, text="🔄 RESET PERFORMANCE", command=self._reset_dashboard, fg_color="#3B82F6", hover_color="#2563EB", font=("Segoe UI", 12, "bold")).pack(side=tk.RIGHT, padx=10, pady=15)
+        ctk.CTkButton(footer, text="🧹 DELETE ALL PENDINGS", command=self._delete_pendings, fg_color="#EF4444", hover_color="#DC2626", font=("Segoe UI", 12, "bold")).pack(side=tk.RIGHT, padx=10, pady=15)
+        ctk.CTkButton(footer, text="📊 GENERATE FULL REPORT", command=self._generate_report, fg_color=COLORS["neon_green"], text_color="black", hover_color="#00D96D", font=("Segoe UI", 12, "bold")).pack(side=tk.RIGHT, padx=10, pady=15)
 
-        # 5. Bottom AI Ticker (Scrolling Thoughts)
-        ticker_bg = tk.Frame(main_frame, bg="#050505", height=40)
-        ticker_bg.pack(fill=tk.X, pady=(10, 0), side=tk.BOTTOM)
-        
-        # More dynamic ticker text
-        # Ticker text with Education, Demo notice and Strategy Praise
-        self.ticker_text = "[XAUUSD] NEXT LEVEL TRADING: GOLD SCALPING SPECIALIST... | [NOTICE] FOR EDUCATIONAL PURPOSES ONLY... | [ACCOUNT] DEMO ACCOUNT TRADING LIVE... | [STRATEGY] ELITE GRID-SCALPING IN ACTION: THE SMARTEST WAY TO PROFIT FROM MARKET PULLBACKS... | [STATUS] 100% OPERATIONAL... | [YT LIVE] STREAMING LIVE PERFORMANCE... | [MODE] FULL AUTO-TRAILING ACTIVE... "
-        self.ticker_label = tk.Label(ticker_bg, text=self.ticker_text * 3, 
-                                     bg="#050505", fg="#00e676", 
-                                     font=('Consolas', 11, 'italic'),
-                                     anchor='w')
-        self.ticker_label.place(x=0, y=10)
-        self._scroll_ticker()
-
-        # Footer Actions (Smaller, to side)
-        footer = ttk.Frame(main_frame, style="TFrame")
-        footer.pack(fill=tk.X, pady=10, side=tk.BOTTOM)
-        
-        tk.Button(footer, text="🚨 EMERGENCY RESET", command=self._emergency_reset, bg="#ff1744", fg="white", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="🧹 DELETE ALL PENDINGS", command=self._delete_pendings, bg="#ff5252", fg="white", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="📊 GENERATE FULL REPORT", command=self._generate_report, bg="#00e676", fg="black", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
-
-    def _delete_pendings(self):
-        if not messagebox.askyesno("Confirm", "Delete all pending orders?"): return
-        orders = mt5.orders_get()
-        if orders:
-            for o in orders:
-                mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
-            messagebox.showinfo("Success", f"Deleted {len(orders)} pending orders.")
-
-    def _scroll_ticker(self):
-        """Infinite horizontal scroll for AI Ticker"""
-        if not hasattr(self, '_ticker_pos'): self._ticker_pos = 0
-        self._ticker_pos -= 1
-        if self._ticker_pos < -1000: self._ticker_pos = 0
-        self.ticker_label.place(x=self._ticker_pos, y=5)
-        self.root.after(40, self._scroll_ticker)
-
-    def _generate_report(self):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        report_dir = Path("logs/live_reports")
-        report_dir.mkdir(parents=True, exist_ok=True)
-        
-        json_path = report_dir / f"dashboard_report_{timestamp}.json"
-        html_path = report_dir / f"performance_report_{timestamp}.html"
-        
-        # Calculate extended metrics for report
-        profits = [t['profit'] for t in self.trade_history]
-        total_loss = sum(abs(p) for p in profits if p < 0)
-        total_profit = sum(p for p in profits if p > 0)
-        
-        report_data = {
-            'timestamp': datetime.now().isoformat(),
-            'metrics': {
-                **self.metrics, 
-                'total_loss': total_loss, 
-                'total_gain': total_profit,
-                'max_floating_minus': self.session_max_drawdown  # NEW: Added as requested
-            },
-            'trades': self.trade_history
-        }
-        
-        # 1. Save JSON
-        with open(json_path, 'w') as f:
-            json.dump(report_data, f, default=str, indent=4)
-        
-        # 2. Update Global Index
-        self._update_global_index()
-        
-        # 2. Generate HTML Report
-        chart_labels = json.dumps([t['time'] for t in self.trade_history])
-        chart_data = json.dumps(list(np.cumsum(profits)) if profits else [0])
-        
-        pnl_color = "#00e676" if self.metrics['total_pnl'] >= 0 else "#ff5252"
-        
-        table_rows = ""
-        for t in sorted(self.trade_history, key=lambda x: x['time'], reverse=True)[:100]:
-            p_color = "profit-pos" if t['profit'] >= 0 else "profit-neg"
-            table_rows += f"""
-                <tr>
-                    <td>{t['time']}</td>
-                    <td>{t['symbol']}</td>
-                    <td>{t['side']}</td>
-                    <td>{t['volume']}</td>
-                    <td class="{p_color}">${t['profit']:.2f}</td>
-                </tr>
-            """
-
-        html_template = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>NEXT LEVEL BRAIN - Performance Report</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; padding: 40px; line-height: 1.6; }}
-        .container {{ max-width: 1100px; margin: auto; background: #161b22; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #30363d; }}
-        h1 {{ color: #00e676; text-align: center; font-size: 2.5em; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; }}
-        .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }}
-        .stat-card {{ background: #21262d; padding: 25px; border-radius: 15px; text-align: center; border: 1px solid #30363d; transition: transform 0.3s; }}
-        .stat-card:hover {{ transform: translateY(-5px); border-color: #00e676; }}
-        .stat-value {{ font-size: 28px; font-weight: 800; margin-top: 10px; }}
-        .stat-label {{ font-size: 12px; color: #8b949e; text-transform: uppercase; font-weight: bold; }}
-        .loss-val {{ color: #ff5252; }}
-        .gain-val {{ color: #00e676; }}
-        .chart-container {{ background: #0d1117; padding: 20px; border-radius: 15px; margin-bottom: 40px; border: 1px solid #30363d; }}
-        table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border-radius: 10px; overflow: hidden; }}
-        th, td {{ padding: 15px; text-align: left; border-bottom: 1px solid #30363d; }}
-        th {{ background: #21262d; color: #00e676; font-weight: 600; text-transform: uppercase; font-size: 0.9em; }}
-        tr:hover {{ background-color: #21262d; }}
-        .profit-pos {{ color: #00e676; font-weight: bold; }}
-        .profit-neg {{ color: #ff5252; font-weight: bold; }}
-        .footer {{ text-align: center; margin-top: 40px; color: #8b949e; font-size: 0.8em; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🧠 Performance Report</h1>
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">Total Trades</div>
-                <div class="stat-value">{len(profits)}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Total P&L</div>
-                <div class="stat-value" style="color: {pnl_color}">${self.metrics['total_pnl']:.2f}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Total Minus (Loss)</div>
-                <div class="stat-value loss-val">-${total_loss:.2f}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Win Rate</div>
-                <div class="stat-value gain-val">{self.metrics['win_rate']:.1%}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Profit Factor</div>
-                <div class="stat-value">{self.metrics['profit_factor']:.2f}</div>
-            </div>
-        </div>
-        
-        <div class="chart-container">
-            <canvas id="equityChart"></canvas>
-        </div>
-        
-        <h3>📋 RECENT TRANSACTIONS</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Symbol</th>
-                    <th>Side</th>
-                    <th>Lots</th>
-                    <th>Profit ($)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {table_rows}
-            </tbody>
-        </table>
-        <div class="footer">Generated by NEXT LEVEL BRAIN AI Trading System | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
-    </div>
-
-    <script>
-        const ctx = document.getElementById('equityChart').getContext('2d');
-        new Chart(ctx, {{
-            type: 'line',
-            data: {{
-                labels: {chart_labels},
-                datasets: [{{
-                    label: 'Cumulative Equity Curve ($)',
-                    data: {chart_data},
-                    borderColor: '#00e676',
-                    borderWidth: 3,
-                    pointRadius: 2,
-                    backgroundColor: 'rgba(0, 230, 118, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }}]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {{
-                    x: {{ 
-                        grid: {{ color: '#30363d' }},
-                        ticks: {{ color: '#8b949e' }}
-                    }},
-                    y: {{ 
-                        grid: {{ color: '#30363d' }},
-                        ticks: {{ color: '#8b949e' }}
-                    }}
-                }},
-                plugins: {{
-                    legend: {{ display: false }},
-                    tooltip: {{
-                        backgroundColor: '#161b22',
-                        titleColor: '#00e676',
-                        bodyColor: '#fff',
-                        borderColor: '#30363d',
-                        borderWidth: 1
-                    }}
-                }}
-            }}
-        }});
-    </script>
-</body>
-</html>
-"""
-        with open(html_path, 'w', encoding='utf-8') as f:
-            f.write(html_template)
-            
-        messagebox.showinfo("Report Saved", f"Performance reports generated:\n- HTML: {html_path.name}\n- JSON: {json_path.name}\n- GLOBAL: index.html updated\n\nLocation: logs/live_reports/")
-
-    def _update_global_index(self):
-        """Aggregate all session data into a premium main index.html"""
+    def _animate_pulse(self):
+        if not self.running: return
         try:
-            report_dir = Path("logs/live_reports")
-            json_files = sorted(list(report_dir.glob("*.json")), key=lambda x: x.name)
-            
-            all_sessions = []
-            for jf in json_files:
+            pulse_val = (np.sin(time.time() * 4) + 1) / 2
+            size = 7 + (pulse_val * 6)
+            self.pulse_canvas.coords(self.pulse_circle, 15-size/2, 15-size/2, 15+size/2, 15+size/2)
+            self.after(50, self._animate_pulse)
+        except: pass
+
+    def _play_alert(self):
+        """Play a loud 10-second beep alert for milestone hit"""
+        def run_alert():
+            if winsound:
                 try:
-                    with open(jf, 'r') as f:
-                        data = json.load(f)
-                        # Extract key data for the global chart
-                        all_sessions.append({
-                            'time': data.get('timestamp', 'N/A')[:16].replace('T', ' '),
-                            'pnl': data.get('metrics', {}).get('total_pnl', 0),
-                            'minus': data.get('metrics', {}).get('max_floating_minus', 0),
-                            'trades': data.get('metrics', {}).get('total_trades', 0),
-                            'file': jf.name.replace('.json', '.html').replace('dashboard_report_', 'performance_report_')
-                        })
-                except: continue
+                    # Looping beep for ~10 seconds (10 x 1000ms)
+                    for _ in range(10):
+                        if not self.running: break
+                        winsound.Beep(1000, 800) # 1000Hz frequency, 800ms duration
+                        time.sleep(0.2)
+                except: pass
+        threading.Thread(target=run_alert, daemon=True).start()
 
-            if not all_sessions: return
-
-            # Generate Graph Data
-            labels = [s['time'] for s in all_sessions]
-            pnl_data = [s['pnl'] for s in all_sessions]
-            minus_data = [abs(s['minus']) for s in all_sessions]
-            
-            cum_pnl = np.cumsum(pnl_data).tolist()
-            
-            html_template = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>NEXT LEVEL BRAIN - Global Trading Intelligence</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {{ font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #0d1117; color: #c9d1d9; padding: 40px; margin: 0; }}
-        .container {{ max-width: 1200px; margin: auto; }}
-        .header {{ text-align: center; margin-bottom: 50px; padding: 40px; background: linear-gradient(145deg, #161b22, #0d1117); border-radius: 24px; border: 1px solid #30363d; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }}
-        h1 {{ color: #00e676; font-size: 3em; margin: 0; text-transform: uppercase; letter-spacing: 4px; }}
-        .subtitle {{ color: #8b949e; font-size: 1.1em; margin-top: 10px; }}
-        
-        .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 50px; }}
-        .card {{ background: #161b22; padding: 30px; border-radius: 20px; border: 1px solid #30363d; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }}
-        .card:hover {{ transform: translateY(-10px); border-color: #00e676; box-shadow: 0 10px 30px rgba(0, 230, 118, 0.1); }}
-        .val {{ font-size: 32px; font-weight: 800; margin-top: 10px; font-family: 'Consolas', monospace; }}
-        .lab {{ font-size: 13px; color: #8b949e; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }}
-        
-        .chart-container {{ background: #161b22; padding: 30px; border-radius: 24px; border: 1px solid #30363d; margin-bottom: 50px; height: 500px; }}
-        
-        .session-list {{ background: #161b22; border-radius: 24px; border: 1px solid #30363d; overflow: hidden; }}
-        table {{ width: 100%; border-collapse: collapse; }}
-        th {{ background: #21262d; color: #00e676; padding: 20px; text-align: left; text-transform: uppercase; font-size: 12px; }}
-        td {{ padding: 18px 20px; border-bottom: 1px solid #30363d; font-size: 14px; }}
-        tr:hover {{ background: #1c2128; }}
-        .btn {{ display: inline-block; padding: 8px 16px; background: #238636; color: white; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: bold; }}
-        .btn:hover {{ background: #2ea043; }}
-        .minus-val {{ color: #ff5252; font-weight: bold; }}
-        .pnl-pos {{ color: #00e676; font-weight: bold; }}
-        .pnl-neg {{ color: #ff5252; font-weight: bold; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🧠 GLOBAL DASHBOARD</h1>
-            <div class="subtitle">Next Level Brain - Unified Performance Intelligence</div>
-        </div>
-
-        <div class="summary-grid">
-            <div class="card">
-                <div class="lab">Total Sessions</div>
-                <div class="val" style="color: #58a6ff;">{len(all_sessions)}</div>
-            </div>
-            <div class="card">
-                <div class="lab">Cumulative PnL</div>
-                <div class="val" style="color: {('#00e676' if sum(pnl_data) >= 0 else '#ff5252')};">${sum(pnl_data):,.2f}</div>
-            </div>
-            <div class="card">
-                <div class="lab">Total Trade Count</div>
-                <div class="val">{sum(s['trades'] for s in all_sessions)}</div>
-            </div>
-            <div class="card">
-                <div class="lab">Peak Market Minus</div>
-                <div class="val" style="color: #ff5252;">-${max(minus_data):,.2f}</div>
-            </div>
-        </div>
-
-        <div class="chart-container">
-            <canvas id="mainChart"></canvas>
-        </div>
-
-        <div class="session-list">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Session Timestamp</th>
-                        <th>Trades</th>
-                        <th>Session PnL</th>
-                        <th>Max Market Minus ($)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {"".join([f'''<tr>
-                        <td>{s['time']}</td>
-                        <td>{s['trades']}</td>
-                        <td class="{('pnl-pos' if s['pnl'] >= 0 else 'pnl-neg')}">${s['pnl']:.2f}</td>
-                        <td class="minus-val">-${abs(s['minus']):.2f}</td>
-                        <td><a href="{s['file']}" class="btn">VIEW FULL REPORT</a></td>
-                    </tr>''' for s in reversed(all_sessions)])}
-                </tbody>
-            </table>
-        </div>
-        
-        <p style="text-align: center; color: #8b949e; margin-top: 40px; font-size: 12px;">
-            SYSTEM STATUS: ONLINE | DATABASE: SYNCED | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        </p>
-    </div>
-
-    <script>
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        new Chart(ctx, {{
-            type: 'line',
-            data: {{
-                labels: {json.dumps(labels)},
-                datasets: [
-                    {{
-                        label: 'Total Cumulative Profit ($)',
-                        data: {json.dumps(cum_pnl)},
-                        borderColor: '#00e676',
-                        backgroundColor: 'rgba(0, 230, 118, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                        yAxisID: 'y'
-                    }},
-                    {{
-                        label: 'Market Minus at Peak ($)',
-                        data: {json.dumps(minus_data)},
-                        borderColor: '#ff5252',
-                        backgroundColor: 'rgba(255, 82, 82, 0.1)',
-                        borderDash: [5, 5],
-                        fill: false,
-                        tension: 0.1,
-                        yAxisID: 'y1'
-                    }}
-                ]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {{ mode: 'index', intersect: false }},
-                plugins: {{
-                    tooltip: {{
-                        backgroundColor: '#161b22',
-                        titleColor: '#00e676',
-                        bodyColor: '#fff',
-                        borderColor: '#30363d',
-                        borderWidth: 1,
-                        callbacks: {{
-                            label: function(context) {{
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                if (context.parsed.y !== null) {{
-                                    label += '$' + context.parsed.y.toLocaleString();
-                                }}
-                                return label;
-                            }}
-                        }}
-                    }}
-                }},
-                scales: {{
-                    y: {{
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        grid: {{ color: '#30363d' }},
-                        ticks: {{ color: '#00e676' }}
-                    }},
-                    y1: {{
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        grid: {{ drawOnChartArea: false }},
-                        ticks: {{ color: '#ff5252' }},
-                        title: {{ display: true, text: 'Floating Minus Impact ($)', color: '#ff5252' }}
-                    }},
-                    x: {{
-                        grid: {{ color: '#30363d' }},
-                        ticks: {{ color: '#8b949e' }}
-                    }}
-                }}
-            }}
-        }});
-    </script>
-</body>
-</html>
-"""
-            with open(report_dir / "index.html", "w", encoding="utf-8") as f:
-                f.write(html_template)
-        except Exception as e:
-            print(f"Global index update error: {e}")
-
-    def _save_reset_config(self):
-        try:
-            config_file = Path("logs/reset_config.json")
-            config_file.parent.mkdir(exist_ok=True)
-            with open(config_file, 'w') as f:
-                json.dump({
-                    'reset_timestamp': self.reset_timestamp,
-                    'session_max_drawdown': self.session_max_drawdown,
-                    'start_balance': self.start_balance
-                }, f)
-        except Exception as e:
-            print(f"Failed to save reset config: {e}")
-
-    def _load_reset_config(self):
-        try:
-            config_file = Path("logs/reset_config.json")
-            if config_file.exists():
-                with open(config_file, 'r') as f:
-                    data = json.load(f)
-                    return data.get('reset_timestamp', 0), data.get('session_max_drawdown', 0.0), data.get('start_balance', 0.0)
-        except:
-            pass
-        return 0, 0.0, 0.0
-
-    def _emergency_reset(self):
-        if not messagebox.askyesno("🚨 EMERGENCY RESET", "DANGER: This will close ALL open positions, DELETE all pending orders, and RESET dashboard metrics.\n\nAre you absolutely sure?"):
-            return
-            
-        # 1. Close all active positions
-        positions = mt5.positions_get()
-        closed_count = 0
-        if positions:
-            for p in positions:
-                action = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
-                tick = mt5.symbol_info_tick(p.symbol)
-                if tick:
-                    price = tick.bid if p.type == mt5.POSITION_TYPE_BUY else tick.ask
-                    request = {
-                        "action": mt5.TRADE_ACTION_DEAL,
-                        "symbol": p.symbol,
-                        "volume": p.volume,
-                        "type": action,
-                        "position": p.ticket,
-                        "price": price,
-                        "deviation": 20,
-                        "magic": p.magic,
-                        "comment": "EMERGENCY_RESET",
-                        "type_time": mt5.ORDER_TIME_GTC,
-                        "type_filling": mt5.ORDER_FILLING_IOC,
-                    }
-                    res = mt5.order_send(request)
-                    if res.retcode == mt5.TRADE_RETCODE_DONE:
-                        closed_count += 1
-                    else:
-                        print(f"Failed to close {p.ticket}: {res.retcode}")
-
-        # 2. Delete all pending orders
-        orders = mt5.orders_get()
-        deleted_count = 0
-        if orders:
-            for o in orders:
-                res = mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
-                if res.retcode == mt5.TRADE_RETCODE_DONE:
-                    deleted_count += 1
-        
-        # 3. Clear Grid State File
-        state_file = Path("logs/grid_state.json")
-        if state_file.exists():
-            try:
-                state_file.unlink()
-            except Exception as e:
-                print(f"Failed to delete state file: {e}")
-        
-        # 4. Reset Performance Metrics in UI
-        acc = mt5.account_info()
-        self.start_balance = acc.balance if acc else 0
-        self.reset_timestamp = int(time.time())
-        self._save_reset_config()
-        self.trade_history = []
-        # The hist_tree is no longer part of the main display, so this line is removed.
-        # for i in self.hist_tree.get_children(): self.hist_tree.delete(i)
-        
-        # Update metrics to 0 immediately
-        for key in self.metric_labels:
-            self.metric_labels[key].config(text="0.0" if "rate" not in key else "0.0%")
-        self.cards['session_val'].config(text="$0.00", foreground="#00e676")
-        
-        # User requested: DO NOT reset max floating (-) in emergency reset
-        # self.session_max_drawdown = 0.0 # Reset session max drawdown (REMOVED as requested)
-        # self.cards['drawdown_val'].config(text="$0.00") # Update card (REMOVED as requested)
-        
-        self.equity_history = [] # Clear equity history for chart
-        
-        messagebox.showinfo("Reset Complete", f"Emergency Reset Successful:\n- Closed: {closed_count} positions\n- Deleted: {deleted_count} pending orders\n- Performance Metrics Resetted.")
+    def _on_closing(self):
+        self.running = False
+        if hasattr(self, 'liq_engine'):
+            self.liq_engine.stop()
+        self._save_session_stats()
+        self.destroy()
 
     def _update_loop(self):
-        terminal_path = r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe"
+        terminal_path = os.getenv("MT5_TERMINAL_PATH", r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe")
         if not mt5.initialize(path=terminal_path):
-            messagebox.showerror("Error", f"MT5 initialize failed: {mt5.last_error()}")
+            self.after(0, lambda: messagebox.showerror("Error", f"MT5 not running at {terminal_path}!"))
             self.running = False
             return
-            
-        # Login if needed
-        login_str = os.getenv('MT5_LOGIN', '0')
-        login = int(login_str) if login_str.isdigit() else 0
-        password = os.getenv('MT5_PASSWORD')
-        server = os.getenv('MT5_SERVER')
-        
-        if login and password and server:
-            if not mt5.login(login, password=password, server=server):
-                print(f"MT5 login failed in dashboard: {mt5.last_error()}")
 
         while self.running:
             try:
                 acc = mt5.account_info()
-                if acc:
-                    balance = acc.balance
-                    equity = acc.equity
-                    
-                    # Initialize Starting Balance if not set
-                    if self.start_balance == 0:
-                        self.start_balance = balance
-                        self._save_reset_config()
-                    balance = acc.balance
-                    equity = acc.equity
-                    
-                    # Update Trading Cards
-                    session_pnl = balance - self.start_balance
-                    session_color = "#00e676" if session_pnl >= 0 else "#ff5252"
-                    
-                    self.cards['start_val'].config(text=f"${self.start_balance:,.2f}")
-                    self.cards['balance_val'].config(text=f"${balance:,.2f}")
-                    self.cards['equity_val'].config(text=f"${equity:,.2f}")
-                    self.cards['session_val'].config(text=f"${session_pnl:,.2f}", fg=session_color)
-                    
-                    margin_pct = f"{acc.margin_level:.1f}%" if acc.margin_level else "0%"
-                    self.cards['margin_val'].config(text=margin_pct)
-                    
-                    # Track Chart History (Persistent & Long-Term)
-                    now = time.time()
-                    if not self.equity_history:
-                        self.equity_history.append(self.start_balance)
-                    
-                    # Append every 60 seconds OR if balance changed significantly
-                    last_point = self.equity_history[-1]
-                    if now - self._last_chart_append > 60 or abs(balance - last_point) > 0.01:
-                        self.equity_history.append(balance)
-                        if len(self.equity_history) > 200: self.equity_history.pop(0)
-                        self._last_chart_append = now
-                        self._save_chart_history()
+                current_session = (time.time() - self.start_time) if self.start_time else 0
+                if self.start_time and int(current_session) % 30 == 0:
+                    self._save_session_stats()
 
                 positions = mt5.positions_get()
-                current_floating_pnl = sum(p.profit for p in positions) if positions else 0.0
                 
-                # Update Max Floating Minus Tracker
-                if current_floating_pnl < self.session_max_drawdown:
-                    self.session_max_drawdown = current_floating_pnl
-                    self._save_reset_config() # Persist new drawdown peak
+                # Start session timer only if positions are detected
+                if positions and self.start_time is None:
+                    self.start_time = time.time()
+                    self._last_history_update = 0 # Ensure fresh start
                 
-                self.cards['drawdown_val'].config(text=f"${self.session_max_drawdown:,.2f}")
-                
-                self._draw_chart()
-                self._update_risk_calculator(positions)
-                self._update_positions_tree(positions)
-                self._update_full_history()
-                self._update_grid_status()
-                
-                time.sleep(1) # Increased frequency to 1 second
+                self._detect_system_context()
+
+                now = time.time()
+                deals = None
+                if now - self._last_history_update >= 2:
+                    from_date = datetime.now() - timedelta(days=self.history_days)
+                    to_date = datetime.now() + timedelta(days=1)
+                    deals = mt5.history_deals_get(from_date, to_date)
+                    self._last_history_update = now
+
+                def _apply_ui(acc=acc, positions=positions, deals_data=deals):
+                    try:
+                        if acc:
+                            self.summary_cards['balance_val'].update_value(f"{self.unit}{acc.balance:,.2f}")
+                            self.summary_cards['equity_val'].update_value(f"{self.unit}{acc.equity:,.2f}")
+                            free_margin = f"{self.unit}{acc.margin_free:,.2f}"
+                            self.summary_cards['margin_val'].update_value(free_margin)
+                        self._update_positions_tree(positions)
+                        if deals_data is not None:
+                            self._update_full_history(deals_data)
+                        self._update_chart()
+                    except Exception as ui_err:
+                        print(f"UI apply error: {ui_err}")
+
+                self.after(0, _apply_ui)
+                self.after(0, self._update_intelligence_tabs)
+                time.sleep(1)
             except Exception as e:
                 print(f"UI Update error: {e}")
                 time.sleep(5)
 
-    def _draw_chart(self):
-        try:
-            self.chart_canvas.delete("all")
-            w = self.chart_canvas.winfo_width()
-            h = self.chart_canvas.winfo_height()
-            if w < 10 or h < 10 or not self.equity_history:
-                return
-
-            points = self.equity_history
-            if len(points) < 2:
-                return
-
-            min_val = min(points)
-            max_val = max(points)
-            
-            # Smart Scale: Ensure some 'breathing room' so points aren't flat on edges
-            val_range = max_val - min_val
-            if val_range < 0.1: # If flat, give a small range
-                val_range = 10.0
-                min_val = max_val - 5.0
-                max_val = max_val + 5.0
-            else:
-                padding = val_range * 0.1
-                min_val -= padding
-                max_val += padding
-                val_range = max_val - min_val
-
-            # Padding
-            pad = 25
-            
-            # Draw Grid Lines
-            for i in range(5):
-                y = pad + (h - 2*pad) * i / 4
-                self.chart_canvas.create_line(pad, y, w-pad, y, fill="#1e2229", dash=(2, 2))
-
-            # Scaled points
-            coords = []
-            for i, val in enumerate(points):
-                x = pad + (w - 2*pad) * i / (len(points) - 1 if len(points) > 1 else 1)
-                y = h - pad - (h - 2*pad) * (val - min_val) / val_range
-                coords.append((x, y))
-
-            line_color = "#00e676" 
-            
-            # 1. Draw Area Fill (Polygon)
-            if len(coords) > 1:
-                poly_coords = [coords[0][0], h - pad] # Start at bottom left
-                for x, y in coords:
-                    poly_coords.extend([x, y])
-                poly_coords.extend([coords[-1][0], h - pad]) # End at bottom right
-                self.chart_canvas.create_polygon(poly_coords, fill="#00e676", stipple="gray25", outline="")
-                # Note: gray25 is a built-in bitmap for transparency in Tkinter
-            
-            # 2. Draw Curve
-            for i in range(len(coords) - 1):
-                self.chart_canvas.create_line(coords[i][0], coords[i][1], 
-                                            coords[i+1][0], coords[i+1][1], 
-                                            fill=line_color, width=3, smooth=True)
-            
-            # 3. Draw Hollow Dots at intervals
-            # If we have many points, only draw some dots to avoid clutter
-            step = max(1, len(coords) // 10)
-            for i in range(0, len(coords), step):
-                cx, cy = coords[i]
-                self.chart_canvas.create_oval(cx-3, cy-3, cx+3, cy+3, 
-                                            fill="#0d1117", outline=line_color, width=2)
-            
-            # Final point always has a dot
-            self.chart_canvas.create_oval(coords[-1][0]-4, coords[-1][1]-4, 
-                                        coords[-1][0]+4, coords[-1][1]+4, 
-                                        fill="#ffffff", outline=line_color, width=2)
-            
-            # Labels (Moved inside chart for better visibility)
-            self.chart_canvas.create_text(pad + 5, pad + 10, text=f"${max_val:,.0f}", fill="#8b949e", font=('Segoe UI', 8, 'bold'), anchor=tk.W)
-            self.chart_canvas.create_text(pad + 5, h - pad - 10, text=f"${min_val:,.0f}", fill="#8b949e", font=('Segoe UI', 8, 'bold'), anchor=tk.W)
-            
-        except Exception as e:
-            print(f"Chart draw error: {e}")
-
-    def _load_chart_history(self):
-        try:
-            path = Path("logs/chart_history.json")
-            if path.exists():
-                with open(path, 'r') as f:
-                    return json.load(f)
-        except: pass
-        return []
-
-    def _save_chart_history(self):
-        try:
-            path = Path("logs/chart_history.json")
-            path.parent.mkdir(exist_ok=True)
-            with open(path, 'w') as f:
-                json.dump(self.equity_history, f)
-        except: pass
-
-    def _update_risk_calculator(self, positions):
-        try:
-            # 1. Detect active symbol
-            symbol = "XAUUSDm"
-            if positions:
-                symbol = positions[0].symbol
-            
-            # 2. Update Live Price
-            tick = mt5.symbol_info_tick(symbol)
-            if tick:
-                self.live_price_label.config(text=f"LIVE PRICE: {tick.bid:.3f}")
-            
-            # 3. Calculate Exposure & Floating
-            current_floating_pnl = sum(p.profit for p in positions) if positions else 0.0
-            pnl_color = "#00e676" if current_floating_pnl >= 0 else "#ff5252"
-            self.floating_pnl_label.config(text=f"CURRENT PNL: ${current_floating_pnl:,.2f}", fg=pnl_color)
-
-            if not positions:
-                self.net_lots_label.config(text="NET EXPOSURE: 0.00")
-                for pips in [50, 100, 200, 300, 500]: 
-                    self.proj_cards[pips].config(text="$0.00", fg="#888888")
-                return
-
-            total_buy_vol = sum(p.volume for p in positions if p.type == mt5.POSITION_TYPE_BUY)
-            total_sell_vol = sum(p.volume for p in positions if p.type == mt5.POSITION_TYPE_SELL)
-            net_vol = total_buy_vol - total_sell_vol 
-            
-            direction = "BUY (Long)" if net_vol > 0 else "SELL (Short)" if net_vol < 0 else "HEDGED"
-            self.net_lots_label.config(text=f"NET EXPOSURE: {abs(net_vol):.2f} Lots {direction}")
-            
-            # 4. Scenario Projections (Total PnL = Current + Movement Impact)
-            # Gold: $1 move (100 pips) = Lots * 100.
-            # Example: 1 Lot * $10 move = $1000 impact.
-            for pips in [1000, 2000, 5000, 10000, 15000, 30000]:
-                movement_impact = abs(net_vol) * pips # Pips * Vol = Impact in $
-                total_projected_pnl = current_floating_pnl - movement_impact
-                
-                proj_color = "#00e676" if total_projected_pnl >= 0 else "#ff5252"
-                if pips in self.proj_cards:
-                    self.proj_cards[pips].config(text=f"${total_projected_pnl:,.2f}", fg=proj_color)
-                
-        except Exception as e:
-            print(f"Risk calc error: {e}")
-
-    # _update_chart removed as requested
-
-    def _update_grid_status(self):
-        try:
-            state_file = Path("logs/grid_state.json")
-            if state_file.exists():
-                with open(state_file, 'r') as f:
-                    state = json.load(f)
-                
-                # Assume first symbol found for now (usually XAUUSDm)
-                if state:
-                    symbol = list(state.keys())[0]
-                    data = state[symbol]
-                    
-                    mode = data.get('type', 'N/A')
-                    progress = f"{data.get('last_index', 0)} / 300"
-                    peak = data.get('peak_usd', 0.0)
-                    
-                    # Calculate lock same as trading script
-                    lock = 0.0
-                    if peak > 0:
-                        lock = peak * 0.99
-                        if peak - lock < 5.0:
-                            lock = peak - 5.0
-                    
-                    self.grid_cards['grid_mode'].config(text=mode)
-                    self.grid_cards['grid_progress'].config(text=progress)
-                    self.grid_cards['peak_val'].config(text=f"${peak:,.2f}")
-                    self.grid_cards['lock_val'].config(text=f"${lock:,.2f}")
-                    
-                    # Highlight if trailing is active
-                    if peak > 1.0:
-                        self.grid_cards['lock_val'].config(fg="#ff5252")
-                    else:
-                        self.grid_cards['lock_val'].config(fg="#888888", text="WAITING")
-            else:
-                for key in self.grid_cards:
-                    self.grid_cards[key].config(text="OFF", fg="#888888")
-        except Exception as e:
-            print(f"Grid Status Update error: {e}")
-
-    def _update_positions_tree(self, positions):
-        # Selected items tracking if needed
-        for i in self.pos_tree.get_children():
-            self.pos_tree.delete(i)
-            
-        if not positions:
+    def _update_intelligence_tabs(self):
+        """Update metrics and chart for the unified terminal"""
+        if not self.tab_view.get() == "🧠 MARKET INTELLIGENCE":
             return
             
+        tf = self.active_tf
+        data = self.liq_engine.liquidity_data.get(tf)
+        
+        if data:
+            # Simple prediction for this specific TF
+            curr = data['current_price']
+            nearest_bsl = min([h['price'] for h in data['bsl']], key=lambda x: abs(x-curr)) if data['bsl'] else None
+            nearest_ssl = min([l['price'] for l in data['ssl']], key=lambda x: abs(x-curr)) if data['ssl'] else None
+            
+            # Distance and Direction
+            dist_up = (nearest_bsl - curr) if nearest_bsl else 0
+            dist_down = (curr - nearest_ssl) if nearest_ssl else 0
+            
+            direction = "NEUTRAL"
+            pot = 0
+            if dist_up > 0 and (dist_up < dist_down or dist_down == 0):
+                direction = "BULLISH"
+                pot = dist_up * 10 if "XAU" in self.active_symbol else dist_up * 10000
+            elif dist_down > 0:
+                direction = "BEARISH"
+                pot = dist_down * 10 if "XAU" in self.active_symbol else dist_down * 10000
+            
+            # Absolute Price Change Calculation ($)
+            # For XAUUSD: 10 Pips = $1.00 change in price
+            # For Forex: 10,000 Pips = $1.00 change in price
+            price_change = (pot / 10) if "XAU" in self.active_symbol else (pot / 10000)
+            
+            dir_color = COLORS["neon_green"] if direction == "BULLISH" else COLORS["neon_red"] if direction == "BEARISH" else COLORS["text_secondary"]
+            
+            self.intel_ui['dir_card'].update_value(direction, dir_color)
+            self.intel_ui['pot_label'].configure(text=f"{pot:.1f} Pips (Δ ${price_change:,.2f} Price)")
+            
+            intensity = max(0, min(1, 1 - (pot / 100))) if (nearest_bsl or nearest_ssl) else 0
+            self.intel_ui['magnet_bar'].set(intensity)
+            self.intel_ui['magnet_bar'].configure(progress_color=dir_color if (nearest_bsl or nearest_ssl) else COLORS["text_secondary"])
+            
+            self.intel_ui['bsl_card'].update_value(f"{nearest_bsl:.2f}" if nearest_bsl else "--")
+            self.intel_ui['ssl_card'].update_value(f"{nearest_ssl:.2f}" if nearest_ssl else "--")
+            
+            # Liquidity Detailed Commentary
+            comment_text = ""
+            bsl_val = f"{nearest_bsl:.2f}" if nearest_bsl else "N/A"
+            ssl_val = f"{nearest_ssl:.2f}" if nearest_ssl else "N/A"
+            
+            if direction == "BULLISH":
+                comment_text += f"🟢 BULLISH BIAS (TARGETING BSL - {bsl_val}):\nMarket is moving towards Buy Side Liquidity (BSL). Sellers' Stop Losses (Buy Orders) are trapped here. Sweeping BSL triggers upward spikes, then often creates a reversal or continuation.\n\n"
+            elif direction == "BEARISH":
+                comment_text += f"🔴 BEARISH BIAS (TARGETING SSL - {ssl_val}):\nMarket is attacking Sell Side Liquidity (SSL). Buyers' Stop Losses (Sell Orders) rest here. Sweeping SSL triggers downward cascades, which act as a trap before a potential bounce or drop.\n\n"
+            else:
+                comment_text += f"⚪ NEUTRAL BIAS:\nMarket is hovering between BSL ({bsl_val}) & SSL ({ssl_val}) zones. Awaiting structure shift.\n\n"
+            
+            comment_text += "🧲 FVG ATTRACTION:\nFair Value Gaps (FVG) act as price magnets to rebalance unfilled orders."
+            self.intel_ui['commentary_label'].configure(text=comment_text)
+            
+            # Throttle chart redraw to every 3 seconds to prevent UI hangs
+            now = time.time()
+            if not hasattr(self, '_last_intel_chart_redraw') or now - self._last_intel_chart_redraw >= 3:
+                # Redraw chart for this specific TF
+                self._draw_unified_tv_chart(tf)
+                self._last_intel_chart_redraw = now
+
+    def _create_intelligence_widgets(self):
+        self.active_tf = "M15"
+        self.intel_ui = {}
+        
+        container = ctk.CTkFrame(self.tab_intelligence, fg_color="transparent")
+        container.pack(fill=tk.BOTH, expand=True)
+
+        # 1. Header with TF Switcher
+        header_frame = ctk.CTkFrame(container, fg_color="transparent")
+        header_frame.pack(fill=tk.X, pady=(10, 5))
+        
+        ctk.CTkLabel(header_frame, text="⚡ TRADING TERMINAL", font=("Segoe UI", 20, "bold"), text_color=COLORS["neon_yellow"]).pack(side=tk.LEFT, padx=10)
+        
+        tf_switcher = ctk.CTkSegmentedButton(header_frame, values=["M1", "M3", "M5", "M10", "M15", "M30"],
+                                             command=self._on_tf_change,
+                                             selected_color=COLORS["neon_blue"],
+                                             selected_hover_color=COLORS["neon_green"],
+                                             unselected_color=COLORS["bg_card"],
+                                             font=("Segoe UI", 11, "bold"))
+        tf_switcher.set(self.active_tf)
+        tf_switcher.pack(side=tk.RIGHT, padx=10)
+        
+        # 2. Main Terminal Layout (Sidebar + Chart)
+        main_layout = ctk.CTkFrame(container, fg_color="transparent")
+        main_layout.pack(fill=tk.BOTH, expand=True)
+        
+        # Left Dashboard (Metrics)
+        dashboard = ctk.CTkFrame(main_layout, fg_color=COLORS["bg_card"], width=280, corner_radius=15, border_width=1, border_color=COLORS["border"])
+        dashboard.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
+        dashboard.pack_propagate(False)
+        
+        ctk.CTkLabel(dashboard, text="INSTITUTIONAL METRICS", font=("Segoe UI", 11, "bold"), text_color=COLORS["neon_yellow"]).pack(pady=15)
+        
+        dir_card = SummaryCard(dashboard, "INSTITUTIONAL BIAS (SENTIMENT)", COLORS["neon_green"])
+        dir_card.pack(fill=tk.X, padx=15, pady=5)
+        
+        mag_frame = ctk.CTkFrame(dashboard, fg_color="transparent")
+        mag_frame.pack(fill=tk.X, padx=15, pady=10)
+        ctk.CTkLabel(mag_frame, text="PROBABILITY OF MOVE (MAGNET)", font=("Segoe UI", 9, "bold"), text_color=COLORS["text_secondary"]).pack(anchor=tk.W)
+        bar = ctk.CTkProgressBar(mag_frame, height=8)
+        bar.pack(fill=tk.X, pady=5)
+        pot_label = ctk.CTkLabel(mag_frame, text="0.0 Pips", font=("Consolas", 14, "bold"))
+        pot_label.pack(anchor=tk.E)
+        
+        bsl_card = ScrollableStatCard(dashboard, "TARGET: BUY SIDE (BSL)", COLORS["bsl_color"])
+        bsl_card.pack(fill=tk.X, padx=15, pady=5)
+        
+        ssl_card = ScrollableStatCard(dashboard, "TARGET: SELL SIDE (SSL)", COLORS["ssl_color"])
+        ssl_card.pack(fill=tk.X, padx=15, pady=5)
+        
+        # Detailed Commentary Label
+        commentary_frame = ctk.CTkFrame(dashboard, fg_color="transparent")
+        commentary_frame.pack(fill=tk.BOTH, padx=15, pady=10, expand=True)
+        commentary_label = ctk.CTkLabel(commentary_frame, text="ANALYZING LIQUIDITY...", 
+                                             font=("Segoe UI", 13, "bold"), text_color="#E0E0E0", 
+                                             justify="left", wraplength=230)
+        commentary_label.pack(anchor=tk.NW, fill=tk.BOTH)
+        
+        # Right Terminal (Central Chart)
+        chart_area = ctk.CTkFrame(main_layout, fg_color=COLORS["bg_card"], corner_radius=15, border_width=1, border_color=COLORS["border"])
+        chart_area.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        fig, (ax_main, ax_vol) = plt.subplots(2, 1, figsize=(10, 8), dpi=100, gridspec_kw={'height_ratios': [4, 1], 'hspace': 0.05})
+        fig.patch.set_facecolor(COLORS["bg_card"])
+        
+        for ax in [ax_main, ax_vol]:
+            ax.set_facecolor(COLORS["bg_card"])
+            ax.tick_params(colors=COLORS["text_secondary"], labelsize=8)
+            for spine in ax.spines.values(): spine.set_visible(False)
+            ax.grid(True, linestyle='--', alpha=0.05)
+            
+        canvas = FigureCanvasTkAgg(fig, master=chart_area)
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        self.intel_ui = {
+            'dir_card': dir_card, 'magnet_bar': bar, 'pot_label': pot_label,
+            'bsl_card': bsl_card, 'ssl_card': ssl_card, 'commentary_label': commentary_label,
+            'fig': fig, 'ax': ax_main, 'ax_vol': ax_vol, 'canvas': canvas
+        }
+
+    def _on_tf_change(self, value):
+        self.active_tf = value
+        self._update_intelligence_tabs()
+
+    def _draw_unified_tv_chart(self, tf):
+        ui = self.intel_ui
+        data = self.liq_engine.liquidity_data.get(tf)
+        
+        if not data or 'ohlc' not in data or not data['ohlc']: 
+            ui['ax'].set_title(f"WAITING FOR {tf} DATA...", color=COLORS["neon_yellow"])
+            ui['canvas'].draw()
+            return
+            
+        ax = ui['ax']
+        ax_vol = ui['ax_vol']
+        ax.clear()
+        ax_vol.clear()
+        
+        ohlc = data['ohlc']
+        prices = pd.DataFrame(ohlc)
+        
+        # 1. Rendering Candlesticks (TV Styling)
+        for i, row in prices.iterrows():
+            color = "#089981" if row['close'] >= row['open'] else "#F23645"
+            ax.vlines(i, row['low'], row['high'], color=color, linewidth=1, alpha=0.8)
+            body_width = 0.6
+            rect = plt.Rectangle((i - body_width/2, min(row['open'], row['close'])), 
+                                  body_width, abs(row['open'] - row['close']),
+                                  facecolor=color, edgecolor=color, alpha=0.9, linewidth=1)
+            ax.add_patch(rect)
+            ax_vol.bar(i, row['tick_volume'], color=color, alpha=0.3, width=0.8)
+
+        # 2. Plot Institutional Liquidity Overlays (BSL/SSL)
+        curr = data['current_price']
+        # Dynamic glow offset based on price
+        glow_size = curr * 0.0001
+        
+        for b in data['bsl']:
+            is_grabbed = b.get('grabbed', False)
+            color = "#555555" if is_grabbed else COLORS["bsl_color"]
+            alpha = 0.15 if is_grabbed else 0.3
+            linewidth = 0.8 if is_grabbed else 1.2
+            
+            ax.axhline(b['price'], color=color, linestyle='-', alpha=alpha, linewidth=linewidth)
+            if not is_grabbed:
+                for offset in [glow_size, glow_size*2]:
+                    ax.axhline(b['price']+offset, color=color, alpha=0.05, linewidth=2.5)
+            ax.text(len(prices)-1, b['price'], " BSL (G)" if is_grabbed else " BSL", color=color, fontweight='bold', fontsize=7, va='center')
+
+        for s in data['ssl']:
+            is_grabbed = s.get('grabbed', False)
+            color = "#555555" if is_grabbed else COLORS["ssl_color"]
+            alpha = 0.15 if is_grabbed else 0.3
+            linewidth = 0.8 if is_grabbed else 1.2
+            
+            ax.axhline(s['price'], color=color, linestyle='-', alpha=alpha, linewidth=linewidth)
+            if not is_grabbed:
+                for offset in [glow_size, glow_size*2]:
+                    ax.axhline(s['price']-offset, color=color, alpha=0.05, linewidth=2.5)
+            ax.text(len(prices)-1, s['price'], " SSL (G)" if is_grabbed else " SSL", color=color, fontweight='bold', fontsize=7, va='center')
+
+        # Plot FVGs (Mitigated first, Active last to prevent overlapping issues)
+        fvg_data = data.get('fvg', [])
+        fvg_data_sorted = sorted(fvg_data, key=lambda x: x.get('mitigated', False), reverse=True)
+        
+        if not prices.empty:
+            min_time = prices['time'].min()
+            for fvg in fvg_data_sorted:
+                if fvg['time'] >= min_time:
+                    matches = prices.index[prices['time'] == fvg['time']].tolist()
+                    x_start = matches[0] if matches else 0
+                else:
+                    x_start = 0  # Render from left edge if FVG started before visible window
+                    
+                is_mitigated = fvg.get('mitigated', False)
+                if is_mitigated and 'mitigated_time' in fvg:
+                    if fvg['mitigated_time'] >= min_time:
+                        end_matches = prices.index[prices['time'] == fvg['mitigated_time']].tolist()
+                        x_end = end_matches[0] if end_matches else len(prices) - 1
+                    else:
+                        x_end = 0  # Mitigated before visible window
+                else:
+                    x_end = len(prices) - 1
+                    
+                if x_end > x_start:
+                    if is_mitigated:
+                        # Faded grey/neutral color for mitigated FVGs
+                        color = "#777777" 
+                        alpha_fvg = 0.15
+                        text_alpha = 0.4
+                        border_color = "#555555"
+                        label = " FVG (M)"
+                    else:
+                        color = "#00FF00" if fvg['type'] == 'bullish' else "#FF0000"
+                        alpha_fvg = 0.35
+                        text_alpha = 0.8
+                        border_color = color
+                        label = " FVG"
+                        
+                    width = max(1, x_end - x_start) # Ensure at least 1 width
+                    rect = plt.Rectangle((x_start, fvg['bottom']), 
+                                         width, fvg['top'] - fvg['bottom'],
+                                         facecolor=color, alpha=alpha_fvg, edgecolor=border_color, linewidth=1.5)
+                    ax.add_patch(rect)
+                    ax.text(x_start, (fvg['top'] + fvg['bottom'])/2, label, color=color, alpha=text_alpha, fontsize=8, fontweight='bold', va='center', ha='left')
+
+        # Current Price Line
+        ax.axhline(curr, color='white', linestyle='--', linewidth=0.8, alpha=0.8)
+        
+        # Scaling (Zoom into recent price action but keep liquidity visible if close)
+        p_min, p_max = prices['low'].min(), prices['high'].max()
+        p_range = p_max - p_min
+        ax.set_ylim(p_min - p_range*0.2, p_max + p_range*0.2)
+        
+        ax_vol.relim()
+        ax_vol.autoscale_view()
+        
+        ax.set_facecolor(COLORS["bg_card"])
+        ax_vol.set_facecolor(COLORS["bg_card"])
+        ax.grid(True, linestyle='--', color='white', alpha=0.05)
+        ax_vol.grid(True, linestyle='--', color='white', alpha=0.05)
+        ax.get_xaxis().set_visible(False)
+        ax_vol.get_xaxis().set_visible(False)
+        
+        ax.set_title(f"PRO TRADING TERMINAL - {self.active_symbol} ({tf})", color=COLORS["neon_yellow"], fontname='Segoe UI', fontsize=12, pad=15)
+        
+        ui['fig'].tight_layout()
+        ui['canvas'].draw()
+
+       
+
+    def _update_positions_tree(self, positions):
+        # Clear
+        for i in self.pos_tree.get_children():
+            self.pos_tree.delete(i)
+        if not positions: return
+        
         for p in positions:
             side = "BUY" if p.type == mt5.POSITION_TYPE_BUY else "SELL"
-            profit = p.profit
-            tag = 'profit' if profit >= 0 else 'loss'
+            tag = "profit" if p.profit >= 0 else "loss"
             self.pos_tree.insert("", tk.END, values=(
-                p.symbol, side, p.volume, f"{profit:.2f}"
+                p.ticket, p.symbol, side, p.volume, f"{p.price_open:.5f}", f"{p.profit:.2f}"
             ), tags=(tag,))
-
-    def _update_full_history(self):
-        from_date = datetime.now() - timedelta(days=self.history_days)
-        to_date = datetime.now() + timedelta(days=1)
         
-        deals = mt5.history_deals_get(from_date, to_date)
+        self.pos_tree.tag_configure("profit", foreground=COLORS["neon_green"])
+        self.pos_tree.tag_configure("loss", foreground=COLORS["neon_red"])
+
+    def _update_chart(self):
+        if not hasattr(self, 'trade_history') or not self.trade_history: return
+        profits = [h['profit'] for h in self.trade_history]
+        if not profits: return
+        cum_pnl = np.cumsum(profits)
+        
+        self.ax.clear()
+        self.ax.plot(cum_pnl, color=COLORS["neon_green"], linewidth=2)
+        self.ax.fill_between(range(len(cum_pnl)), cum_pnl, color=COLORS["neon_green"], alpha=0.1)
+        self.ax.set_title("SESSION EQUITY CURVE", color='white', fontsize=10, fontname='Segoe UI')
+        self.ax.grid(True, linestyle='--', alpha=0.1)
+        self.canvas.draw()
+
+    def _tick_timer(self):
+        if not self.running: return
+        try:
+            now = datetime.now()
+            self.clock_label.configure(text=now.strftime("%H:%M:%S"))
+            
+            if self.start_time is not None:
+                total_seconds = int(self.accumulated_seconds + (time.time() - self.start_time))
+            else:
+                total_seconds = int(self.accumulated_seconds)
+                
+            d, r = divmod(total_seconds, 86400)
+            h, r = divmod(r, 3600)
+            m, s = divmod(r, 60)
+            uptime_str = f"{d}d {h:02d}:{m:02d}:{s:02d}" if d > 0 else f"{h:02d}:{m:02d}:{s:02d}"
+            self.summary_cards['duration_val'].update_value(uptime_str)
+
+            # Milestone
+            try:
+                milestone_file = Path("logs/milestone_progress.json")
+                if milestone_file.exists():
+                    with open(milestone_file, 'r') as f:
+                        data = json.load(f)
+                        prog = data.get('progress', 0.0)
+                        target = data.get('target_inc', 100.0)
+                        val = max(0, min(1, prog / target))
+                        self.milestone_progress.set(val)
+                        color = COLORS["neon_green"] if prog >= 0 else COLORS["neon_red"]
+                        self.milestone_text.configure(text=f"{self.unit}{prog:,.2f} / {self.unit}{target:.0f}", text_color=color)
+                        self.milestone_progress.configure(progress_color=color)
+                        
+                        # --- Layer 3 Hit Counter & Alert ---
+                        hits = data.get('hits', 0)
+                        if self.last_hits == -1:
+                            self.last_hits = hits
+                        
+                        if hits > self.last_hits:
+                            self.last_hits = hits
+                            self._play_alert()
+                            print(f"🎉 MILESTONE HIT #{hits}!")
+                            
+                        # Display hits on the card
+                        if hasattr(self, 'milestone_hits_label'):
+                            self.milestone_hits_label.configure(text=f"Total Hits: {hits}")
+                        else:
+                            # Create label dynamically if not exists
+                            self.milestone_hits_label = ctk.CTkLabel(self.main_container, text=f"Total Hits: {hits}", font=("Segoe UI", 11, "bold"), text_color=COLORS["neon_yellow"])
+                            self.milestone_hits_label.place(in_=self.milestone_progress, relx=1.0, rely=-2.5, anchor=tk.E)
+            except Exception: pass
+        except Exception: pass
+        self.after(1000, self._tick_timer)
+
+    def _detect_system_context(self):
+        try:
+            milestone_file = Path("logs/milestone_progress.json")
+            if milestone_file.exists():
+                with open(milestone_file, 'r') as f:
+                    data = json.load(f)
+                    self.unit = data.get('unit', "$")
+            acc = mt5.account_info()
+            if acc:
+                if "Real" in acc.server and "Exness" in acc.server: self.unit = "USC"
+                elif acc.currency == "USC": self.unit = "USC"
+            positions = mt5.positions_get()
+            if positions: self.active_symbol = positions[0].symbol
+            else: self.active_symbol = "XAUUSDc" if self.unit == "USC" else "XAUUSDm"
+            
+            # Sync Engine Symbol
+            if hasattr(self, 'liq_engine') and self.liq_engine.symbol != self.active_symbol:
+                self.liq_engine.symbol = self.active_symbol
+                
+            self.pos_tree.heading("profit", text=f"Profit ({self.unit})")
+        except Exception as e: print(f"Context error: {e}")
+
+    def _update_full_history(self, deals):
         if deals:
-            closed_deals = [d for d in deals if d.entry == 1 and d.time > self.reset_timestamp]
+            reset_file = Path("logs/dashboard_reset.json")
+            reset_ts = 0
+            if reset_file.exists():
+                try:
+                    with open(reset_file, 'r') as f: reset_ts = json.load(f).get('reset_timestamp', 0)
+                except: pass
+            closed_deals = [d for d in deals if d.entry == 1 and d.time > reset_ts]
             
-            new_history = []
-            for d in closed_deals:
-                new_history.append({
-                    'time': datetime.fromtimestamp(d.time).strftime('%Y-%m-%d %H:%M'),
-                    'symbol': d.symbol,
-                    'side': 'BUY' if d.type == mt5.DEAL_TYPE_BUY else 'SELL',
-                    'volume': d.volume,
-                    'profit': d.profit + d.commission + d.swap,
-                    'comment': d.comment or ""
-                })
-            
-            if len(new_history) != len(self.trade_history):
-                self.trade_history = new_history
-                for i in self.hist_tree.get_children(): self.hist_tree.delete(i)
-                for item in sorted(self.trade_history, key=lambda x: x['time'], reverse=True)[:50]:
-                    self.hist_tree.insert("", tk.END, values=(
-                        item['time'], item['symbol'], item['side'], item['volume'], f"{item['profit']:.2f}", item['comment']
-                    ))
+            self.trade_history = [{
+                'time': datetime.fromtimestamp(d.time).strftime('%Y-%m-%d %H:%M'),
+                'symbol': d.symbol,
+                'side': 'BUY' if d.type == mt5.DEAL_TYPE_BUY else 'SELL',
+                'profit': d.profit + d.commission + d.swap
+            } for d in closed_deals]
 
             profits = [h['profit'] for h in self.trade_history]
             if profits:
                 wins = [p for p in profits if p > 0]
                 losses = [p for p in profits if p <= 0]
-                
                 total_pnl = sum(profits)
                 win_rate = len(wins) / len(profits) if profits else 0
-                
                 gross_profit = sum(wins)
                 gross_loss = abs(sum(losses))
                 profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf')
                 
                 cum_pnl = np.cumsum(profits)
-                acc_info = mt5.account_info()
-                base_balance = acc_info.balance if acc_info else 10000.0
-                equity_curve = base_balance + cum_pnl
-                peak = np.maximum.accumulate(equity_curve)
-                dd_pct = (peak - equity_curve) / peak * 100
-                max_dd_pct = np.max(dd_pct) if len(dd_pct) > 0 else 0
+                peak = np.maximum.accumulate(cum_pnl)
+                dd = peak - cum_pnl
+                max_dd = np.max(dd) if len(dd) > 0 else 0
                 
-                self.metrics = {
-                    'total_trades': len(profits), 'win_rate': win_rate, 'total_pnl': total_pnl,
-                    'profit_factor': profit_factor, 'max_drawdown': max_dd_pct
-                }
+                acc = mt5.account_info()
+                balance = acc.balance if acc else 1.0
+                max_dd_pct = (max_dd / balance) * 100 if balance > 0 else 0
                 
-                self.metric_labels['total_trades'].config(text=str(len(profits)))
-                self.metric_labels['win_rate'].config(text=f"{win_rate:.1%}")
-                pnl_color = "#00ff00" if total_pnl >= 0 else "#ff5252"
-                self.metric_labels['total_pnl'].config(text=f"${total_pnl:,.2f}", foreground=pnl_color)
-                self.metric_labels['profit_factor'].config(text=f"{profit_factor:.2f}")
-                self.metric_labels['max_drawdown'].config(text=f"{max_dd_pct:.2f}%")
+                self.metrics = {'total_trades': len(profits), 'win_rate': win_rate, 'total_pnl': total_pnl, 'profit_factor': profit_factor, 'max_drawdown': max_dd, 'max_drawdown_pct': max_dd_pct}
                 
-                # Session PNL (Last 24h) removed to avoid overwriting the Session Growth metric 
-                # (Balance - StartBalance) calculated in the main update loop.
+                self.stat_cards['total_trades'].update_value(str(len(profits)))
+                self.stat_cards['win_rate'].update_value(f"{win_rate:.1%}")
+                pnl_color = COLORS["neon_green"] if total_pnl >= 0 else COLORS["neon_red"]
+                self.stat_cards['total_pnl'].update_value(f"{self.unit}{total_pnl:,.2f}", pnl_color)
+                self.stat_cards['profit_factor'].update_value(f"{profit_factor:.2f}")
+                self.stat_cards['max_drawdown'].update_value(f"{max_dd_pct:.2f}%")
+                
+                now = datetime.now()
+                session_pnl = sum(h['profit'] for h in self.trade_history if (now - datetime.strptime(h['time'], '%Y-%m-%d %H:%M')).total_seconds() < 86400)
+                session_color = COLORS["neon_green"] if session_pnl >= 0 else COLORS["neon_red"]
+                self.summary_cards['session_val'].update_value(f"{self.unit}{session_pnl:,.2f}", session_color)
 
+    def _reset_dashboard(self):
+        if not messagebox.askyesno("Confirm", "Reset performance data?"): return
+        try:
+            signal_file = Path("logs/global_reset.signal")
+            with open(signal_file, 'w') as f: f.write(str(datetime.now().timestamp()))
+            for f in ["logs/grid_state.json", "logs/recycler_state.json", "logs/smart_trailing_state.json", "logs/milestone_progress.json"]:
+                if Path(f).exists(): Path(f).unlink()
+        except: pass
+        reset_point = datetime.now().timestamp()
+        with open(Path("logs/dashboard_reset.json"), 'w') as f: json.dump({'reset_timestamp': reset_point}, f)
+        self.trade_history = []
+        self.accumulated_seconds = 0
+        self.start_time = time.time()
+        self._save_session_stats()
+        messagebox.showinfo("Done", "Performance reset.")
 
-    def _on_closing(self):
-        self.running = False
-        self.root.destroy()
+    def _delete_pendings(self):
+        if not messagebox.askyesno("Confirm", "Close all positions/orders?"): return
+        positions = mt5.positions_get()
+        if positions:
+            for p in positions:
+                mt5.Close(p.symbol, ticket=p.ticket)
+        orders = mt5.orders_get()
+        if orders:
+            for o in orders:
+                mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
+        messagebox.showinfo("Done", "Cleanup complete.")
+
+    def _generate_report(self):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        report_data = {'timestamp': datetime.now().isoformat(), 'metrics': self.metrics, 'trades': self.trade_history}
+        report_path = Path(f"logs/live_reports/dashboard_report_{timestamp}.json")
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(report_path, 'w') as f: json.dump(report_data, f, indent=4)
+        messagebox.showinfo("Saved", f"Report saved: {report_path}")
 
     def run(self):
-        self.root.mainloop()
+        self.mainloop()
+
+# --- Custom Widget Components ---
+
+class ScrollableStatCard(ctk.CTkFrame):
+    def __init__(self, master, label, color):
+        super().__init__(master, fg_color=COLORS["bg_card"], corner_radius=12, border_width=1, border_color=COLORS["border"])
+        self.label = ctk.CTkLabel(self, text=label, font=("Segoe UI", 9, "bold"), text_color=COLORS["text_secondary"])
+        self.label.pack(pady=(15, 0))
+        self.value_label = ctk.CTkLabel(self, text="--", font=("Consolas", 18, "bold"), text_color=color)
+        self.value_label.pack(pady=(0, 15))
+
+    def update_value(self, val, color=None):
+        self.value_label.configure(text=val)
+        if color: self.value_label.configure(text_color=color)
+
+class SummaryCard(ctk.CTkFrame):
+    def __init__(self, master, label, color):
+        super().__init__(master, fg_color=COLORS["bg_card"], corner_radius=12, border_width=1, border_color=COLORS["border"])
+        self.label = ctk.CTkLabel(self, text=label, font=("Segoe UI", 9, "bold"), text_color=COLORS["text_secondary"])
+        self.label.pack(anchor=tk.W, padx=20, pady=(15, 0))
+        self.value_label = ctk.CTkLabel(self, text="0.00", font=("Consolas", 22, "bold"), text_color=color)
+        self.value_label.pack(anchor=tk.W, padx=20, pady=(0, 15))
+
+    def update_value(self, val, color=None):
+        self.value_label.configure(text=val)
+        if color: self.value_label.configure(text_color=color)
 
 if __name__ == "__main__":
     app = LivePortfolioDashboard()

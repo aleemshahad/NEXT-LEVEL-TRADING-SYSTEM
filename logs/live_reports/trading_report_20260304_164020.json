@@ -1,0 +1,25 @@
+{
+    "timestamp": "2026-03-04T16:40:20.016834",
+    "metrics": {
+        "total_trades": 1,
+        "total_pnl": 2.73,
+        "win_rate": 1.0,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.0,
+        "total_loss": 0,
+        "max_floating_minus": 0.0
+    },
+    "trades": [
+        {
+            "ticket": 1055388746,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.3369999999995,
+            "profit": 2.73,
+            "magic": 777002,
+            "time": "2026-03-04 16:40:12",
+            "comment": "EMERGENCY_RESET"
+        }
+    ]
+}

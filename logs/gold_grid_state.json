@@ -1,0 +1,366 @@
+{
+  "grid_levels": {
+    "5101.94": {
+      "order_ticket": 1157779550,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:11.953926",
+      "position_size": 0.01,
+      "stop_loss": 5050.92,
+      "take_profit": 5255.0
+    },
+    "5064.44": {
+      "order_ticket": 1157779568,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:12.095983",
+      "position_size": 0.01,
+      "stop_loss": 5013.8,
+      "take_profit": 5216.37
+    },
+    "5026.94": {
+      "order_ticket": 1157779577,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:12.261266",
+      "position_size": 0.01,
+      "stop_loss": 4976.67,
+      "take_profit": 5177.75
+    },
+    "4989.44": {
+      "order_ticket": 1157779608,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:12.425681",
+      "position_size": 0.01,
+      "stop_loss": 4939.55,
+      "take_profit": 5139.12
+    },
+    "4951.94": {
+      "order_ticket": 1157779637,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:12.623229",
+      "position_size": 0.01,
+      "stop_loss": 4902.42,
+      "take_profit": 5100.5
+    },
+    "4914.44": {
+      "order_ticket": 1157779655,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:12.794434",
+      "position_size": 0.01,
+      "stop_loss": 4865.3,
+      "take_profit": 5061.87
+    },
+    "4876.94": {
+      "order_ticket": 1157779673,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:12.948747",
+      "position_size": 0.01,
+      "stop_loss": 4828.17,
+      "take_profit": 5023.25
+    },
+    "4839.44": {
+      "order_ticket": 1157779688,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:13.143170",
+      "position_size": 0.01,
+      "stop_loss": 4791.05,
+      "take_profit": 4984.62
+    },
+    "4801.94": {
+      "order_ticket": 1157779701,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:13.329762",
+      "position_size": 0.01,
+      "stop_loss": 4753.92,
+      "take_profit": 4946.0
+    },
+    "4764.44": {
+      "order_ticket": 1157779716,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:13.496841",
+      "position_size": 0.01,
+      "stop_loss": 4716.8,
+      "take_profit": 4907.37
+    },
+    "4726.94": {
+      "order_ticket": 1157779765,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:13.668834",
+      "position_size": 0.01,
+      "stop_loss": 4679.67,
+      "take_profit": 4868.75
+    },
+    "4689.44": {
+      "order_ticket": 1157779782,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:13.841361",
+      "position_size": 0.01,
+      "stop_loss": 4642.55,
+      "take_profit": 4830.12
+    },
+    "4651.94": {
+      "order_ticket": 1157779794,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:14.001671",
+      "position_size": 0.01,
+      "stop_loss": 4605.42,
+      "take_profit": 4791.5
+    },
+    "4614.44": {
+      "order_ticket": 1157779804,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:14.203017",
+      "position_size": 0.01,
+      "stop_loss": 4568.3,
+      "take_profit": 4752.87
+    },
+    "4576.94": {
+      "order_ticket": 1157779819,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:22:14.373770",
+      "position_size": 0.01,
+      "stop_loss": 4531.17,
+      "take_profit": 4714.25
+    },
+    "5100.18": {
+      "order_ticket": 1157826790,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:15.092721",
+      "position_size": 0.01,
+      "stop_loss": 5049.18,
+      "take_profit": 5253.19
+    },
+    "5062.68": {
+      "order_ticket": 1157826802,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:15.236283",
+      "position_size": 0.01,
+      "stop_loss": 5012.05,
+      "take_profit": 5214.56
+    },
+    "5025.18": {
+      "order_ticket": 1157826812,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:15.434279",
+      "position_size": 0.01,
+      "stop_loss": 4974.93,
+      "take_profit": 5175.94
+    },
+    "4987.68": {
+      "order_ticket": 1157826825,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:15.607244",
+      "position_size": 0.01,
+      "stop_loss": 4937.8,
+      "take_profit": 5137.31
+    },
+    "4950.18": {
+      "order_ticket": 1157826839,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:15.861272",
+      "position_size": 0.01,
+      "stop_loss": 4900.68,
+      "take_profit": 5098.69
+    },
+    "4912.68": {
+      "order_ticket": 1157826857,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:16.157593",
+      "position_size": 0.01,
+      "stop_loss": 4863.55,
+      "take_profit": 5060.06
+    },
+    "4875.18": {
+      "order_ticket": 1157826874,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:16.440986",
+      "position_size": 0.01,
+      "stop_loss": 4826.43,
+      "take_profit": 5021.44
+    },
+    "4837.68": {
+      "order_ticket": 1157826888,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:16.613790",
+      "position_size": 0.01,
+      "stop_loss": 4789.3,
+      "take_profit": 4982.81
+    },
+    "4800.18": {
+      "order_ticket": 1157826901,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:16.786055",
+      "position_size": 0.01,
+      "stop_loss": 4752.18,
+      "take_profit": 4944.19
+    },
+    "4762.68": {
+      "order_ticket": 1157826907,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:16.925254",
+      "position_size": 0.01,
+      "stop_loss": 4715.05,
+      "take_profit": 4905.56
+    },
+    "4725.18": {
+      "order_ticket": 1157826914,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:17.121171",
+      "position_size": 0.01,
+      "stop_loss": 4677.93,
+      "take_profit": 4866.94
+    },
+    "4687.68": {
+      "order_ticket": 1157826928,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:17.278885",
+      "position_size": 0.01,
+      "stop_loss": 4640.8,
+      "take_profit": 4828.31
+    },
+    "4650.18": {
+      "order_ticket": 1157826940,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:17.482014",
+      "position_size": 0.01,
+      "stop_loss": 4603.68,
+      "take_profit": 4789.69
+    },
+    "4612.68": {
+      "order_ticket": 1157826953,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:17.645233",
+      "position_size": 0.01,
+      "stop_loss": 4566.55,
+      "take_profit": 4751.06
+    },
+    "4575.18": {
+      "order_ticket": 1157826964,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:27:17.836510",
+      "position_size": 0.01,
+      "stop_loss": 4529.43,
+      "take_profit": 4712.44
+    },
+    "5102.71": {
+      "order_ticket": 1157857319,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:18.213931",
+      "position_size": 0.01,
+      "stop_loss": 5051.68,
+      "take_profit": 5255.79
+    },
+    "5065.21": {
+      "order_ticket": 1157857330,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:18.405638",
+      "position_size": 0.01,
+      "stop_loss": 5014.56,
+      "take_profit": 5217.17
+    },
+    "5027.71": {
+      "order_ticket": 1157857359,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:18.606663",
+      "position_size": 0.01,
+      "stop_loss": 4977.43,
+      "take_profit": 5178.54
+    },
+    "4990.21": {
+      "order_ticket": 1157857376,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:18.755741",
+      "position_size": 0.01,
+      "stop_loss": 4940.31,
+      "take_profit": 5139.92
+    },
+    "4952.71": {
+      "order_ticket": 1157857424,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:18.932076",
+      "position_size": 0.01,
+      "stop_loss": 4903.18,
+      "take_profit": 5101.29
+    },
+    "4915.21": {
+      "order_ticket": 1157857457,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:19.129437",
+      "position_size": 0.01,
+      "stop_loss": 4866.06,
+      "take_profit": 5062.67
+    },
+    "4877.71": {
+      "order_ticket": 1157857472,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:19.307116",
+      "position_size": 0.01,
+      "stop_loss": 4828.93,
+      "take_profit": 5024.04
+    },
+    "4840.21": {
+      "order_ticket": 1157857491,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:19.508622",
+      "position_size": 0.01,
+      "stop_loss": 4791.81,
+      "take_profit": 4985.42
+    },
+    "4802.71": {
+      "order_ticket": 1157857531,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:19.687841",
+      "position_size": 0.01,
+      "stop_loss": 4754.68,
+      "take_profit": 4946.79
+    },
+    "4765.21": {
+      "order_ticket": 1157857552,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:19.862410",
+      "position_size": 0.01,
+      "stop_loss": 4717.56,
+      "take_profit": 4908.17
+    },
+    "4727.71": {
+      "order_ticket": 1157857567,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:20.020876",
+      "position_size": 0.01,
+      "stop_loss": 4680.43,
+      "take_profit": 4869.54
+    },
+    "4690.21": {
+      "order_ticket": 1157857590,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:20.208530",
+      "position_size": 0.01,
+      "stop_loss": 4643.31,
+      "take_profit": 4830.92
+    },
+    "4652.71": {
+      "order_ticket": 1157857612,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:20.418759",
+      "position_size": 0.01,
+      "stop_loss": 4606.18,
+      "take_profit": 4792.29
+    },
+    "4615.21": {
+      "order_ticket": 1157857650,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:20.568816",
+      "position_size": 0.01,
+      "stop_loss": 4569.06,
+      "take_profit": 4753.67
+    },
+    "4577.71": {
+      "order_ticket": 1157857659,
+      "status": "PENDING",
+      "entry_time": "2026-03-04T11:32:20.728124",
+      "position_size": 0.01,
+      "stop_loss": 4531.93,
+      "take_profit": 4715.04
+    }
+  },
+  "current_spacing": 37.5,
+  "last_updated": "2026-03-04T11:32:20.787237"
+}

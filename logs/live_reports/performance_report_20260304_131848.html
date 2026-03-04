@@ -1,0 +1,429 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEXT LEVEL BRAIN - Live Performance</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #0b0e14; color: #ecf0f1; padding: 30px; }
+        .report-card { max-width: 1000px; margin: auto; background: #1a1e27; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); border: 1px solid #2d3436; }
+        h1 { color: #00e676; text-align: center; font-size: 32px; margin-bottom: 30px; letter-spacing: 1px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 40px; }
+        .metric-box { background: #242933; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #2d3436; }
+        .metric-label { font-size: 11px; color: #b2bec3; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
+        .metric-value { font-size: 24px; font-weight: 800; }
+        .loss-text { color: #ff7675; }
+        .win-text { color: #55efc4; }
+        .chart-section { background: #0b0e14; padding: 20px; border-radius: 15px; margin-bottom: 40px; border: 1px solid #2d3436; min-height: 400px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2d3436; }
+        th { background: #242933; color: #00e676; font-size: 13px; text-transform: uppercase; }
+        .profit-pos { color: #00e676; font-weight: bold; }
+        .profit-neg { color: #ff7675; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="report-card">
+        <h1>📊 LIVE TRADING PERFORMANCE</h1>
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <div class="metric-label">Total Trades</div>
+                <div class="metric-value">41</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Net P&L</div>
+                <div class="metric-value" style="color: #00e676">$64.52</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Total Minus (Loss)</div>
+                <div class="metric-value loss-text">-$31.33</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-value win-text">70.7%</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Max DD</div>
+                <div class="metric-value">0.11%</div>
+            </div>
+        </div>
+        
+        <div class="chart-section">
+            <canvas id="pnlChart"></canvas>
+        </div>
+
+        <h3>📝 RECENT TRADES</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>Lots</th>
+                    <th>Profit ($)</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td>2026-03-04 13:15:17</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$3.30</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:15:16</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$1.48</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:15:16</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$2.48</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:09:00</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.60</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:09:00</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$1.60</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:08:38</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$4.88</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:08:37</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$3.88</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:07:24</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-0.66</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:07:24</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.38</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:07:24</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$1.26</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:06:17</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.87</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:05:20</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$3.30</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:11</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$10.41</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:11</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$12.41</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:11</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$14.41</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:10</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.63</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:10</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$1.70</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:10</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$3.70</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:10</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$6.26</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:10</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$8.26</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:09</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-2.90</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:09</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-1.90</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:09</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-1.37</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:09</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-0.37</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:08</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-7.78</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:08</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-5.90</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:08</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-4.90</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 13:04:08</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-3.90</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:56:03</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.80</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:53:19</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.79</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:51:46</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.70</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:51:46</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$1.70</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:51:46</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$2.70</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:51:46</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$3.77</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:51:45</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-1.30</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:51:45</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-0.30</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:49:45</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.55</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:49:45</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$1.55</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:49:01</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-0.05</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:49:01</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.95</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 11:46:16</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.53</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+    <script>
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ["2026-03-04 11:46:16", "2026-03-04 11:49:01", "2026-03-04 11:49:01", "2026-03-04 11:49:45", "2026-03-04 11:49:45", "2026-03-04 11:51:45", "2026-03-04 11:51:45", "2026-03-04 11:51:46", "2026-03-04 11:51:46", "2026-03-04 11:51:46", "2026-03-04 11:51:46", "2026-03-04 11:53:19", "2026-03-04 11:56:03", "2026-03-04 13:04:08", "2026-03-04 13:04:08", "2026-03-04 13:04:08", "2026-03-04 13:04:08", "2026-03-04 13:04:09", "2026-03-04 13:04:09", "2026-03-04 13:04:09", "2026-03-04 13:04:09", "2026-03-04 13:04:10", "2026-03-04 13:04:10", "2026-03-04 13:04:10", "2026-03-04 13:04:10", "2026-03-04 13:04:10", "2026-03-04 13:04:11", "2026-03-04 13:04:11", "2026-03-04 13:04:11", "2026-03-04 13:05:20", "2026-03-04 13:06:17", "2026-03-04 13:07:24", "2026-03-04 13:07:24", "2026-03-04 13:07:24", "2026-03-04 13:08:37", "2026-03-04 13:08:38", "2026-03-04 13:09:00", "2026-03-04 13:09:00", "2026-03-04 13:15:16", "2026-03-04 13:15:16", "2026-03-04 13:15:17"],
+                datasets: [{
+                    label: 'Cumulative Equity',
+                    data: [0.53, 0.48000000000000004, 1.43, 1.98, 3.5300000000000002, 2.2300000000000004, 1.9300000000000004, 2.6300000000000003, 4.33, 7.03, 10.8, 11.59, 12.39, 4.61, -1.29, -6.19, -10.09, -12.99, -14.89, -16.26, -16.630000000000003, -16.000000000000004, -14.300000000000004, -10.600000000000005, -4.340000000000005, 3.9199999999999946, 14.329999999999995, 26.739999999999995, 41.14999999999999, 44.44999999999999, 45.319999999999986, 44.65999999999999, 45.03999999999999, 46.29999999999999, 50.17999999999999, 55.059999999999995, 55.66, 57.26, 58.739999999999995, 61.21999999999999, 64.52],
+                    borderColor: '#00e676',
+                    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                    fill: true,
+                    tension: 0.2,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { display: false },
+                    y: { grid: { color: '#2d3436' }, ticks: { color: '#b2bec3' } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

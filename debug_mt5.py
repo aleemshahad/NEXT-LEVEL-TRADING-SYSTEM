@@ -14,7 +14,7 @@ def debug_mt5():
     success = False
     for i in range(3):
         print(f"Connection attempt {i+1}/3...")
-        terminal_path = r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe"
+        terminal_path = os.getenv("MT5_TERMINAL_PATH", r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe")
         if mt5.initialize(path=terminal_path):
             success = True
             break

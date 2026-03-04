@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEXT LEVEL BRAIN - Live Performance</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #0b0e14; color: #ecf0f1; padding: 30px; }
+        .report-card { max-width: 1000px; margin: auto; background: #1a1e27; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); border: 1px solid #2d3436; }
+        h1 { color: #00e676; text-align: center; font-size: 32px; margin-bottom: 30px; letter-spacing: 1px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 40px; }
+        .metric-box { background: #242933; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #2d3436; }
+        .metric-label { font-size: 11px; color: #b2bec3; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
+        .metric-value { font-size: 24px; font-weight: 800; }
+        .loss-text { color: #ff7675; }
+        .win-text { color: #55efc4; }
+        .chart-section { background: #0b0e14; padding: 20px; border-radius: 15px; margin-bottom: 40px; border: 1px solid #2d3436; min-height: 400px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2d3436; }
+        th { background: #242933; color: #00e676; font-size: 13px; text-transform: uppercase; }
+        .profit-pos { color: #00e676; font-weight: bold; }
+        .profit-neg { color: #ff7675; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="report-card">
+        <h1>📊 LIVE TRADING PERFORMANCE</h1>
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <div class="metric-label">Total Trades</div>
+                <div class="metric-value">8</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Net P&L</div>
+                <div class="metric-value" style="color: #00e676">$4.13</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Total Minus (Loss)</div>
+                <div class="metric-value loss-text">-$2.67</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-value win-text">62.5%</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Max DD</div>
+                <div class="metric-value">0.45%</div>
+            </div>
+        </div>
+        
+        <div class="chart-section">
+            <canvas id="pnlChart"></canvas>
+        </div>
+
+        <h3>📝 RECENT TRADES</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>Lots</th>
+                    <th>Profit ($)</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td>2026-03-04 19:00:25</td>
+                    <td>XAUUSDm</td>
+                    <td>SELL</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-1.77</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 19:00:25</td>
+                    <td>XAUUSDm</td>
+                    <td>SELL</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-0.69</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 19:00:25</td>
+                    <td>XAUUSDm</td>
+                    <td>SELL</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.30</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 19:00:25</td>
+                    <td>XAUUSDm</td>
+                    <td>SELL</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$1.80</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 19:00:25</td>
+                    <td>XAUUSDm</td>
+                    <td>SELL</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$3.17</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 18:29:08</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.86</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 18:29:07</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-neg">$-0.21</td>
+                </tr>
+                
+                <tr>
+                    <td>2026-03-04 18:28:12</td>
+                    <td>XAUUSDm</td>
+                    <td>BUY</td>
+                    <td>0.01</td>
+                    <td class="profit-pos">$0.67</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+    <script>
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ["2026-03-04 18:28:12", "2026-03-04 18:29:07", "2026-03-04 18:29:08", "2026-03-04 19:00:25", "2026-03-04 19:00:25", "2026-03-04 19:00:25", "2026-03-04 19:00:25", "2026-03-04 19:00:25"],
+                datasets: [{
+                    label: 'Cumulative Equity',
+                    data: [0.67, 0.4600000000000001, 1.32, -0.44999999999999996, -1.14, -0.8399999999999999, 0.9600000000000002, 4.13],
+                    borderColor: '#00e676',
+                    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                    fill: true,
+                    tension: 0.2,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { display: false },
+                    y: { grid: { color: '#2d3436' }, ticks: { color: '#b2bec3' } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

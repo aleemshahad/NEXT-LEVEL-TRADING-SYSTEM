@@ -1,0 +1,924 @@
+{
+    "timestamp": "2026-03-03T23:08:58.333191",
+    "metrics": {
+        "total_trades": 114,
+        "win_rate": 0.5614035087719298,
+        "total_pnl": 152.59,
+        "profit_factor": 1.5944524523744597,
+        "max_drawdown": 0.5910592325453127
+    },
+    "trades": [
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.83,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 2.83,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 3.81,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 4.9399999999999995,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 6.08,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 5.19,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 6.39,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 4.9399999999999995,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 6.91,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 8.03,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 10.49,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 13.12,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 14.76,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 17.53,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:24",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 19.7,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:27",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -2.22,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:27",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -0.82,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:27",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.34,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:27",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.52,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:30",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -1.78,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:30",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -1.33,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:30",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.08,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:30",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.34,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:33",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -1.45,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:33",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -0.32,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:38",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 15.34,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:38",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 16.74,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -5.84,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -4.91,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -3.61,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -2.7,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -1.15,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.03,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.03,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 2.03,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 3.03,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:41",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 3.9,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -11.7,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -10.46,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -9.46,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -8.64,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -7.64,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -6.64,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -5.76,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -4.76,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -4.25,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -3.42,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -1.42,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.58,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 2.62,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 4.62,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:49",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 6.42,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:51",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -4.15,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:51",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -3.08,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:51",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -2.21,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:51",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -1.51,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:51",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -0.51,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:51",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -0.11,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:51",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.46,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:54",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.64,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:54",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.72,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:54",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 2.7199999999999998,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:54",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 4.17,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -0.1,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.86,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.52,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 2.37,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 3.37,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 4.62,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 5.39,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 6.32,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 7.19,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 21:59",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 8.19,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -12.16,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -11.4,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -10.37,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -9.4,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -9.04,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -8.43,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -7.51,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -6.39,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -5.17,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -3.63,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -0.22,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.02,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.94,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:06",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.11,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:06",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.62,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:06",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 2.95,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 22:20",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 17.09,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -11.0,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -9.92,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -8.59,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -7.39,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -6.36,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -5.28,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -4.76,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -3.44,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -2.44,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": -1.8399999999999999,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 0.32,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 1.99,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 4.03,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 6.38,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 8.38,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 10.38,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 12.64,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 14.64,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 16.47,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 18.47,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 21.42,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:03",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 24.75,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:08",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 4.44,
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "time": "2026-03-03 23:08",
+            "symbol": "XAUUSDm",
+            "side": "SELL",
+            "volume": 0.01,
+            "profit": 5.53,
+            "comment": "CLOSE_GRID"
+        }
+    ]
+}

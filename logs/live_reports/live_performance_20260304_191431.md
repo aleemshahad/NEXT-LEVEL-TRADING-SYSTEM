@@ -1,0 +1,36 @@
+# 🧠 NEXT LEVEL BRAIN - LIVE PERFORMANCE REPORT
+**Generated:** 2026-03-04 19:14:31
+**Tracking Period:** Last 30 Days
+**Strategy:** Grid Both
+
+## 📊 PERFORMANCE SUMMARY
+- **Total Trades:** 20
+- **Win Rate:** 60.0%
+- **Total P&L:** $7.26
+- **Total Minus (Loss):** -$8.33
+- **Profit Factor:** 1.87
+- **Max Drawdown:** 0.75%
+
+## 📋 RECENT TRADE LOG (Last 50)
+| Time | Symbol | Side | Lots | Profit ($) | Comment |
+|------|--------|------|------|------------|---------|
+| 2026-03-04 19:14:02 | XAUUSDm | SELL | 0.01 | -1.28 | CLOSE_GRID |
+| 2026-03-04 19:14:02 | XAUUSDm | SELL | 0.01 | -0.28 | CLOSE_GRID |
+| 2026-03-04 19:14:02 | XAUUSDm | SELL | 0.01 | 0.48 | CLOSE_GRID |
+| 2026-03-04 19:14:02 | XAUUSDm | SELL | 0.01 | 1.65 | CLOSE_GRID |
+| 2026-03-04 19:13:28 | XAUUSDm | SELL | 0.01 | 2.75 | CLOSE_GRID |
+| 2026-03-04 19:13:27 | XAUUSDm | SELL | 0.01 | -2.32 | CLOSE_GRID |
+| 2026-03-04 19:13:27 | XAUUSDm | SELL | 0.01 | -1.44 | CLOSE_GRID |
+| 2026-03-04 19:13:27 | XAUUSDm | SELL | 0.01 | -0.34 | CLOSE_GRID |
+| 2026-03-04 19:13:27 | XAUUSDm | SELL | 0.01 | 0.74 | CLOSE_GRID |
+| 2026-03-04 19:13:27 | XAUUSDm | SELL | 0.01 | 1.75 | CLOSE_GRID |
+| 2026-03-04 19:11:15 | XAUUSDm | SELL | 0.01 | 0.56 | CLOSE_GRID |
+| 2026-03-04 19:10:38 | XAUUSDm | SELL | 0.01 | 0.86 | CLOSE_GRID |
+| 2026-03-04 19:00:25 | XAUUSDm | SELL | 0.01 | -1.77 | CLOSE_GRID |
+| 2026-03-04 19:00:25 | XAUUSDm | SELL | 0.01 | -0.69 | CLOSE_GRID |
+| 2026-03-04 19:00:25 | XAUUSDm | SELL | 0.01 | 0.30 | CLOSE_GRID |
+| 2026-03-04 19:00:25 | XAUUSDm | SELL | 0.01 | 1.80 | CLOSE_GRID |
+| 2026-03-04 19:00:25 | XAUUSDm | SELL | 0.01 | 3.17 | CLOSE_GRID |
+| 2026-03-04 18:29:08 | XAUUSDm | BUY | 0.01 | 0.86 | CLOSE_GRID |
+| 2026-03-04 18:29:07 | XAUUSDm | BUY | 0.01 | -0.21 | CLOSE_GRID |
+| 2026-03-04 18:28:12 | XAUUSDm | BUY | 0.01 | 0.67 | CLOSE_GRID |
