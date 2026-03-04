@@ -1,314 +1,353 @@
 [
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-12 14:30:00",
-    "exit_time": "2026-01-12 14:45:00",
-    "type": "SELL",
-    "pnl": -30.000000000000004,
-    "success": "False",
-    "confidence": 0.6118176256014287,
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-01-28 14:40:00",
+    "exit_time": "2026-01-28 14:45:00",
+    "type": "BUY",
+    "pnl": 0.38000000000465667,
+    "success": "True",
+    "confidence": 0.6141953046232663,
     "market_conditions": {
-      "rsi": 55.975068987416414,
+      "rsi": 60.478341916526574,
       "trend": "bullish"
     }
   },
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-13 14:00:00",
-    "exit_time": "2026-01-13 14:15:00",
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-01-29 14:45:00",
+    "exit_time": "2026-01-29 14:55:00",
     "type": "BUY",
-    "pnl": 7.359164164787719,
+    "pnl": -212.99043999999415,
+    "success": "False",
+    "confidence": 0.6204750293860468,
+    "market_conditions": {
+      "rsi": 43.19641017681017,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-01-30 14:55:00",
+    "exit_time": "2026-01-30 15:00:00",
+    "type": "SELL",
+    "pnl": 44.88000000000284,
+    "success": "True",
+    "confidence": 0.7431371482639251,
+    "market_conditions": {
+      "rsi": 45.72877588978912,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-02 03:15:00",
+    "exit_time": "2026-02-02 03:20:00",
+    "type": "SELL",
+    "pnl": 214.69052000000377,
+    "success": "True",
+    "confidence": 0.6136996012968435,
+    "market_conditions": {
+      "rsi": 45.408330317599855,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-02 03:30:00",
+    "exit_time": "2026-02-02 03:35:00",
+    "type": "SELL",
+    "pnl": 56.0400000000027,
+    "success": "True",
+    "confidence": 0.7371671453264972,
+    "market_conditions": {
+      "rsi": 30.076742141652332,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-02 10:55:00",
+    "exit_time": "2026-02-02 11:00:00",
+    "type": "BUY",
+    "pnl": 80.77000000000226,
+    "success": "True",
+    "confidence": 0.7307877977595343,
+    "market_conditions": {
+      "rsi": 48.52084442634751,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-02 14:30:00",
+    "exit_time": "2026-02-02 14:35:00",
+    "type": "BUY",
+    "pnl": 11.300000000001093,
+    "success": "True",
+    "confidence": 0.6001230657765382,
+    "market_conditions": {
+      "rsi": 58.395478983278736,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-03 03:40:00",
+    "exit_time": "2026-02-03 03:45:00",
+    "type": "BUY",
+    "pnl": 2.659999999996217,
+    "success": "True",
+    "confidence": 0.7133035923158,
+    "market_conditions": {
+      "rsi": 55.87910090013847,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-03 14:35:00",
+    "exit_time": "2026-02-03 14:40:00",
+    "type": "BUY",
+    "pnl": 0.2800000000024738,
+    "success": "True",
+    "confidence": 0.6123285071738173,
+    "market_conditions": {
+      "rsi": 43.33411248426008,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-04 03:35:00",
+    "exit_time": "2026-02-04 14:40:00",
+    "type": "BUY",
+    "pnl": -1014.0422000000036,
+    "success": "False",
+    "confidence": 0.5663367201069981,
+    "market_conditions": {
+      "rsi": 30.932596946822017,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-05 14:40:00",
+    "exit_time": "2026-02-05 14:45:00",
+    "type": "BUY",
+    "pnl": 6.75000000000182,
+    "success": "True",
+    "confidence": 0.7127509183856697,
+    "market_conditions": {
+      "rsi": 53.268925189093004,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-06 14:25:00",
+    "exit_time": "2026-02-06 14:30:00",
+    "type": "BUY",
+    "pnl": 116.25000000000001,
+    "success": "True",
+    "confidence": 0.713421380683712,
+    "market_conditions": {
+      "rsi": 50.759613635711155,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-06 14:35:00",
+    "exit_time": "2026-02-06 14:40:00",
+    "type": "BUY",
+    "pnl": -32.99777000000177,
+    "success": "False",
+    "confidence": 0.9101055614605946,
+    "market_conditions": {
+      "rsi": 54.985884492081084,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-09 10:30:00",
+    "exit_time": "2026-02-09 10:35:00",
+    "type": "SELL",
+    "pnl": 12.550760000003722,
+    "success": "True",
+    "confidence": 0.9101956488621994,
+    "market_conditions": {
+      "rsi": 14.225994426146883,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-10 10:15:00",
+    "exit_time": "2026-02-10 10:20:00",
+    "type": "BUY",
+    "pnl": 37.68999999999323,
+    "success": "True",
+    "confidence": 0.8837565680074415,
+    "market_conditions": {
+      "rsi": 46.89920638692141,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-10 10:25:00",
+    "exit_time": "2026-02-10 10:30:00",
+    "type": "BUY",
+    "pnl": 13.090000000001965,
+    "success": "True",
+    "confidence": 0.5772081845708865,
+    "market_conditions": {
+      "rsi": 47.04451345755748,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-10 14:20:00",
+    "exit_time": "2026-02-10 14:30:00",
+    "type": "BUY",
+    "pnl": 68.04000000000087,
+    "success": "True",
+    "confidence": 0.665644712246842,
+    "market_conditions": {
+      "rsi": 76.01757295394398,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-10 14:50:00",
+    "exit_time": "2026-02-10 14:55:00",
+    "type": "SELL",
+    "pnl": 8.950000000004366,
+    "success": "True",
+    "confidence": 0.7119501916720494,
+    "market_conditions": {
+      "rsi": 41.65489299813026,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-11 10:45:00",
+    "exit_time": "2026-02-11 11:20:00",
+    "type": "BUY",
+    "pnl": 27.080000000005384,
+    "success": "True",
+    "confidence": 0.7265585702861364,
+    "market_conditions": {
+      "rsi": 68.39117450182843,
+      "trend": "bullish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-11 14:40:00",
+    "exit_time": "2026-02-11 14:45:00",
+    "type": "SELL",
+    "pnl": 24.30000000000291,
+    "success": "True",
+    "confidence": 0.7329502530753338,
+    "market_conditions": {
+      "rsi": 39.082610195579086,
+      "trend": "bearish"
+    }
+  },
+  {
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-12 03:05:00",
+    "exit_time": "2026-02-12 03:15:00",
+    "type": "SELL",
+    "pnl": 48.129999999991924,
     "success": "True",
     "confidence": 0.9,
     "market_conditions": {
-      "rsi": 59.201085902656324,
+      "rsi": 49.97093520259902,
       "trend": "bullish"
     }
   },
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-13 14:30:00",
-    "exit_time": "2026-01-13 20:15:00",
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-16 10:30:00",
+    "exit_time": "2026-02-16 10:35:00",
     "type": "BUY",
-    "pnl": 29.932077492494358,
+    "pnl": 8.430000000007567,
     "success": "True",
-    "confidence": 0.7234269810390168,
+    "confidence": 0.9,
     "market_conditions": {
-      "rsi": 79.78064162325146,
-      "trend": "bullish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-14 14:15:00",
-    "exit_time": "2026-01-14 16:30:00",
-    "type": "BUY",
-    "pnl": 30.021873724971847,
-    "success": "True",
-    "confidence": 0.7112369735633275,
-    "market_conditions": {
-      "rsi": 80.70823998597992,
-      "trend": "bullish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-15 14:45:00",
-    "exit_time": "2026-01-15 15:00:00",
-    "type": "SELL",
-    "pnl": 30.11193934614676,
-    "success": "True",
-    "confidence": 0.9113152455562774,
-    "market_conditions": {
-      "rsi": 42.566518426700455,
+      "rsi": 36.57733329304654,
       "trend": "bearish"
     }
   },
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-20 14:30:00",
-    "exit_time": "2026-01-20 14:45:00",
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-17 14:00:00",
+    "exit_time": "2026-02-17 14:05:00",
     "type": "SELL",
-    "pnl": 30.202275164185203,
-    "success": "True",
-    "confidence": 0.6202821485623659,
-    "market_conditions": {
-      "rsi": 28.215778079846757,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-21 14:15:00",
-    "exit_time": "2026-01-21 14:30:00",
-    "type": "BUY",
-    "pnl": 0.3283098080783863,
-    "success": "True",
-    "confidence": 0.7153051374686628,
-    "market_conditions": {
-      "rsi": 56.782081122289,
-      "trend": "bullish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-23 14:45:00",
-    "exit_time": "2026-01-23 15:00:00",
-    "type": "SELL",
-    "pnl": 0.1610056570696068,
-    "success": "True",
-    "confidence": 0.7394620336201072,
-    "market_conditions": {
-      "rsi": 38.637722857096534,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-27 14:15:00",
-    "exit_time": "2026-01-27 14:30:00",
-    "type": "SELL",
-    "pnl": 10.344876268558338,
-    "success": "True",
-    "confidence": 0.9930336549776435,
-    "market_conditions": {
-      "rsi": 44.473651064855495,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-27 14:45:00",
-    "exit_time": "2026-01-27 15:00:00",
-    "type": "SELL",
-    "pnl": -3.3864699999976438,
+    "pnl": -29.375589999999647,
     "success": "False",
-    "confidence": 0.922261749922926,
+    "confidence": 0.931242209701926,
     "market_conditions": {
-      "rsi": 48.57692034608335,
-      "trend": "bullish"
+      "rsi": 32.847655777112806,
+      "trend": "bearish"
     }
   },
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-28 03:15:00",
-    "exit_time": "2026-01-28 03:30:00",
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-17 14:10:00",
+    "exit_time": "2026-02-17 14:15:00",
     "type": "BUY",
-    "pnl": 21.32033817452836,
+    "pnl": 36.31999999999607,
     "success": "True",
-    "confidence": 0.6150857295778296,
+    "confidence": 0.721593703370933,
     "market_conditions": {
-      "rsi": 43.20074685563533,
+      "rsi": 36.12653717464034,
       "trend": "bearish"
     }
   },
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-28 14:45:00",
-    "exit_time": "2026-01-28 15:00:00",
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-19 14:05:00",
+    "exit_time": "2026-02-19 14:10:00",
     "type": "SELL",
-    "pnl": 0.2885313374231259,
+    "pnl": 14.630000000006477,
     "success": "True",
-    "confidence": 0.6149832054835838,
+    "confidence": 0.5760741540465326,
     "market_conditions": {
-      "rsi": 38.959772288461096,
+      "rsi": 38.21601338215928,
       "trend": "bearish"
     }
   },
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-01-31 14:30:00",
-    "exit_time": "2026-01-31 17:00:00",
-    "type": "SELL",
-    "pnl": 30.38005176341474,
-    "success": "True",
-    "confidence": 0.7109799279508211,
-    "market_conditions": {
-      "rsi": 14.597370399874976,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-01 10:45:00",
-    "exit_time": "2026-02-01 13:45:00",
-    "type": "SELL",
-    "pnl": 0.7418483700107285,
-    "success": "True",
-    "confidence": 0.7131616718355644,
-    "market_conditions": {
-      "rsi": 36.3411453716726,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-02 03:00:00",
-    "exit_time": "2026-02-02 03:15:00",
-    "type": "SELL",
-    "pnl": 3.899469879362839,
-    "success": "True",
-    "confidence": 0.7226404020139019,
-    "market_conditions": {
-      "rsi": 33.45939738228613,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-02 03:30:00",
-    "exit_time": "2026-02-02 03:45:00",
-    "type": "SELL",
-    "pnl": -30.485115873453108,
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-19 14:55:00",
+    "exit_time": "2026-02-19 15:00:00",
+    "type": "BUY",
+    "pnl": -33.805890000003274,
     "success": "False",
-    "confidence": 0.7118177733293991,
+    "confidence": 0.7205573546724864,
     "market_conditions": {
-      "rsi": 37.92768958147374,
-      "trend": "bearish"
+      "rsi": 55.958121737150954,
+      "trend": "bullish"
     }
   },
   {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-03 03:00:00",
-    "exit_time": "2026-02-03 03:15:00",
-    "type": "SELL",
-    "pnl": 30.39366052583275,
-    "success": "True",
-    "confidence": 0.9074234454545032,
-    "market_conditions": {
-      "rsi": 42.61855809093672,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-03 03:30:00",
-    "exit_time": "2026-02-03 03:45:00",
+    "symbol": "XAUUSDm",
+    "entry_time": "2026-02-23 03:10:00",
+    "exit_time": "2026-02-23 03:15:00",
     "type": "BUY",
-    "pnl": 0.02932235574321938,
+    "pnl": 1.1899999999968713,
     "success": "True",
-    "confidence": 0.6436914137032133,
+    "confidence": 0.9103188495927015,
     "market_conditions": {
-      "rsi": 46.88916428761301,
-      "trend": "bullish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-03 10:45:00",
-    "exit_time": "2026-02-03 11:00:00",
-    "type": "SELL",
-    "pnl": 0.05683147310250986,
-    "success": "True",
-    "confidence": 0.714444609701048,
-    "market_conditions": {
-      "rsi": 39.56222889556219,
+      "rsi": 39.3050362876622,
       "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-04 03:15:00",
-    "exit_time": "2026-02-04 03:30:00",
-    "type": "BUY",
-    "pnl": 1.5549875779628783,
-    "success": "True",
-    "confidence": 0.7365574335858915,
-    "market_conditions": {
-      "rsi": 67.21529023442574,
-      "trend": "bullish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-05 03:00:00",
-    "exit_time": "2026-02-05 03:15:00",
-    "type": "SELL",
-    "pnl": 4.812401724346783,
-    "success": "True",
-    "confidence": 0.7139367415100564,
-    "market_conditions": {
-      "rsi": 30.987992761477543,
-      "trend": "bearish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-06 14:45:00",
-    "exit_time": "2026-02-06 15:00:00",
-    "type": "BUY",
-    "pnl": 30.50420213680372,
-    "success": "True",
-    "confidence": 0.9127801573947494,
-    "market_conditions": {
-      "rsi": 73.75125436005632,
-      "trend": "bullish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-07 03:15:00",
-    "exit_time": "2026-02-07 03:45:00",
-    "type": "BUY",
-    "pnl": 0.2839031048430393,
-    "success": "True",
-    "confidence": 0.6053629783269148,
-    "market_conditions": {
-      "rsi": 67.44744229903792,
-      "trend": "bullish"
-    }
-  },
-  {
-    "symbol": "BTCUSDm",
-    "entry_time": "2026-02-09 10:30:00",
-    "exit_time": "2026-02-09 16:30:00",
-    "type": "SELL",
-    "pnl": -30.596566452528656,
-    "success": "False",
-    "confidence": 0.7196484051550263,
-    "market_conditions": {
-      "rsi": 59.086699037301074,
-      "trend": "bullish"
     }
   }
 ]

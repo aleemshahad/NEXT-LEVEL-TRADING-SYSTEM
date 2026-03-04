@@ -3,5 +3,13 @@ risk:
   max_drawdown: 0.15
   max_risk_per_trade: 0.02
 symbols:
-- BTCUSDm
+- XAUUSDm
 timeframe: M5
+
+grid:
+  size: 300
+  spacing: 1.0
+  lot_size: 0.01
+  profit_target_pct: 0.25
+  profit_target_usd: 20 # Close session when total profit of one side hits $20
+  mode: BOTH # Options: BOTH, BUY_ONLY, SELL_ONLY
