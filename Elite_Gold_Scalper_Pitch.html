@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Gold Scalper - Strategy Pitch</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --accent-color: #00e676;
+            --text-main: #c9d1d9;
+            --text-bright: #ffffff;
+            --risk-red: #ff5252;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .tagline {
+            font-size: 1.2em;
+            color: var(--text-bright);
+            font-style: italic;
+        }
+
+        .section {
+            margin-bottom: 50px;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 20px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: var(--accent-color);
+        }
+
+        .highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .chart-container {
+            margin-top: 30px;
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .logic-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-num {
+            background: var(--accent-color);
+            color: black;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: #8b949e;
+            margin-top: 60px;
+            border-top: 1px solid #30363d;
+            padding-top: 20px;
+        }
+
+        @media print {
+            .container {
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+
+            .container {
+                background: white;
+                border: 1px solid #ddd;
+            }
+
+            h1,
+            h2,
+            h3 {
+                color: #008000;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="hero">
+            <h1>NEXT LEVEL: ELITE GOLD SCALPER</h1>
+            <p class="tagline">The Future of Institutional-Grade Grid Trading Technology</p>
+        </div>
+
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <p>
+                The <span class="highlight">Elite Gold Scalper</span> is not just a trading bot; it is a high-frequency
+                grid-management engine designed for the high-volatility environment of <strong>XAUUSD (Gold)</strong>.
+                By combining modular staggered order placement with an ultra-fast heartbeat monitoring system, this
+                strategy exploits market pullbacks with surgical precision while maintaining a rigid risk-protection
+                layer.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Core Technology</h2>
+            <div class="feature-grid">
+                <div class="card">
+                    <h3>10Hz Heartbeat Monitor</h3>
+                    <p>The system executes <span class="highlight">10 checks per second</span>. While traditional bots
+                        lag by minutes, our engine reacts instantly to Gold's rapid price spikes.</p>
+                </div>
+                <div class="card">
+                    <h3>Dynamic Spacing Engine</h3>
+                    <p>Orders are placed in batches with increasing offsets ($1, $2, $3...). This allows the system to
+                        survive the initial volatility and capitalize on deeper market moves.</p>
+                </div>
+                <div class="card">
+                    <h3>Zero-Loss Trailing</h3>
+                    <p>Advanced algorithmic lock-in ensures that once a basket enters profit, the "Trailing Lock"
+                        <strong>never</strong> dips below the breakeven point.</p>
+                </div>
+                <div class="card">
+                    <h3>Exposure Mastery</h3>
+                    <p>Real-time scenario projections calculate potential floating PnL for $10 to $300 moves, ensuring
+                        the user is always in control of their margin.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Strategic Logic: The "Staggered Batch" Approach</h2>
+            <p>Unlike standard grid bots that place 500 orders at once, our system uses a <strong>Staggered
+                    Loading</strong> method:</p>
+            <div class="chart-container">
+                <canvas id="spacingChart"></canvas>
+            </div>
+            <div style="margin-top: 20px;">
+                <div class="logic-step">
+                    <div class="step-num">1</div>
+                    <p>Initial 10 orders at <strong>$1.0</strong> spacing (Scalping Zone)</p>
+                </div>
+                <div class="logic-step">
+                    <div class="step-num">2</div>
+                    <p>Next 10 orders at <strong>$2.0</strong> spacing (Expansion Zone)</p>
+                </div>
+                <div class="logic-step">
+                    <div class="step-num">3</div>
+                    <p>All subsequent levels at <strong>$5.0</strong> spacing (Stabilization Zone)</p>
+                </div>
+            </div>
+            <p>This staggered approach significantly reduces drawdown while maximizing profit potential during market
+                reversals.</p>
+        </div>
+
+        <div class="section">
+            <h2>Performance & Risk Resilience</h2>
+            <p>Our strategy is built to weather the storms. Here is how it handles massive XAUUSD movements:</p>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #30363d;">
+                        <th style="padding: 10px;">Market Move</th>
+                        <th style="padding: 10px;">Trades Activated</th>
+                        <th style="padding: 10px;">Risk Level</th>
+                        <th style="padding: 10px;">Profit Target</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #30363d;">
+                        <td style="padding: 10px;">$10 - $20</td>
+                        <td style="padding: 10px;">10 - 15</td>
+                        <td style="padding: 10px; color: #00e676;">Minimal</td>
+                        <td style="padding: 10px;">High Frequency</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #30363d;">
+                        <td style="padding: 10px;">$50 - $100</td>
+                        <td style="padding: 10px;">30 - 50</td>
+                        <td style="padding: 10px; color: #ffab40;">Moderate</td>
+                        <td style="padding: 10px;">Major Pullback</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #30363d;">
+                        <td style="padding: 10px;">$300+</td>
+                        <td style="padding: 10px;">90+</td>
+                        <td style="padding: 10px; color: var(--risk-red);">Managed</td>
+                        <td style="padding: 10px;">Recovery King</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Why Investors Choose Elite Gold Scalper</h2>
+            <ul>
+                <li><strong>Auto-Reconnecting Watchdog:</strong> The system never sleeps, ensuring 24/7 uptime.</li>
+                <li><strong>Interactive Live Dashboard:</strong> See your equity, session PnL, and AI thoughts in high
+                    definition.</li>
+                <li><strong>Intelligent Trailing:</strong> Locks profit every 0.1 seconds, preventing slippage.</li>
+                <li><strong>Scalable:</strong> Works from a $150 Cent account to a $100,000 Professional account.</li>
+            </ul>
+        </div>
+
+        <div class="hero" style="margin-top: 60px;">
+            <h2 style="color: var(--text-bright);">READY TO CAPTURE THE GOLD MARKET?</h2>
+            <p>The smartest grid system on the planet is now available.</p>
+            <div
+                style="background: var(--accent-color); color: black; padding: 20px; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 1.5em; cursor: pointer;">
+                ACQUIRE STRATEGY LICENCE
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 NEXT LEVEL TRADING. Professional Grade Automated Systems.</p>
+            <p style="font-size: 0.8em;">Disclaimer: Trading involves risk. Performance is based on technical logic and
+                algorithm efficiency.</p>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('spacingChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Level 1', 'Level 10', 'Level 20', 'Level 30', 'Level 40', 'Level 50'],
+                datasets: [{
+                    label: 'Cumulative Offset ($)',
+                    data: [0, 10, 30, 60, 100, 150],
+                    borderColor: '#00e676',
+                    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        grid: { color: '#30363d' },
+                        ticks: { color: '#8b949e' }
+                    },
+                    x: {
+                        grid: { color: '#30363d' },
+                        ticks: { color: '#8b949e' }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
