@@ -1081,11 +1081,7 @@ class LivePortfolioDashboard:
             
             if len(new_history) != len(self.trade_history):
                 self.trade_history = new_history
-                for i in self.hist_tree.get_children(): self.hist_tree.delete(i)
-                for item in sorted(self.trade_history, key=lambda x: x['time'], reverse=True)[:50]:
-                    self.hist_tree.insert("", tk.END, values=(
-                        item['time'], item['symbol'], item['side'], item['volume'], f"{item['profit']:.2f}", item['comment']
-                    ))
+                # hist_tree removed from UI, skipping update
 
             profits = [h['profit'] for h in self.trade_history]
             if profits:
@@ -1119,16 +1115,21 @@ class LivePortfolioDashboard:
                 self.metric_labels['profit_factor'].config(text=f"{profit_factor:.2f}")
                 self.metric_labels['max_drawdown'].config(text=f"{max_dd_pct:.2f}%")
             else:
-                # RESET labels if history is empty
-                self.metric_labels['total_trades'].config(text="0")
-                self.metric_labels['win_rate'].config(text="0.0%")
-                self.metric_labels['total_pnl'].config(text="$0.00", foreground="#00e676")
-                self.metric_labels['profit_factor'].config(text="0.00")
-                self.metric_labels['max_drawdown'].config(text="0.00%")
-                self.metrics = {
-                    'total_trades': 0, 'win_rate': 0.0, 'total_pnl': 0.0,
-                    'profit_factor': 0.0, 'max_drawdown': 0.0
-                }
+                self._reset_labels_to_zero()
+        else:
+            self._reset_labels_to_zero()
+
+    def _reset_labels_to_zero(self):
+        """Helper to ensure UI labels show zeroed state when no history exists"""
+        self.metric_labels['total_trades'].config(text="0")
+        self.metric_labels['win_rate'].config(text="0.0%")
+        self.metric_labels['total_pnl'].config(text="$0.00", foreground="#00e676")
+        self.metric_labels['profit_factor'].config(text="0.00")
+        self.metric_labels['max_drawdown'].config(text="0.00%")
+        self.metrics = {
+            'total_trades': 0, 'win_rate': 0.0, 'total_pnl': 0.0,
+            'profit_factor': 0.0, 'max_drawdown': 0.0
+        }
                 
                 # Session PNL (Last 24h) removed to avoid overwriting the Session Growth metric 
                 # (Balance - StartBalance) calculated in the main update loop.
