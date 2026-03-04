@@ -257,6 +257,7 @@ class LivePortfolioDashboard:
         
         tk.Button(footer, text="🚨 EMERGENCY RESET", command=self._emergency_reset, bg="#ff1744", fg="white", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
         tk.Button(footer, text="🧹 DELETE ALL PENDINGS", command=self._delete_pendings, bg="#ff5252", fg="white", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
+        tk.Button(footer, text="🧹 CLEAR HISTORY", command=self._clear_history, bg="#ff9100", fg="black", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
         tk.Button(footer, text="📊 GENERATE FULL REPORT", command=self._generate_report, bg="#00e676", fg="black", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
 
     def _delete_pendings(self):
@@ -266,6 +267,26 @@ class LivePortfolioDashboard:
             for o in orders:
                 mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
             messagebox.showinfo("Success", f"Deleted {len(orders)} pending orders.")
+
+    def _clear_history(self):
+        """Reset persistent chart and metrics history without affecting active trades"""
+        if not messagebox.askyesno("Confirm Clear", "This will wipe the Equity Curve chart and reset session stats. Active trades will NOT be affected.\n\nContinue?"):
+            return
+            
+        # 1. Reset metrics
+        acc = mt5.account_info()
+        self.start_balance = acc.balance if acc else 0
+        self.reset_timestamp = int(time.time())
+        self._save_reset_config()
+        
+        # 2. Reset chart
+        self.equity_history = [self.start_balance]
+        self._save_chart_history()
+        
+        # 3. Clear local trade list
+        self.trade_history = []
+        
+        messagebox.showinfo("History Cleared", "Dashboard metrics and chart history have been reset successfully.")
 
     def _scroll_ticker(self):
         """Infinite horizontal scroll for AI Ticker"""
