@@ -1,0 +1,1666 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEXT LEVEL BRAIN - Global Trading Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #0d1117; color: #c9d1d9; padding: 40px; margin: 0; }
+        .container { max-width: 1200px; margin: auto; }
+        .header { text-align: center; margin-bottom: 50px; padding: 40px; background: linear-gradient(145deg, #161b22, #0d1117); border-radius: 24px; border: 1px solid #30363d; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        h1 { color: #00e676; font-size: 3em; margin: 0; text-transform: uppercase; letter-spacing: 4px; }
+        .subtitle { color: #8b949e; font-size: 1.1em; margin-top: 10px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 50px; }
+        .card { background: #161b22; padding: 30px; border-radius: 20px; border: 1px solid #30363d; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card:hover { transform: translateY(-10px); border-color: #00e676; box-shadow: 0 10px 30px rgba(0, 230, 118, 0.1); }
+        .val { font-size: 32px; font-weight: 800; margin-top: 10px; font-family: 'Consolas', monospace; }
+        .lab { font-size: 13px; color: #8b949e; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+        .chart-container { background: #161b22; padding: 30px; border-radius: 24px; border: 1px solid #30363d; margin-bottom: 50px; height: 500px; }
+        .session-list { background: #161b22; border-radius: 24px; border: 1px solid #30363d; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #21262d; color: #00e676; padding: 20px; text-align: left; text-transform: uppercase; font-size: 12px; }
+        td { padding: 18px 20px; border-bottom: 1px solid #30363d; font-size: 14px; }
+        tr:hover { background: #1c2128; }
+        .btn { display: inline-block; padding: 8px 16px; background: #238636; color: white; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .btn:hover { background: #2ea043; }
+        .minus-val { color: #ff5252; font-weight: bold; }
+        .pnl-pos { color: #00e676; font-weight: bold; }
+        .pnl-neg { color: #ff5252; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 GLOBAL DASHBOARD</h1>
+            <div class="subtitle">Next Level Brain - Unified Performance Intelligence</div>
+        </div>
+        <div class="summary-grid">
+            <div class="card">
+                <div class="lab">Total Sessions</div>
+                <div class="val" style="color: #58a6ff;">252</div>
+            </div>
+            <div class="card">
+                <div class="lab">Cumulative PnL</div>
+                <div class="val" style="color: #00e676;">$73,294.51</div>
+            </div>
+            <div class="card">
+                <div class="lab">Total Trade Count</div>
+                <div class="val">67011</div>
+            </div>
+            <div class="card">
+                <div class="lab">Peak Market Minus</div>
+                <div class="val" style="color: #ff5252;">-$525.97</div>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="mainChart"></canvas>
+        </div>
+        <div class="session-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Session Timestamp</th>
+                        <th>Trades</th>
+                        <th>Session PnL</th>
+                        <th>Max Market Minus ($)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2026-03-04 17:41</td>
+                        <td>8</td>
+                        <td class="pnl-pos">$25.67</td>
+                        <td class="minus-val">-$10.04</td>
+                        <td><a href="performance_report_20260304_174157.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 16:48</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$3.26</td>
+                        <td class="minus-val">-$2.02</td>
+                        <td><a href="performance_report_20260304_164803.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 16:40</td>
+                        <td>1</td>
+                        <td class="pnl-pos">$2.73</td>
+                        <td class="minus-val">-$0.00</td>
+                        <td><a href="performance_report_20260304_164020.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 16:21</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$0.92</td>
+                        <td class="minus-val">-$3.68</td>
+                        <td><a href="performance_report_20260304_162138.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 16:19</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$0.92</td>
+                        <td class="minus-val">-$3.68</td>
+                        <td><a href="performance_report_20260304_161936.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 16:17</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$0.92</td>
+                        <td class="minus-val">-$3.68</td>
+                        <td><a href="performance_report_20260304_161735.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:24</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$29.54</td>
+                        <td class="minus-val">-$20.43</td>
+                        <td><a href="performance_report_20260304_152424.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:22</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$29.54</td>
+                        <td class="minus-val">-$20.43</td>
+                        <td><a href="performance_report_20260304_152223.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:20</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$29.54</td>
+                        <td class="minus-val">-$20.43</td>
+                        <td><a href="performance_report_20260304_152022.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:18</td>
+                        <td>15</td>
+                        <td class="pnl-pos">$8.25</td>
+                        <td class="minus-val">-$20.43</td>
+                        <td><a href="performance_report_20260304_151817.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:16</td>
+                        <td>9</td>
+                        <td class="pnl-pos">$7.59</td>
+                        <td class="minus-val">-$20.43</td>
+                        <td><a href="performance_report_20260304_151609.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:10</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$2.53</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_151045.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:08</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$2.53</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_150844.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:06</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$2.53</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_150643.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:04</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$2.53</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_150442.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:02</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$2.53</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_150242.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 15:00</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$2.53</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_150041.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:58</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$2.53</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_145840.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:56</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$1.73</td>
+                        <td class="minus-val">-$16.20</td>
+                        <td><a href="performance_report_20260304_145638.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:54</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$1.73</td>
+                        <td class="minus-val">-$3.26</td>
+                        <td><a href="performance_report_20260304_145437.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:49</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$2.48</td>
+                        <td class="minus-val">-$0.66</td>
+                        <td><a href="performance_report_20260304_144916.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:47</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$2.48</td>
+                        <td class="minus-val">-$0.66</td>
+                        <td><a href="performance_report_20260304_144715.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:45</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$2.48</td>
+                        <td class="minus-val">-$0.66</td>
+                        <td><a href="performance_report_20260304_144513.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:43</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$2.48</td>
+                        <td class="minus-val">-$0.66</td>
+                        <td><a href="performance_report_20260304_144312.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:41</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$2.48</td>
+                        <td class="minus-val">-$0.66</td>
+                        <td><a href="performance_report_20260304_144111.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:39</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$2.48</td>
+                        <td class="minus-val">-$0.66</td>
+                        <td><a href="performance_report_20260304_143909.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:33</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_143359.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:31</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_143158.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:29</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_142957.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:27</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_142755.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:25</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_142554.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:23</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_142353.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:21</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_142149.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:19</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_141947.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:17</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_141746.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:15</td>
+                        <td>106</td>
+                        <td class="pnl-pos">$106.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_141545.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:13</td>
+                        <td>105</td>
+                        <td class="pnl-pos">$103.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_141344.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:11</td>
+                        <td>105</td>
+                        <td class="pnl-pos">$103.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_141142.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:09</td>
+                        <td>105</td>
+                        <td class="pnl-pos">$103.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_140941.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:07</td>
+                        <td>105</td>
+                        <td class="pnl-pos">$103.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_140740.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:05</td>
+                        <td>101</td>
+                        <td class="pnl-pos">$102.54</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_140538.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:03</td>
+                        <td>86</td>
+                        <td class="pnl-pos">$95.58</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_140335.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 14:01</td>
+                        <td>86</td>
+                        <td class="pnl-pos">$95.58</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_140134.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:59</td>
+                        <td>86</td>
+                        <td class="pnl-pos">$95.58</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_135933.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:57</td>
+                        <td>86</td>
+                        <td class="pnl-pos">$95.58</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_135732.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:55</td>
+                        <td>84</td>
+                        <td class="pnl-pos">$90.80</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_135531.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:53</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_135327.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:51</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_135126.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:49</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_134925.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:47</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_134724.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:45</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_134523.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:43</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_134322.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:41</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_134119.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:39</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_133917.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:37</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_133716.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:35</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_133516.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:33</td>
+                        <td>69</td>
+                        <td class="pnl-pos">$76.07</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_133313.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:31</td>
+                        <td>60</td>
+                        <td class="pnl-pos">$68.21</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_133103.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:29</td>
+                        <td>60</td>
+                        <td class="pnl-pos">$68.21</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_132902.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:27</td>
+                        <td>60</td>
+                        <td class="pnl-pos">$68.21</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_132700.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:24</td>
+                        <td>50</td>
+                        <td class="pnl-pos">$70.75</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_132455.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:22</td>
+                        <td>50</td>
+                        <td class="pnl-pos">$70.75</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_132253.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:20</td>
+                        <td>49</td>
+                        <td class="pnl-pos">$68.43</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_132050.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:18</td>
+                        <td>41</td>
+                        <td class="pnl-pos">$64.52</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_131848.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:16</td>
+                        <td>41</td>
+                        <td class="pnl-pos">$64.52</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_131644.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:14</td>
+                        <td>38</td>
+                        <td class="pnl-pos">$57.26</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_131441.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:12</td>
+                        <td>38</td>
+                        <td class="pnl-pos">$57.26</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_131239.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:10</td>
+                        <td>38</td>
+                        <td class="pnl-pos">$57.26</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_131037.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:08</td>
+                        <td>34</td>
+                        <td class="pnl-pos">$46.30</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_130834.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:06</td>
+                        <td>31</td>
+                        <td class="pnl-pos">$45.32</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_130632.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:04</td>
+                        <td>29</td>
+                        <td class="pnl-pos">$41.15</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_130428.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:02</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_130222.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:00</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_130020.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:58</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_125818.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:56</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_125616.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:54</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_125414.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:52</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_125212.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:50</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_125009.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:48</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_124807.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:46</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_124605.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:44</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_124403.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:42</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_124201.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:39</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_123959.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:37</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_123757.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:35</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_123555.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:33</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_123354.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:31</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_123152.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:29</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_122950.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:27</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_122748.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:25</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_122546.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:23</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_122345.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:19</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_121939.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:17</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_121738.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:15</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_121535.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:13</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_121334.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:11</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$217.24</td>
+                        <td><a href="performance_report_20260304_121133.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:09</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$199.95</td>
+                        <td><a href="performance_report_20260304_120932.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:07</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$199.05</td>
+                        <td><a href="performance_report_20260304_120731.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:05</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$139.47</td>
+                        <td><a href="performance_report_20260304_120530.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:03</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$139.47</td>
+                        <td><a href="performance_report_20260304_120329.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 12:01</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$82.16</td>
+                        <td><a href="performance_report_20260304_120128.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:59</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$20.10</td>
+                        <td><a href="performance_report_20260304_115925.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:57</td>
+                        <td>13</td>
+                        <td class="pnl-pos">$12.39</td>
+                        <td class="minus-val">-$20.10</td>
+                        <td><a href="performance_report_20260304_115724.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:55</td>
+                        <td>12</td>
+                        <td class="pnl-pos">$11.59</td>
+                        <td class="minus-val">-$20.10</td>
+                        <td><a href="performance_report_20260304_115523.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:53</td>
+                        <td>12</td>
+                        <td class="pnl-pos">$11.59</td>
+                        <td class="minus-val">-$20.10</td>
+                        <td><a href="performance_report_20260304_115322.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:51</td>
+                        <td>5</td>
+                        <td class="pnl-pos">$3.53</td>
+                        <td class="minus-val">-$20.10</td>
+                        <td><a href="performance_report_20260304_115118.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:49</td>
+                        <td>3</td>
+                        <td class="pnl-pos">$1.43</td>
+                        <td class="minus-val">-$2.50</td>
+                        <td><a href="performance_report_20260304_114916.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:47</td>
+                        <td>1</td>
+                        <td class="pnl-pos">$0.53</td>
+                        <td class="minus-val">-$0.91</td>
+                        <td><a href="performance_report_20260304_114715.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:39</td>
+                        <td>1</td>
+                        <td class="pnl-pos">$0.72</td>
+                        <td class="minus-val">-$9.12</td>
+                        <td><a href="performance_report_20260304_113950.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:33</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$0.96</td>
+                        <td class="minus-val">-$3.04</td>
+                        <td><a href="performance_report_20260304_113334.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:14</td>
+                        <td>48</td>
+                        <td class="pnl-neg">$-5.86</td>
+                        <td class="minus-val">-$458.66</td>
+                        <td><a href="performance_report_20260304_111402.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:11</td>
+                        <td>45</td>
+                        <td class="pnl-neg">$-6.00</td>
+                        <td class="minus-val">-$458.66</td>
+                        <td><a href="performance_report_20260304_111131.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:09</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$11.05</td>
+                        <td class="minus-val">-$458.66</td>
+                        <td><a href="performance_report_20260304_110921.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:07</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$11.05</td>
+                        <td class="minus-val">-$458.66</td>
+                        <td><a href="performance_report_20260304_110720.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:05</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$11.05</td>
+                        <td class="minus-val">-$140.77</td>
+                        <td><a href="performance_report_20260304_110516.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:03</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$11.05</td>
+                        <td class="minus-val">-$134.14</td>
+                        <td><a href="performance_report_20260304_110314.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 11:01</td>
+                        <td>19</td>
+                        <td class="pnl-pos">$11.05</td>
+                        <td class="minus-val">-$62.00</td>
+                        <td><a href="performance_report_20260304_110111.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:58</td>
+                        <td>17</td>
+                        <td class="pnl-pos">$11.59</td>
+                        <td class="minus-val">-$62.00</td>
+                        <td><a href="performance_report_20260304_105859.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:56</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$7.69</td>
+                        <td class="minus-val">-$58.50</td>
+                        <td><a href="performance_report_20260304_105653.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:54</td>
+                        <td>7</td>
+                        <td class="pnl-pos">$7.69</td>
+                        <td class="minus-val">-$30.24</td>
+                        <td><a href="performance_report_20260304_105451.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:52</td>
+                        <td>3</td>
+                        <td class="pnl-pos">$5.59</td>
+                        <td class="minus-val">-$10.56</td>
+                        <td><a href="performance_report_20260304_105249.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:50</td>
+                        <td>3</td>
+                        <td class="pnl-pos">$5.59</td>
+                        <td class="minus-val">-$1.12</td>
+                        <td><a href="performance_report_20260304_105047.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:48</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$4.55</td>
+                        <td class="minus-val">-$0.96</td>
+                        <td><a href="performance_report_20260304_104834.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:41</td>
+                        <td>11</td>
+                        <td class="pnl-neg">$-6.64</td>
+                        <td class="minus-val">-$13.90</td>
+                        <td><a href="performance_report_20260304_104120.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:39</td>
+                        <td>10</td>
+                        <td class="pnl-neg">$-7.49</td>
+                        <td class="minus-val">-$13.90</td>
+                        <td><a href="performance_report_20260304_103915.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:37</td>
+                        <td>5</td>
+                        <td class="pnl-neg">$-6.76</td>
+                        <td class="minus-val">-$13.90</td>
+                        <td><a href="performance_report_20260304_103706.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:26</td>
+                        <td>32</td>
+                        <td class="pnl-pos">$17.77</td>
+                        <td class="minus-val">-$21.42</td>
+                        <td><a href="performance_report_20260304_102647.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:24</td>
+                        <td>32</td>
+                        <td class="pnl-pos">$17.77</td>
+                        <td class="minus-val">-$19.86</td>
+                        <td><a href="performance_report_20260304_102445.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:22</td>
+                        <td>32</td>
+                        <td class="pnl-pos">$17.77</td>
+                        <td class="minus-val">-$19.82</td>
+                        <td><a href="performance_report_20260304_102244.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:20</td>
+                        <td>32</td>
+                        <td class="pnl-pos">$17.77</td>
+                        <td class="minus-val">-$16.40</td>
+                        <td><a href="performance_report_20260304_102042.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:16</td>
+                        <td>31</td>
+                        <td class="pnl-pos">$16.99</td>
+                        <td class="minus-val">-$7.18</td>
+                        <td><a href="performance_report_20260304_101643.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:13</td>
+                        <td>29</td>
+                        <td class="pnl-pos">$12.11</td>
+                        <td class="minus-val">-$38.64</td>
+                        <td><a href="performance_report_20260304_101358.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:11</td>
+                        <td>24</td>
+                        <td class="pnl-pos">$7.26</td>
+                        <td class="minus-val">-$38.64</td>
+                        <td><a href="performance_report_20260304_101151.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:09</td>
+                        <td>21</td>
+                        <td class="pnl-pos">$3.38</td>
+                        <td class="minus-val">-$38.64</td>
+                        <td><a href="performance_report_20260304_100941.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:07</td>
+                        <td>20</td>
+                        <td class="pnl-pos">$2.34</td>
+                        <td class="minus-val">-$38.64</td>
+                        <td><a href="performance_report_20260304_100718.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:05</td>
+                        <td>16</td>
+                        <td class="pnl-pos">$0.76</td>
+                        <td class="minus-val">-$38.64</td>
+                        <td><a href="performance_report_20260304_100511.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:03</td>
+                        <td>5</td>
+                        <td class="pnl-pos">$1.98</td>
+                        <td class="minus-val">-$36.44</td>
+                        <td><a href="performance_report_20260304_100306.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 10:00</td>
+                        <td>2</td>
+                        <td class="pnl-pos">$0.84</td>
+                        <td class="minus-val">-$5.34</td>
+                        <td><a href="performance_report_20260304_100058.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:56</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$127.62</td>
+                        <td><a href="performance_report_20260304_095646.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:54</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$125.94</td>
+                        <td><a href="performance_report_20260304_095444.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:51</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$150.78</td>
+                        <td><a href="performance_report_20260304_095149.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:49</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$150.78</td>
+                        <td><a href="performance_report_20260304_094948.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:47</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$150.78</td>
+                        <td><a href="performance_report_20260304_094745.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:45</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$150.78</td>
+                        <td><a href="performance_report_20260304_094543.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:43</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$150.78</td>
+                        <td><a href="performance_report_20260304_094340.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:41</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$109.14</td>
+                        <td><a href="performance_report_20260304_094138.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:39</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$85.92</td>
+                        <td><a href="performance_report_20260304_093936.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:37</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$88.32</td>
+                        <td><a href="performance_report_20260304_093716.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:35</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$86.22</td>
+                        <td><a href="performance_report_20260304_093513.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:33</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$86.22</td>
+                        <td><a href="performance_report_20260304_093311.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:31</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$85.20</td>
+                        <td><a href="performance_report_20260304_093109.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:29</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$85.20</td>
+                        <td><a href="performance_report_20260304_092907.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:27</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$85.20</td>
+                        <td><a href="performance_report_20260304_092705.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:25</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$78.00</td>
+                        <td><a href="performance_report_20260304_092503.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:23</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$72.00</td>
+                        <td><a href="performance_report_20260304_092301.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:21</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$63.42</td>
+                        <td><a href="performance_report_20260304_092100.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:18</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$57.48</td>
+                        <td><a href="performance_report_20260304_091858.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:16</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$35.94</td>
+                        <td><a href="performance_report_20260304_091649.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:14</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$30.42</td>
+                        <td><a href="performance_report_20260304_091447.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:10</td>
+                        <td>706</td>
+                        <td class="pnl-pos">$703.81</td>
+                        <td class="minus-val">-$10.85</td>
+                        <td><a href="performance_report_20260304_091056.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:08</td>
+                        <td>701</td>
+                        <td class="pnl-pos">$683.96</td>
+                        <td class="minus-val">-$6.27</td>
+                        <td><a href="performance_report_20260304_090849.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:06</td>
+                        <td>700</td>
+                        <td class="pnl-pos">$683.44</td>
+                        <td class="minus-val">-$4.44</td>
+                        <td><a href="performance_report_20260304_090644.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:04</td>
+                        <td>699</td>
+                        <td class="pnl-pos">$683.07</td>
+                        <td class="minus-val">-$4.44</td>
+                        <td><a href="performance_report_20260304_090438.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:02</td>
+                        <td>696</td>
+                        <td class="pnl-pos">$682.83</td>
+                        <td class="minus-val">-$4.44</td>
+                        <td><a href="performance_report_20260304_090231.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 09:00</td>
+                        <td>694</td>
+                        <td class="pnl-pos">$683.39</td>
+                        <td class="minus-val">-$0.00</td>
+                        <td><a href="performance_report_20260304_090028.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:56</td>
+                        <td>692</td>
+                        <td class="pnl-pos">$684.61</td>
+                        <td class="minus-val">-$5.22</td>
+                        <td><a href="performance_report_20260304_085632.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:54</td>
+                        <td>689</td>
+                        <td class="pnl-pos">$684.48</td>
+                        <td class="minus-val">-$0.88</td>
+                        <td><a href="performance_report_20260304_085430.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:48</td>
+                        <td>687</td>
+                        <td class="pnl-pos">$681.35</td>
+                        <td class="minus-val">-$0.92</td>
+                        <td><a href="performance_report_20260304_084819.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:45</td>
+                        <td>684</td>
+                        <td class="pnl-pos">$677.93</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_084530.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:43</td>
+                        <td>682</td>
+                        <td class="pnl-pos">$677.97</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_084326.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:41</td>
+                        <td>679</td>
+                        <td class="pnl-pos">$675.74</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_084123.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:39</td>
+                        <td>674</td>
+                        <td class="pnl-pos">$670.74</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_083920.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:37</td>
+                        <td>663</td>
+                        <td class="pnl-pos">$673.65</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_083715.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:35</td>
+                        <td>663</td>
+                        <td class="pnl-pos">$673.65</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_083514.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:33</td>
+                        <td>663</td>
+                        <td class="pnl-pos">$673.65</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_083312.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:30</td>
+                        <td>653</td>
+                        <td class="pnl-pos">$670.20</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_083058.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:28</td>
+                        <td>649</td>
+                        <td class="pnl-pos">$665.00</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_082852.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:26</td>
+                        <td>640</td>
+                        <td class="pnl-pos">$660.38</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_082646.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:24</td>
+                        <td>639</td>
+                        <td class="pnl-pos">$660.20</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_082440.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:22</td>
+                        <td>638</td>
+                        <td class="pnl-pos">$658.58</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_082238.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:20</td>
+                        <td>637</td>
+                        <td class="pnl-pos">$655.95</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_082036.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:18</td>
+                        <td>635</td>
+                        <td class="pnl-pos">$650.43</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_081831.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:16</td>
+                        <td>631</td>
+                        <td class="pnl-pos">$647.59</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_081624.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:14</td>
+                        <td>630</td>
+                        <td class="pnl-pos">$646.88</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_081422.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:12</td>
+                        <td>627</td>
+                        <td class="pnl-pos">$645.68</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_081218.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:10</td>
+                        <td>625</td>
+                        <td class="pnl-pos">$644.86</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_081009.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:08</td>
+                        <td>624</td>
+                        <td class="pnl-pos">$643.25</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_080805.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:06</td>
+                        <td>613</td>
+                        <td class="pnl-pos">$642.50</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_080603.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:04</td>
+                        <td>613</td>
+                        <td class="pnl-pos">$642.50</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_080402.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 08:01</td>
+                        <td>606</td>
+                        <td class="pnl-pos">$636.69</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_080156.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:59</td>
+                        <td>595</td>
+                        <td class="pnl-pos">$624.47</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_075947.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:57</td>
+                        <td>589</td>
+                        <td class="pnl-pos">$629.43</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_075742.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:55</td>
+                        <td>589</td>
+                        <td class="pnl-pos">$629.43</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_075540.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:53</td>
+                        <td>582</td>
+                        <td class="pnl-pos">$623.21</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_075335.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:51</td>
+                        <td>574</td>
+                        <td class="pnl-pos">$622.19</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_075128.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:49</td>
+                        <td>562</td>
+                        <td class="pnl-pos">$619.73</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_074924.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:47</td>
+                        <td>559</td>
+                        <td class="pnl-pos">$620.47</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_074721.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:45</td>
+                        <td>559</td>
+                        <td class="pnl-pos">$620.47</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_074520.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:43</td>
+                        <td>554</td>
+                        <td class="pnl-pos">$618.20</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_074309.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:41</td>
+                        <td>554</td>
+                        <td class="pnl-pos">$618.20</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_074104.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:38</td>
+                        <td>542</td>
+                        <td class="pnl-pos">$616.00</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_073859.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:36</td>
+                        <td>542</td>
+                        <td class="pnl-pos">$616.00</td>
+                        <td class="minus-val">-$104.40</td>
+                        <td><a href="performance_report_20260304_073658.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:34</td>
+                        <td>542</td>
+                        <td class="pnl-pos">$616.00</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_073457.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:32</td>
+                        <td>542</td>
+                        <td class="pnl-pos">$616.00</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_073256.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:30</td>
+                        <td>542</td>
+                        <td class="pnl-pos">$616.00</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_073055.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:28</td>
+                        <td>539</td>
+                        <td class="pnl-pos">$616.15</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_072848.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:26</td>
+                        <td>538</td>
+                        <td class="pnl-pos">$616.81</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_072646.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:24</td>
+                        <td>529</td>
+                        <td class="pnl-pos">$615.55</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_072443.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:22</td>
+                        <td>527</td>
+                        <td class="pnl-pos">$617.69</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_072237.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:20</td>
+                        <td>521</td>
+                        <td class="pnl-pos">$612.97</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_072033.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:18</td>
+                        <td>511</td>
+                        <td class="pnl-pos">$617.35</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_071827.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:16</td>
+                        <td>511</td>
+                        <td class="pnl-pos">$617.35</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_071626.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:14</td>
+                        <td>504</td>
+                        <td class="pnl-pos">$614.78</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_071417.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:12</td>
+                        <td>504</td>
+                        <td class="pnl-pos">$614.78</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_071205.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:09</td>
+                        <td>504</td>
+                        <td class="pnl-pos">$614.78</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_070956.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:07</td>
+                        <td>502</td>
+                        <td class="pnl-pos">$614.30</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_070735.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:05</td>
+                        <td>501</td>
+                        <td class="pnl-pos">$613.89</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_070526.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:03</td>
+                        <td>491</td>
+                        <td class="pnl-pos">$616.30</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_070319.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 07:01</td>
+                        <td>489</td>
+                        <td class="pnl-pos">$614.85</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_070116.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:59</td>
+                        <td>486</td>
+                        <td class="pnl-pos">$613.83</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_065910.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:56</td>
+                        <td>480</td>
+                        <td class="pnl-pos">$611.15</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_065656.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:54</td>
+                        <td>477</td>
+                        <td class="pnl-pos">$610.04</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_065448.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:42</td>
+                        <td>471</td>
+                        <td class="pnl-pos">$609.92</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_064204.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:39</td>
+                        <td>461</td>
+                        <td class="pnl-pos">$597.54</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_063950.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:37</td>
+                        <td>459</td>
+                        <td class="pnl-pos">$594.72</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_063749.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:35</td>
+                        <td>453</td>
+                        <td class="pnl-pos">$588.79</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_063539.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:32</td>
+                        <td>443</td>
+                        <td class="pnl-pos">$568.21</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_063228.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:30</td>
+                        <td>428</td>
+                        <td class="pnl-pos">$563.74</td>
+                        <td class="minus-val">-$81.39</td>
+                        <td><a href="performance_report_20260304_063022.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:28</td>
+                        <td>428</td>
+                        <td class="pnl-pos">$563.74</td>
+                        <td class="minus-val">-$74.13</td>
+                        <td><a href="performance_report_20260304_062816.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:26</td>
+                        <td>416</td>
+                        <td class="pnl-pos">$554.52</td>
+                        <td class="minus-val">-$42.66</td>
+                        <td><a href="performance_report_20260304_062609.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:24</td>
+                        <td>405</td>
+                        <td class="pnl-pos">$548.77</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_062403.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:21</td>
+                        <td>399</td>
+                        <td class="pnl-pos">$541.27</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_062155.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:19</td>
+                        <td>396</td>
+                        <td class="pnl-pos">$539.54</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_061954.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:17</td>
+                        <td>392</td>
+                        <td class="pnl-pos">$538.13</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_061740.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:15</td>
+                        <td>385</td>
+                        <td class="pnl-pos">$529.47</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_061535.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:13</td>
+                        <td>377</td>
+                        <td class="pnl-pos">$523.30</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_061329.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:11</td>
+                        <td>374</td>
+                        <td class="pnl-pos">$518.62</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_061119.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:09</td>
+                        <td>365</td>
+                        <td class="pnl-pos">$513.06</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_060902.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 06:06</td>
+                        <td>357</td>
+                        <td class="pnl-pos">$503.44</td>
+                        <td class="minus-val">-$22.74</td>
+                        <td><a href="performance_report_20260304_060643.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 05:57</td>
+                        <td>348</td>
+                        <td class="pnl-pos">$472.85</td>
+                        <td class="minus-val">-$70.61</td>
+                        <td><a href="performance_report_20260304_055706.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 05:46</td>
+                        <td>346</td>
+                        <td class="pnl-pos">$475.48</td>
+                        <td class="minus-val">-$70.61</td>
+                        <td><a href="performance_report_20260304_054635.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 05:36</td>
+                        <td>340</td>
+                        <td class="pnl-pos">$463.94</td>
+                        <td class="minus-val">-$70.61</td>
+                        <td><a href="performance_report_20260304_053602.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 05:25</td>
+                        <td>330</td>
+                        <td class="pnl-pos">$439.52</td>
+                        <td class="minus-val">-$70.61</td>
+                        <td><a href="performance_report_20260304_052531.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 05:15</td>
+                        <td>326</td>
+                        <td class="pnl-pos">$407.26</td>
+                        <td class="minus-val">-$70.61</td>
+                        <td><a href="performance_report_20260304_051503.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 05:04</td>
+                        <td>308</td>
+                        <td class="pnl-pos">$381.06</td>
+                        <td class="minus-val">-$70.61</td>
+                        <td><a href="performance_report_20260304_050429.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 04:53</td>
+                        <td>300</td>
+                        <td class="pnl-pos">$374.69</td>
+                        <td class="minus-val">-$6.65</td>
+                        <td><a href="performance_report_20260304_045342.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 13:53</td>
+                        <td>71</td>
+                        <td class="pnl-pos">$78.37</td>
+                        <td class="minus-val">-$525.97</td>
+                        <td><a href="performance_report_20260304_135301.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 05:52</td>
+                        <td>346</td>
+                        <td class="pnl-pos">$475.48</td>
+                        <td class="minus-val">-$525.97</td>
+                        <td><a href="performance_report_20260304_055246.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 04:43</td>
+                        <td>0</td>
+                        <td class="pnl-pos">$0.00</td>
+                        <td class="minus-val">-$525.97</td>
+                        <td><a href="performance_report_20260304_044339.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-04 04:36</td>
+                        <td>293</td>
+                        <td class="pnl-pos">$350.19</td>
+                        <td class="minus-val">-$0.00</td>
+                        <td><a href="performance_report_20260304_043612.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-03-03 23:08</td>
+                        <td>114</td>
+                        <td class="pnl-pos">$152.59</td>
+                        <td class="minus-val">-$0.00</td>
+                        <td><a href="performance_report_20260303_230858.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr><tr>
+                        <td>2026-02-23 19:05</td>
+                        <td>30</td>
+                        <td class="pnl-pos">$79.48</td>
+                        <td class="minus-val">-$0.00</td>
+                        <td><a href="performance_report_20260223_190532.html" class="btn">VIEW FULL REPORT</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="text-align: center; color: #8b949e; margin-top: 40px; font-size: 12px;">
+            SYSTEM STATUS: ONLINE | 2026-03-04 17:42:05
+        </p>
+    </div>
+    <script>
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ["2026-02-23 19:05", "2026-03-03 23:08", "2026-03-04 04:36", "2026-03-04 04:43", "2026-03-04 05:52", "2026-03-04 13:53", "2026-03-04 04:53", "2026-03-04 05:04", "2026-03-04 05:15", "2026-03-04 05:25", "2026-03-04 05:36", "2026-03-04 05:46", "2026-03-04 05:57", "2026-03-04 06:06", "2026-03-04 06:09", "2026-03-04 06:11", "2026-03-04 06:13", "2026-03-04 06:15", "2026-03-04 06:17", "2026-03-04 06:19", "2026-03-04 06:21", "2026-03-04 06:24", "2026-03-04 06:26", "2026-03-04 06:28", "2026-03-04 06:30", "2026-03-04 06:32", "2026-03-04 06:35", "2026-03-04 06:37", "2026-03-04 06:39", "2026-03-04 06:42", "2026-03-04 06:54", "2026-03-04 06:56", "2026-03-04 06:59", "2026-03-04 07:01", "2026-03-04 07:03", "2026-03-04 07:05", "2026-03-04 07:07", "2026-03-04 07:09", "2026-03-04 07:12", "2026-03-04 07:14", "2026-03-04 07:16", "2026-03-04 07:18", "2026-03-04 07:20", "2026-03-04 07:22", "2026-03-04 07:24", "2026-03-04 07:26", "2026-03-04 07:28", "2026-03-04 07:30", "2026-03-04 07:32", "2026-03-04 07:34", "2026-03-04 07:36", "2026-03-04 07:38", "2026-03-04 07:41", "2026-03-04 07:43", "2026-03-04 07:45", "2026-03-04 07:47", "2026-03-04 07:49", "2026-03-04 07:51", "2026-03-04 07:53", "2026-03-04 07:55", "2026-03-04 07:57", "2026-03-04 07:59", "2026-03-04 08:01", "2026-03-04 08:04", "2026-03-04 08:06", "2026-03-04 08:08", "2026-03-04 08:10", "2026-03-04 08:12", "2026-03-04 08:14", "2026-03-04 08:16", "2026-03-04 08:18", "2026-03-04 08:20", "2026-03-04 08:22", "2026-03-04 08:24", "2026-03-04 08:26", "2026-03-04 08:28", "2026-03-04 08:30", "2026-03-04 08:33", "2026-03-04 08:35", "2026-03-04 08:37", "2026-03-04 08:39", "2026-03-04 08:41", "2026-03-04 08:43", "2026-03-04 08:45", "2026-03-04 08:48", "2026-03-04 08:54", "2026-03-04 08:56", "2026-03-04 09:00", "2026-03-04 09:02", "2026-03-04 09:04", "2026-03-04 09:06", "2026-03-04 09:08", "2026-03-04 09:10", "2026-03-04 09:14", "2026-03-04 09:16", "2026-03-04 09:18", "2026-03-04 09:21", "2026-03-04 09:23", "2026-03-04 09:25", "2026-03-04 09:27", "2026-03-04 09:29", "2026-03-04 09:31", "2026-03-04 09:33", "2026-03-04 09:35", "2026-03-04 09:37", "2026-03-04 09:39", "2026-03-04 09:41", "2026-03-04 09:43", "2026-03-04 09:45", "2026-03-04 09:47", "2026-03-04 09:49", "2026-03-04 09:51", "2026-03-04 09:54", "2026-03-04 09:56", "2026-03-04 10:00", "2026-03-04 10:03", "2026-03-04 10:05", "2026-03-04 10:07", "2026-03-04 10:09", "2026-03-04 10:11", "2026-03-04 10:13", "2026-03-04 10:16", "2026-03-04 10:20", "2026-03-04 10:22", "2026-03-04 10:24", "2026-03-04 10:26", "2026-03-04 10:37", "2026-03-04 10:39", "2026-03-04 10:41", "2026-03-04 10:48", "2026-03-04 10:50", "2026-03-04 10:52", "2026-03-04 10:54", "2026-03-04 10:56", "2026-03-04 10:58", "2026-03-04 11:01", "2026-03-04 11:03", "2026-03-04 11:05", "2026-03-04 11:07", "2026-03-04 11:09", "2026-03-04 11:11", "2026-03-04 11:14", "2026-03-04 11:33", "2026-03-04 11:39", "2026-03-04 11:47", "2026-03-04 11:49", "2026-03-04 11:51", "2026-03-04 11:53", "2026-03-04 11:55", "2026-03-04 11:57", "2026-03-04 11:59", "2026-03-04 12:01", "2026-03-04 12:03", "2026-03-04 12:05", "2026-03-04 12:07", "2026-03-04 12:09", "2026-03-04 12:11", "2026-03-04 12:13", "2026-03-04 12:15", "2026-03-04 12:17", "2026-03-04 12:19", "2026-03-04 12:23", "2026-03-04 12:25", "2026-03-04 12:27", "2026-03-04 12:29", "2026-03-04 12:31", "2026-03-04 12:33", "2026-03-04 12:35", "2026-03-04 12:37", "2026-03-04 12:39", "2026-03-04 12:42", "2026-03-04 12:44", "2026-03-04 12:46", "2026-03-04 12:48", "2026-03-04 12:50", "2026-03-04 12:52", "2026-03-04 12:54", "2026-03-04 12:56", "2026-03-04 12:58", "2026-03-04 13:00", "2026-03-04 13:02", "2026-03-04 13:04", "2026-03-04 13:06", "2026-03-04 13:08", "2026-03-04 13:10", "2026-03-04 13:12", "2026-03-04 13:14", "2026-03-04 13:16", "2026-03-04 13:18", "2026-03-04 13:20", "2026-03-04 13:22", "2026-03-04 13:24", "2026-03-04 13:27", "2026-03-04 13:29", "2026-03-04 13:31", "2026-03-04 13:33", "2026-03-04 13:35", "2026-03-04 13:37", "2026-03-04 13:39", "2026-03-04 13:41", "2026-03-04 13:43", "2026-03-04 13:45", "2026-03-04 13:47", "2026-03-04 13:49", "2026-03-04 13:51", "2026-03-04 13:53", "2026-03-04 13:55", "2026-03-04 13:57", "2026-03-04 13:59", "2026-03-04 14:01", "2026-03-04 14:03", "2026-03-04 14:05", "2026-03-04 14:07", "2026-03-04 14:09", "2026-03-04 14:11", "2026-03-04 14:13", "2026-03-04 14:15", "2026-03-04 14:17", "2026-03-04 14:19", "2026-03-04 14:21", "2026-03-04 14:23", "2026-03-04 14:25", "2026-03-04 14:27", "2026-03-04 14:29", "2026-03-04 14:31", "2026-03-04 14:33", "2026-03-04 14:39", "2026-03-04 14:41", "2026-03-04 14:43", "2026-03-04 14:45", "2026-03-04 14:47", "2026-03-04 14:49", "2026-03-04 14:54", "2026-03-04 14:56", "2026-03-04 14:58", "2026-03-04 15:00", "2026-03-04 15:02", "2026-03-04 15:04", "2026-03-04 15:06", "2026-03-04 15:08", "2026-03-04 15:10", "2026-03-04 15:16", "2026-03-04 15:18", "2026-03-04 15:20", "2026-03-04 15:22", "2026-03-04 15:24", "2026-03-04 16:17", "2026-03-04 16:19", "2026-03-04 16:21", "2026-03-04 16:40", "2026-03-04 16:48", "2026-03-04 17:41"],
+                datasets: [
+                    {
+                        label: 'Total Cumulative Profit ($)',
+                        data: [79.48, 232.07, 582.26, 582.26, 1057.74, 1136.1100000000001, 1510.8000000000002, 1891.8600000000001, 2299.12, 2738.64, 3202.58, 3678.06, 4150.91, 4654.35, 5167.410000000001, 5686.030000000001, 6209.330000000001, 6738.800000000001, 7276.930000000001, 7816.470000000001, 8357.740000000002, 8906.510000000002, 9461.030000000002, 10024.770000000004, 10588.510000000006, 11156.720000000007, 11745.510000000007, 12340.230000000009, 12937.77000000001, 13547.69000000001, 14157.73000000001, 14768.880000000012, 15382.710000000014, 15997.560000000014, 16613.860000000015, 17227.750000000015, 17842.050000000014, 18456.830000000016, 19071.61000000002, 19686.39000000002, 20303.740000000023, 20921.090000000026, 21534.060000000027, 22151.75000000003, 22767.30000000003, 23384.11000000003, 24000.26000000003, 24616.26000000003, 25232.26000000003, 25848.26000000003, 26464.26000000003, 27080.26000000003, 27698.460000000032, 28316.660000000033, 28937.130000000034, 29557.600000000035, 30177.330000000034, 30799.520000000037, 31422.73000000004, 32052.16000000004, 32681.59000000004, 33306.06000000004, 33942.750000000044, 34585.250000000044, 35227.750000000044, 35871.000000000044, 36515.860000000044, 37161.540000000045, 37808.42000000004, 38456.010000000046, 39106.440000000046, 39762.39000000005, 40420.97000000005, 41081.17000000006, 41741.55000000006, 42406.55000000006, 43076.750000000065, 43750.40000000007, 44424.05000000007, 45097.70000000007, 45768.44000000007, 46444.180000000066, 47122.15000000007, 47800.08000000007, 48481.430000000066, 49165.91000000007, 49850.52000000007, 50533.91000000007, 51216.74000000007, 51899.81000000007, 52583.25000000007, 53267.21000000007, 53971.02000000007, 54674.83000000007, 55378.640000000065, 56082.45000000006, 56786.26000000006, 57490.07000000006, 58193.880000000056, 58897.69000000005, 59601.50000000005, 60305.31000000005, 61009.120000000046, 61712.930000000044, 62416.74000000004, 63120.55000000004, 63824.36000000004, 64528.170000000035, 65231.98000000003, 65935.79000000004, 66639.60000000003, 67343.41000000003, 68047.22000000003, 68751.03000000003, 68751.87000000002, 68753.85000000002, 68754.61000000002, 68756.95000000001, 68760.33000000002, 68767.59000000001, 68779.70000000001, 68796.69000000002, 68814.46000000002, 68832.23000000003, 68850.00000000003, 68867.77000000003, 68861.01000000004, 68853.52000000003, 68846.88000000003, 68851.43000000004, 68857.02000000003, 68862.61000000003, 68870.30000000003, 68877.99000000003, 68889.58000000003, 68900.63000000003, 68911.68000000004, 68922.73000000004, 68933.78000000004, 68944.83000000005, 68938.83000000005, 68932.97000000004, 68933.93000000005, 68934.65000000005, 68935.18000000005, 68936.61000000004, 68940.14000000004, 68951.73000000004, 68963.32000000004, 68975.71000000004, 68988.10000000003, 69000.49000000003, 69012.88000000003, 69025.27000000003, 69037.66000000003, 69050.05000000003, 69062.44000000003, 69074.83000000003, 69087.22000000003, 69099.61000000003, 69112.00000000003, 69124.39000000003, 69136.78000000003, 69149.17000000003, 69161.56000000003, 69173.95000000003, 69186.34000000003, 69198.73000000003, 69211.12000000002, 69223.51000000002, 69235.90000000002, 69248.29000000002, 69260.68000000002, 69273.07000000002, 69285.46000000002, 69297.85000000002, 69310.24000000002, 69322.63000000002, 69335.02000000002, 69347.41000000002, 69359.80000000002, 69400.95000000001, 69446.27000000002, 69492.57000000002, 69549.83000000002, 69607.09000000001, 69664.35, 69728.87000000001, 69793.39000000001, 69861.82, 69932.57, 70003.32, 70071.53000000001, 70139.74000000002, 70207.95000000003, 70284.02000000003, 70362.39000000003, 70440.76000000002, 70519.13000000002, 70597.50000000001, 70675.87000000001, 70754.24, 70832.61, 70910.98, 70989.34999999999, 71067.71999999999, 71158.51999999999, 71254.09999999999, 71349.68, 71445.26, 71540.84, 71643.37999999999, 71746.68, 71849.98, 71953.28, 72056.58, 72162.88, 72269.18000000001, 72375.48000000001, 72481.78000000001, 72588.08000000002, 72694.38000000002, 72800.68000000002, 72906.98000000003, 73013.28000000003, 73119.58000000003, 73122.06000000003, 73124.54000000002, 73127.02000000002, 73129.50000000001, 73131.98000000001, 73134.46, 73136.19, 73137.92, 73140.45, 73142.98, 73145.51, 73148.04, 73150.56999999999, 73153.09999999999, 73155.62999999999, 73163.21999999999, 73171.46999999999, 73201.00999999998, 73230.54999999997, 73260.08999999997, 73261.00999999997, 73261.92999999996, 73262.84999999996, 73265.57999999996, 73268.83999999995, 73294.50999999995],
+                        borderColor: '#00e676',
+                        backgroundColor: 'rgba(0, 230, 118, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Market Minus at Peak ($)',
+                        data: [0, 0, 0, 525.9700000000001, 525.9700000000001, 525.9700000000001, 6.65, 70.61000000000001, 70.61000000000001, 70.61000000000001, 70.61000000000001, 70.61000000000001, 70.61000000000001, 22.74, 22.74, 22.74, 22.74, 22.74, 22.74, 22.74, 22.74, 22.74, 42.66000000000001, 74.13, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 81.38999999999999, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 104.40000000000002, 0.92, 0.88, 5.220000000000001, 0.0, 4.4399999999999995, 4.4399999999999995, 4.4399999999999995, 6.27, 10.85, 30.42, 35.940000000000005, 57.48, 63.42, 72.0, 78.0, 85.2, 85.2, 85.2, 86.22, 86.22, 88.32, 85.91999999999999, 109.14, 150.78, 150.78, 150.78, 150.78, 150.78, 125.93999999999998, 127.61999999999999, 5.340000000000001, 36.44, 38.64000000000001, 38.64000000000001, 38.64000000000001, 38.64000000000001, 38.64000000000001, 7.18, 16.4, 19.82, 19.86, 21.42, 13.899999999999999, 13.899999999999999, 13.899999999999999, 0.96, 1.12, 10.56, 30.240000000000002, 58.50000000000001, 62.000000000000014, 62.000000000000014, 134.14000000000001, 140.76999999999992, 458.65999999999997, 458.65999999999997, 458.65999999999997, 458.65999999999997, 3.04, 9.12, 0.91, 2.5, 20.1, 20.1, 20.1, 20.1, 20.1, 82.16000000000001, 139.47, 139.47, 199.05000000000007, 199.9500000000001, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 217.2399999999999, 0.66, 0.66, 0.66, 0.66, 0.66, 0.66, 3.26, 16.2, 16.2, 16.2, 16.2, 16.2, 16.2, 16.2, 16.2, 20.43, 20.43, 20.43, 20.43, 20.43, 3.6799999999999997, 3.6799999999999997, 3.6799999999999997, 0.0, 2.02, 10.04],
+                        borderColor: '#ff5252',
+                        backgroundColor: 'rgba(255, 82, 82, 0.1)',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    tooltip: {
+                        backgroundColor: '#161b22',
+                        titleColor: '#00e676',
+                        bodyColor: '#fff',
+                        borderColor: '#30363d',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += '$' + context.parsed.y.toLocaleString();
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: '#30363d' },
+                        ticks: { color: '#00e676' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#ff5252' },
+                        title: { display: true, text: 'Floating Minus Impact ($)', color: '#ff5252' }
+                    },
+                    x: {
+                        grid: { color: '#30363d' },
+                        ticks: { color: '#8b949e' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+    "timestamp": "2026-03-04T10:52:49.498183",
+    "metrics": {
+        "total_trades": 3,
+        "total_pnl": 5.59,
+        "win_rate": 1.0,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.0,
+        "total_loss": 0,
+        "max_floating_minus": -10.56
+    },
+    "trades": [
+        {
+            "ticket": 1052937055,
+            "symbol": "XAUUSDm",
+            "type": "SELL",
+            "volume": 0.01,
+            "price": 5162.812,
+            "profit": 2.25,
+            "magic": 777001,
+            "time": "2026-03-04 10:48:19",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1052937085,
+            "symbol": "XAUUSDm",
+            "type": "SELL",
+            "volume": 0.01,
+            "price": 5162.857,
+            "profit": 2.3,
+            "magic": 777001,
+            "time": "2026-03-04 10:48:19",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1052949201,
+            "symbol": "XAUUSDm",
+            "type": "SELL",
+            "volume": 0.01,
+            "price": 5166.399,
+            "profit": 1.04,
+            "magic": 777001,
+            "time": "2026-03-04 10:50:38",
+            "comment": "CLOSE_GRID"
+        }
+    ]
+}

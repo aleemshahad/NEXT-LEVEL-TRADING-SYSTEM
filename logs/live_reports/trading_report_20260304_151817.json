@@ -1,0 +1,179 @@
+{
+    "timestamp": "2026-03-04T15:18:17.840532",
+    "metrics": {
+        "total_trades": 15,
+        "total_pnl": 8.25,
+        "win_rate": 0.6,
+        "profit_factor": 2.870748299319728,
+        "max_drawdown": 0.011627571204437099,
+        "total_loss": 4.41,
+        "max_floating_minus": -20.43
+    },
+    "trades": [
+        {
+            "ticket": 1054825781,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.02,
+            "profit": -1.07,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:06",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054825813,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.02,
+            "profit": -0.07,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:06",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054825835,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.02,
+            "profit": 0.93,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:06",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054825850,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.131,
+            "profit": -0.18,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:07",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054825895,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.0830000000005,
+            "profit": 0.87,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:07",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054825934,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.0830000000005,
+            "profit": 2.87,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:07",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054825955,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.360000000001,
+            "profit": 0.38,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:07",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054826015,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.263,
+            "profit": 1.48,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:08",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054826107,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5196.3550000000005,
+            "profit": 2.38,
+            "magic": 777002,
+            "time": "2026-03-04 15:15:08",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054851840,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5198.5779999999995,
+            "profit": -2.01,
+            "magic": 777002,
+            "time": "2026-03-04 15:17:49",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054851874,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5198.5779999999995,
+            "profit": -1.01,
+            "magic": 777002,
+            "time": "2026-03-04 15:17:49",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054851886,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5198.5779999999995,
+            "profit": 0.99,
+            "magic": 777002,
+            "time": "2026-03-04 15:17:49",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054851911,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5198.5779999999995,
+            "profit": -0.07,
+            "magic": 777002,
+            "time": "2026-03-04 15:17:49",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054851931,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5198.632,
+            "profit": 0.88,
+            "magic": 777002,
+            "time": "2026-03-04 15:17:50",
+            "comment": "CLOSE_GRID"
+        },
+        {
+            "ticket": 1054851951,
+            "symbol": "XAUUSDm",
+            "type": "BUY",
+            "volume": 0.01,
+            "price": 5198.632,
+            "profit": 1.88,
+            "magic": 777002,
+            "time": "2026-03-04 15:17:50",
+            "comment": "CLOSE_GRID"
+        }
+    ]
+}

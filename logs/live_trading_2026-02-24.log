@@ -1,0 +1,1402 @@
+2026-02-24 00:02:41.758 | INFO     | __main__:_load_memories:75 - 🧠 Loaded 27 training memories. AI is ready.
+2026-02-24 00:02:41.801 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:02:41.845 | INFO     | __main__:_load_state:850 - 📁 Loaded Grid State from logs\grid_state.json
+2026-02-24 00:02:41.870 | INFO     | __main__:initialize:1156 - 🧠 Initializing NEXT LEVEL BRAIN Live Trading System...
+2026-02-24 00:02:42.900 | INFO     | __main__:connect:520 - Connecting to MT5 (Attempt 1/3)...
+2026-02-24 00:02:42.939 | INFO     | __main__:connect:536 - Logging into Exness-MT5Trial15 (Account: 260314034)...
+2026-02-24 00:02:42.955 | INFO     | __main__:connect:550 - Connected to MT5 - Balance: $10267.47
+2026-02-24 00:02:42.963 | INFO     | __main__:initialize:1167 - Account Balance: $10267.47
+2026-02-24 00:02:44.028 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:02:44.055 | INFO     | __main__:initialize:1173 - ✅ System initialized successfully
+2026-02-24 00:02:44.074 | INFO     | __main__:run:1324 - 🚀 Starting live trading...
+2026-02-24 00:02:44.159 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:02:44.180 | INFO     | __main__:update:1035 - 🕸️ Starting NEW BUY Grid for XAUUSDm at 5208.08
+2026-02-24 00:03:32.029 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:03:32.058 | INFO     | __main__:update:1035 - 🕸️ Starting NEW BUY Grid for XAUUSDm at 5209.998
+2026-02-24 00:03:56.079 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:04:27.128 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:04:58.175 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:05:29.222 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:05:29.227 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.38 / Target: $0.50
+2026-02-24 00:06:00.287 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:06:00.294 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.51 / Target: $0.50
+2026-02-24 00:06:31.343 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:06:31.345 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.46 / Target: $1.50
+2026-02-24 00:07:02.394 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:07:02.398 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.34 / Target: $1.50
+2026-02-24 00:07:33.436 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:07:33.439 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.78 / Target: $1.50
+2026-02-24 00:08:04.561 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:08:04.563 | INFO     | __main__:update:886 - 📊 Basket Status: $1.02 / Target: $1.50
+2026-02-24 00:08:35.620 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:08:35.620 | INFO     | __main__:update:886 - 📊 Basket Status: $1.92 / Target: $1.50
+2026-02-24 00:08:35.622 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.92. Closing all active grid trades!
+2026-02-24 00:08:38.412 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:08:38.417 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.92). Closing BUY side...
+2026-02-24 00:08:38.419 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:08:38.424 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:08:45.701 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:09:16.741 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:09:47.858 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:10:18.913 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:10:49.964 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:11:21.012 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:11:52.074 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:12:23.129 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:12:54.179 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:12:54.184 | INFO     | __main__:update:1087 - 📈 Market moved up (5209.88). Shifting BUY grid UP by 1 levels.
+2026-02-24 00:13:25.454 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:13:25.463 | INFO     | __main__:update:1087 - 📈 Market moved up (5210.678). Shifting BUY grid UP by 1 levels.
+2026-02-24 00:13:56.656 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:14:27.696 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:14:27.702 | INFO     | __main__:update:1087 - 📈 Market moved up (5211.711). Shifting BUY grid UP by 1 levels.
+2026-02-24 00:14:58.896 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:15:29.966 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:15:29.982 | INFO     | __main__:update:1087 - 📈 Market moved up (5212.971). Shifting BUY grid UP by 1 levels.
+2026-02-24 00:16:01.192 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:16:32.247 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:17:03.314 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:17:34.367 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:18:05.410 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:18:36.477 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:19:07.524 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:19:38.564 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:20:09.601 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:20:40.647 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:21:11.683 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:21:42.732 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:22:13.783 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:22:44.856 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:22:44.864 | INFO     | __main__:update:886 - 📊 Basket Status: $1.34 / Target: $0.50
+2026-02-24 00:22:44.866 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.34. Closing all active grid trades!
+2026-02-24 00:22:47.793 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:22:47.800 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.34). Closing BUY side...
+2026-02-24 00:22:47.806 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:22:47.806 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:22:54.882 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:23:25.928 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:23:56.987 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:24:28.051 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:24:28.056 | INFO     | __main__:update:886 - 📊 Basket Status: $0.10 / Target: $0.50
+2026-02-24 00:24:59.113 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:24:59.116 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.09 / Target: $0.50
+2026-02-24 00:25:30.168 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:25:30.172 | INFO     | __main__:update:886 - 📊 Basket Status: $0.55 / Target: $0.50
+2026-02-24 00:25:30.178 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $0.55. Closing all active grid trades!
+2026-02-24 00:25:32.936 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:25:32.950 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($0.55). Closing BUY side...
+2026-02-24 00:25:32.951 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:25:32.960 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:25:40.275 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:26:11.313 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:26:11.316 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.19 / Target: $0.50
+2026-02-24 00:26:42.365 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:26:42.373 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.65 / Target: $0.50
+2026-02-24 00:27:13.448 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:27:13.450 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.09 / Target: $0.50
+2026-02-24 00:27:44.498 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:27:44.501 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.76 / Target: $0.50
+2026-02-24 00:28:15.558 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:28:15.561 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.92 / Target: $0.50
+2026-02-24 00:28:46.610 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:28:46.612 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.84 / Target: $1.00
+2026-02-24 00:29:17.894 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:29:17.914 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.16 / Target: $1.00
+2026-02-24 00:29:48.982 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:29:48.993 | INFO     | __main__:update:886 - 📊 Basket Status: $-7.95 / Target: $2.50
+2026-02-24 00:30:20.060 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:30:20.066 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.70 / Target: $2.50
+2026-02-24 00:30:51.107 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:30:51.108 | INFO     | __main__:update:886 - 📊 Basket Status: $2.20 / Target: $2.50
+2026-02-24 00:31:22.177 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:31:22.185 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.65 / Target: $2.50
+2026-02-24 00:31:53.253 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:31:53.269 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.10 / Target: $2.50
+2026-02-24 00:32:24.324 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:32:24.327 | INFO     | __main__:update:886 - 📊 Basket Status: $4.70 / Target: $2.50
+2026-02-24 00:32:24.329 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $4.70. Closing all active grid trades!
+2026-02-24 00:32:27.546 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:32:27.551 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($4.70). Closing BUY side...
+2026-02-24 00:32:27.554 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:32:27.555 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:32:34.936 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:33:05.983 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:33:37.033 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:33:37.037 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.33 / Target: $0.50
+2026-02-24 00:34:08.079 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:34:08.079 | INFO     | __main__:update:886 - 📊 Basket Status: $0.22 / Target: $0.50
+2026-02-24 00:34:39.205 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:34:39.210 | INFO     | __main__:update:886 - 📊 Basket Status: $1.32 / Target: $0.50
+2026-02-24 00:34:39.212 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.32. Closing all active grid trades!
+2026-02-24 00:34:41.874 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:34:41.877 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.32). Closing BUY side...
+2026-02-24 00:34:41.877 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:34:41.882 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:34:49.285 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:35:20.332 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:35:20.336 | INFO     | __main__:update:1087 - 📈 Market moved up (5212.323). Shifting BUY grid UP by 1 levels.
+2026-02-24 00:35:51.538 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:36:22.589 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:36:53.635 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:37:24.677 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:37:24.678 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.63 / Target: $0.50
+2026-02-24 00:37:55.743 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:37:55.750 | INFO     | __main__:update:886 - 📊 Basket Status: $0.33 / Target: $0.50
+2026-02-24 00:38:26.789 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:38:26.793 | INFO     | __main__:update:886 - 📊 Basket Status: $1.65 / Target: $0.50
+2026-02-24 00:38:26.795 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.65. Closing all active grid trades!
+2026-02-24 00:38:29.567 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:38:29.572 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.65). Closing BUY side...
+2026-02-24 00:38:29.576 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:38:29.577 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:38:36.859 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:39:07.891 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:39:38.921 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:40:09.983 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:40:09.990 | INFO     | __main__:update:1087 - 📈 Market moved up (5215.749). Shifting BUY grid UP by 3 levels.
+2026-02-24 00:40:41.485 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:40:41.489 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.10 / Target: $1.00
+2026-02-24 00:41:12.536 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:41:12.543 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.14 / Target: $1.00
+2026-02-24 00:41:43.581 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:41:43.583 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.05 / Target: $1.50
+2026-02-24 00:42:14.612 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:42:14.614 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.89 / Target: $1.50
+2026-02-24 00:42:45.676 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:42:45.686 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.34 / Target: $1.50
+2026-02-24 00:43:16.741 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:43:16.747 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.55 / Target: $1.50
+2026-02-24 00:43:47.789 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:43:47.791 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.10 / Target: $1.50
+2026-02-24 00:44:18.826 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:44:18.827 | INFO     | __main__:update:886 - 📊 Basket Status: $0.45 / Target: $1.50
+2026-02-24 00:44:49.880 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:44:49.881 | INFO     | __main__:update:886 - 📊 Basket Status: $5.58 / Target: $1.50
+2026-02-24 00:44:49.883 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $5.58. Closing all active grid trades!
+2026-02-24 00:44:53.030 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:44:53.035 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($5.58). Closing BUY side...
+2026-02-24 00:44:53.038 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:44:53.040 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:45:00.506 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:45:31.604 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:46:02.680 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:46:02.687 | INFO     | __main__:update:1087 - 📈 Market moved up (5216.497). Shifting BUY grid UP by 1 levels.
+2026-02-24 00:46:33.904 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:47:04.970 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:47:36.014 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:48:07.066 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:48:38.096 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:49:09.144 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:49:40.184 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:50:11.231 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:50:11.235 | INFO     | __main__:update:1087 - 📈 Market moved up (5217.373). Shifting BUY grid UP by 1 levels.
+2026-02-24 00:50:42.430 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:50:42.437 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.23 / Target: $0.50
+2026-02-24 00:51:13.485 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:51:13.488 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.45 / Target: $0.50
+2026-02-24 00:51:44.547 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:51:44.555 | INFO     | __main__:update:886 - 📊 Basket Status: $0.22 / Target: $0.50
+2026-02-24 00:52:15.614 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:52:15.618 | INFO     | __main__:update:886 - 📊 Basket Status: $0.13 / Target: $0.50
+2026-02-24 00:52:46.662 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:52:46.666 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.94 / Target: $1.00
+2026-02-24 00:53:17.711 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:53:17.713 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.30 / Target: $1.00
+2026-02-24 00:53:48.763 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:53:48.767 | INFO     | __main__:update:886 - 📊 Basket Status: $0.22 / Target: $1.00
+2026-02-24 00:54:19.822 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:54:19.825 | INFO     | __main__:update:886 - 📊 Basket Status: $2.22 / Target: $1.00
+2026-02-24 00:54:19.825 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $2.22. Closing all active grid trades!
+2026-02-24 00:54:22.774 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:54:22.784 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($2.22). Closing BUY side...
+2026-02-24 00:54:22.785 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 00:54:22.797 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 00:54:29.996 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 00:55:01.032 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:55:32.074 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:55:32.080 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.27 / Target: $0.50
+2026-02-24 00:56:03.205 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:56:03.213 | INFO     | __main__:update:886 - 📊 Basket Status: $0.00 / Target: $0.50
+2026-02-24 00:56:34.255 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:56:34.259 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.66 / Target: $0.50
+2026-02-24 00:57:05.310 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:57:05.311 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.58 / Target: $0.50
+2026-02-24 00:57:36.349 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:57:36.351 | INFO     | __main__:update:886 - 📊 Basket Status: $0.03 / Target: $0.50
+2026-02-24 00:58:07.396 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:58:07.404 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.67 / Target: $0.50
+2026-02-24 00:58:38.435 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:58:38.437 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.38 / Target: $0.50
+2026-02-24 00:59:09.482 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:59:09.484 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.57 / Target: $0.50
+2026-02-24 00:59:40.530 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 00:59:40.530 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.32 / Target: $0.50
+2026-02-24 01:00:11.573 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:00:11.583 | INFO     | __main__:update:886 - 📊 Basket Status: $0.06 / Target: $0.50
+2026-02-24 01:00:42.634 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:00:42.636 | INFO     | __main__:update:886 - 📊 Basket Status: $1.06 / Target: $0.50
+2026-02-24 01:00:42.639 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.06. Closing all active grid trades!
+2026-02-24 01:00:45.340 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:00:45.344 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.06). Closing BUY side...
+2026-02-24 01:00:45.352 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:00:45.360 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:00:52.754 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:01:23.814 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:01:54.859 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:01:54.864 | INFO     | __main__:update:1087 - 📈 Market moved up (5218.811). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:02:26.144 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:02:26.145 | INFO     | __main__:update:1087 - 📈 Market moved up (5219.526). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:02:57.416 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:02:57.420 | INFO     | __main__:update:1087 - 📈 Market moved up (5219.979). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:03:28.634 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:03:28.637 | INFO     | __main__:update:1087 - 📈 Market moved up (5222.437). Shifting BUY grid UP by 2 levels.
+2026-02-24 01:03:59.972 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:04:31.033 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:05:02.095 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:05:33.138 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:06:04.187 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:06:35.328 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:07:06.392 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:07:06.394 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.46 / Target: $0.50
+2026-02-24 01:07:37.445 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:07:37.449 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.58 / Target: $0.50
+2026-02-24 01:08:08.515 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:08:08.521 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.12 / Target: $1.00
+2026-02-24 01:08:39.581 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:08:39.583 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.20 / Target: $1.00
+2026-02-24 01:09:10.624 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:09:10.626 | INFO     | __main__:update:886 - 📊 Basket Status: $2.24 / Target: $1.00
+2026-02-24 01:09:10.626 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $2.24. Closing all active grid trades!
+2026-02-24 01:09:13.726 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:09:13.733 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($2.24). Closing BUY side...
+2026-02-24 01:09:13.737 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:09:13.741 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:09:20.763 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:09:51.802 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:09:51.805 | INFO     | __main__:update:1087 - 📈 Market moved up (5222.643). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:10:23.018 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:10:54.082 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:11:25.112 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:11:56.179 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:11:56.187 | INFO     | __main__:update:1087 - 📈 Market moved up (5223.774). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:12:27.386 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:12:58.435 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:13:29.486 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:13:29.490 | INFO     | __main__:update:886 - 📊 Basket Status: $0.70 / Target: $1.00
+2026-02-24 01:14:00.532 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:14:00.534 | INFO     | __main__:update:886 - 📊 Basket Status: $1.42 / Target: $1.00
+2026-02-24 01:14:00.535 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.42. Closing all active grid trades!
+2026-02-24 01:14:03.373 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:14:03.378 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.42). Closing BUY side...
+2026-02-24 01:14:03.382 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:14:03.385 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:14:10.487 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:14:41.538 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:15:12.591 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:15:43.644 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:16:14.690 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:16:45.734 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:16:45.740 | INFO     | __main__:update:1087 - 📈 Market moved up (5223.887). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:17:16.983 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:17:16.994 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.58 / Target: $0.50
+2026-02-24 01:17:48.054 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:17:48.057 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.94 / Target: $0.50
+2026-02-24 01:18:19.102 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:18:19.104 | INFO     | __main__:update:886 - 📊 Basket Status: $0.20 / Target: $0.50
+2026-02-24 01:18:50.150 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:18:50.154 | INFO     | __main__:update:886 - 📊 Basket Status: $0.67 / Target: $0.50
+2026-02-24 01:18:50.162 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $0.67. Closing all active grid trades!
+2026-02-24 01:18:52.934 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:18:52.939 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($0.67). Closing BUY side...
+2026-02-24 01:18:52.944 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:18:52.949 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:18:59.979 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:19:31.022 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:20:02.060 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:20:33.108 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:21:04.167 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:21:35.219 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:22:06.267 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:22:37.325 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:23:08.375 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:23:08.380 | INFO     | __main__:update:1087 - 📈 Market moved up (5224.568). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:23:39.573 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:24:10.631 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:24:41.697 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:25:12.755 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:25:43.806 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:26:14.846 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:26:45.901 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:27:16.945 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:27:48.034 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:28:19.088 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:28:50.140 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:29:21.186 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:29:52.238 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:30:23.293 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:30:54.360 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:30:54.369 | INFO     | __main__:update:1087 - 📈 Market moved up (5226.35). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:31:25.559 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:31:56.592 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:31:56.595 | INFO     | __main__:update:1087 - 📈 Market moved up (5227.139). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:32:27.846 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:32:27.852 | INFO     | __main__:update:1087 - 📈 Market moved up (5228.361). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:32:59.106 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:32:59.111 | INFO     | __main__:update:1087 - 📈 Market moved up (5228.736). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:33:30.310 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:34:01.355 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:34:32.399 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:34:32.402 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.15 / Target: $0.50
+2026-02-24 01:35:03.436 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:35:03.437 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.08 / Target: $0.50
+2026-02-24 01:35:34.467 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:35:34.470 | INFO     | __main__:update:886 - 📊 Basket Status: $0.91 / Target: $0.50
+2026-02-24 01:35:34.471 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $0.91. Closing all active grid trades!
+2026-02-24 01:35:53.128 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:35:53.131 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($0.91). Closing BUY side...
+2026-02-24 01:35:53.137 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:35:53.138 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:36:03.453 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:36:34.485 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:37:05.519 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:37:36.578 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:38:07.632 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:38:38.666 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:38:38.672 | INFO     | __main__:update:1087 - 📈 Market moved up (5229.627). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:39:09.948 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:39:40.994 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:40:12.040 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:40:43.081 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:41:14.126 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:41:45.207 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:42:16.349 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:42:47.402 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:42:47.405 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.81 / Target: $0.50
+2026-02-24 01:43:18.456 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:43:18.458 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.12 / Target: $0.50
+2026-02-24 01:43:49.549 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:43:49.556 | INFO     | __main__:update:886 - 📊 Basket Status: $0.13 / Target: $0.50
+2026-02-24 01:44:20.596 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:44:20.602 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.40 / Target: $0.50
+2026-02-24 01:44:51.653 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:44:51.659 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.79 / Target: $0.50
+2026-02-24 01:45:22.696 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:45:22.696 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.48 / Target: $1.00
+2026-02-24 01:45:53.721 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:45:53.721 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.58 / Target: $1.00
+2026-02-24 01:46:24.741 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:46:24.741 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.04 / Target: $1.00
+2026-02-24 01:46:55.773 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:46:55.773 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.70 / Target: $1.50
+2026-02-24 01:47:26.795 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:47:26.795 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.54 / Target: $1.50
+2026-02-24 01:47:57.828 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:47:57.828 | INFO     | __main__:update:886 - 📊 Basket Status: $0.48 / Target: $2.00
+2026-02-24 01:48:28.854 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:48:28.855 | INFO     | __main__:update:886 - 📊 Basket Status: $3.04 / Target: $2.00
+2026-02-24 01:48:28.855 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $3.04. Closing all active grid trades!
+2026-02-24 01:48:32.274 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:48:32.276 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($3.04). Closing BUY side...
+2026-02-24 01:48:32.277 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:48:32.277 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:48:39.223 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:49:10.249 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:49:41.286 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:50:12.321 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:50:12.323 | INFO     | __main__:update:1087 - 📈 Market moved up (5228.951). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:50:43.529 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:51:14.561 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:51:45.595 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:52:16.625 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:52:16.626 | INFO     | __main__:update:1087 - 📈 Market moved up (5229.835). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:52:47.801 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:52:47.801 | INFO     | __main__:update:1087 - 📈 Market moved up (5233.299). Shifting BUY grid UP by 3 levels.
+2026-02-24 01:53:19.222 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:53:19.223 | INFO     | __main__:update:1087 - 📈 Market moved up (5234.296). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:53:50.417 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:53:50.419 | INFO     | __main__:update:1087 - 📈 Market moved up (5234.799). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:54:21.587 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:54:21.587 | INFO     | __main__:update:886 - 📊 Basket Status: $0.86 / Target: $0.50
+2026-02-24 01:54:21.588 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $0.86. Closing all active grid trades!
+2026-02-24 01:54:24.563 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:54:24.565 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($0.86). Closing BUY side...
+2026-02-24 01:54:24.565 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:54:24.565 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:54:31.401 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:55:02.430 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:55:02.430 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.23 / Target: $0.50
+2026-02-24 01:55:33.463 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:55:33.463 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.48 / Target: $1.50
+2026-02-24 01:56:04.495 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:56:04.497 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.96 / Target: $1.50
+2026-02-24 01:56:35.524 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:56:35.526 | INFO     | __main__:update:886 - 📊 Basket Status: $0.75 / Target: $1.50
+2026-02-24 01:57:06.572 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:57:06.574 | INFO     | __main__:update:886 - 📊 Basket Status: $0.63 / Target: $1.50
+2026-02-24 01:57:37.598 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:57:37.598 | INFO     | __main__:update:886 - 📊 Basket Status: $6.54 / Target: $1.50
+2026-02-24 01:57:37.598 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $6.54. Closing all active grid trades!
+2026-02-24 01:57:40.390 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:57:40.391 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($6.54). Closing BUY side...
+2026-02-24 01:57:40.391 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 01:57:40.391 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 01:57:47.278 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 01:58:18.293 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:58:18.293 | INFO     | __main__:update:1087 - 📈 Market moved up (5235.907). Shifting BUY grid UP by 1 levels.
+2026-02-24 01:58:49.491 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:59:20.525 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 01:59:51.552 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:00:22.573 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:00:53.616 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:01:24.654 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:01:55.678 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:02:26.697 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:02:26.698 | INFO     | __main__:update:1087 - 📈 Market moved up (5237.293). Shifting BUY grid UP by 1 levels.
+2026-02-24 02:02:57.872 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:03:28.920 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:03:28.920 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.04 / Target: $0.50
+2026-02-24 02:03:59.967 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:03:59.968 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.22 / Target: $1.00
+2026-02-24 02:04:31.014 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:04:31.014 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.78 / Target: $1.00
+2026-02-24 02:05:02.052 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:05:02.053 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.40 / Target: $1.00
+2026-02-24 02:05:33.095 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:05:33.096 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.88 / Target: $1.00
+2026-02-24 02:06:04.130 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:06:04.132 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.54 / Target: $1.00
+2026-02-24 02:06:35.185 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:06:35.186 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.76 / Target: $1.00
+2026-02-24 02:07:06.202 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:07:06.202 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.12 / Target: $1.00
+2026-02-24 02:07:37.229 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:07:37.230 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.88 / Target: $1.00
+2026-02-24 02:08:08.266 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:08:08.266 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.99 / Target: $1.50
+2026-02-24 02:08:39.297 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:08:39.297 | INFO     | __main__:update:886 - 📊 Basket Status: $1.59 / Target: $1.50
+2026-02-24 02:08:39.298 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.59. Closing all active grid trades!
+2026-02-24 02:08:42.109 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:08:42.110 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.59). Closing BUY side...
+2026-02-24 02:08:42.111 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:08:42.111 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 02:08:49.230 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 02:09:20.254 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:09:51.278 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:10:22.311 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:10:22.312 | INFO     | __main__:update:886 - 📊 Basket Status: $0.39 / Target: $0.50
+2026-02-24 02:10:53.355 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:10:53.356 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.15 / Target: $0.50
+2026-02-24 02:11:24.397 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:11:24.397 | INFO     | __main__:update:886 - 📊 Basket Status: $0.26 / Target: $0.50
+2026-02-24 02:11:55.428 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:11:55.428 | INFO     | __main__:update:886 - 📊 Basket Status: $0.19 / Target: $0.50
+2026-02-24 02:12:26.461 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:12:26.461 | INFO     | __main__:update:886 - 📊 Basket Status: $0.34 / Target: $0.50
+2026-02-24 02:12:57.491 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:12:57.493 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.01 / Target: $0.50
+2026-02-24 02:13:28.520 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:13:28.520 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.33 / Target: $0.50
+2026-02-24 02:13:59.549 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:13:59.549 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.11 / Target: $0.50
+2026-02-24 02:14:30.575 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:14:30.575 | INFO     | __main__:update:886 - 📊 Basket Status: $-9.44 / Target: $2.00
+2026-02-24 02:15:01.619 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:15:01.619 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.85 / Target: $2.50
+2026-02-24 02:15:32.646 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:15:32.647 | INFO     | __main__:update:886 - 📊 Basket Status: $-7.35 / Target: $2.50
+2026-02-24 02:16:03.686 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:16:03.687 | INFO     | __main__:update:886 - 📊 Basket Status: $-13.30 / Target: $2.50
+2026-02-24 02:16:34.721 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:16:34.724 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.05 / Target: $2.50
+2026-02-24 02:17:05.760 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:17:05.761 | INFO     | __main__:update:886 - 📊 Basket Status: $-11.70 / Target: $2.50
+2026-02-24 02:17:36.810 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:17:36.811 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.55 / Target: $2.50
+2026-02-24 02:18:07.843 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:18:07.843 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.45 / Target: $2.50
+2026-02-24 02:18:38.883 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:18:38.884 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.25 / Target: $2.50
+2026-02-24 02:19:09.908 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:19:09.909 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.40 / Target: $2.50
+2026-02-24 02:19:40.941 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:19:40.941 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.20 / Target: $2.50
+2026-02-24 02:20:11.967 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:20:11.968 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.60 / Target: $2.50
+2026-02-24 02:20:42.987 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:20:42.987 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.85 / Target: $2.50
+2026-02-24 02:21:14.019 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:21:14.019 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.00 / Target: $2.50
+2026-02-24 02:21:45.040 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:21:45.040 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.30 / Target: $2.50
+2026-02-24 02:22:16.062 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:22:16.062 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.90 / Target: $2.50
+2026-02-24 02:22:47.086 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:22:47.087 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.50 / Target: $2.50
+2026-02-24 02:23:18.114 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:23:18.115 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.95 / Target: $2.50
+2026-02-24 02:23:49.153 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:23:49.154 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.15 / Target: $2.50
+2026-02-24 02:24:20.173 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:24:20.173 | INFO     | __main__:update:886 - 📊 Basket Status: $-8.00 / Target: $2.50
+2026-02-24 02:24:51.212 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:24:51.213 | INFO     | __main__:update:886 - 📊 Basket Status: $-9.80 / Target: $2.50
+2026-02-24 02:25:22.254 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:25:22.255 | INFO     | __main__:update:886 - 📊 Basket Status: $-9.15 / Target: $2.50
+2026-02-24 02:25:53.297 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:25:53.297 | INFO     | __main__:update:886 - 📊 Basket Status: $-7.65 / Target: $2.50
+2026-02-24 02:26:24.323 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:26:24.323 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.50 / Target: $2.50
+2026-02-24 02:26:55.340 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:26:55.341 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.30 / Target: $2.50
+2026-02-24 02:27:26.362 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:27:26.362 | INFO     | __main__:update:886 - 📊 Basket Status: $-8.90 / Target: $2.50
+2026-02-24 02:27:57.399 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:27:57.399 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.90 / Target: $2.50
+2026-02-24 02:28:28.447 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:28:28.447 | INFO     | __main__:update:886 - 📊 Basket Status: $-12.65 / Target: $2.50
+2026-02-24 02:28:59.485 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:28:59.485 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.55 / Target: $2.50
+2026-02-24 02:29:30.514 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:29:30.515 | INFO     | __main__:update:886 - 📊 Basket Status: $-8.05 / Target: $2.50
+2026-02-24 02:30:01.541 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:30:01.541 | INFO     | __main__:update:886 - 📊 Basket Status: $-21.54 / Target: $3.00
+2026-02-24 02:30:32.568 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:30:32.569 | INFO     | __main__:update:886 - 📊 Basket Status: $-19.11 / Target: $3.50
+2026-02-24 02:31:03.598 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:31:03.598 | INFO     | __main__:update:886 - 📊 Basket Status: $-29.20 / Target: $4.00
+2026-02-24 02:31:34.625 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:31:34.625 | INFO     | __main__:update:886 - 📊 Basket Status: $-19.36 / Target: $4.00
+2026-02-24 02:32:05.659 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:32:05.660 | INFO     | __main__:update:886 - 📊 Basket Status: $-18.80 / Target: $4.00
+2026-02-24 02:32:36.697 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:32:36.697 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.64 / Target: $4.00
+2026-02-24 02:33:07.742 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:33:07.743 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.84 / Target: $4.00
+2026-02-24 02:33:38.791 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:33:38.792 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.88 / Target: $4.00
+2026-02-24 02:34:09.831 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:34:09.833 | INFO     | __main__:update:886 - 📊 Basket Status: $-9.84 / Target: $4.00
+2026-02-24 02:34:40.863 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:34:40.865 | INFO     | __main__:update:886 - 📊 Basket Status: $2.80 / Target: $4.00
+2026-02-24 02:35:11.897 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:35:11.898 | INFO     | __main__:update:886 - 📊 Basket Status: $8.32 / Target: $4.00
+2026-02-24 02:35:11.899 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $8.32. Closing all active grid trades!
+2026-02-24 02:35:15.211 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:35:15.211 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($8.32). Closing BUY side...
+2026-02-24 02:35:15.213 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:35:15.213 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 02:35:22.517 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 02:35:53.545 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:36:24.577 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:36:55.620 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:37:26.651 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:37:57.702 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:38:28.728 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:38:28.728 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.17 / Target: $0.50
+2026-02-24 02:38:59.771 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:38:59.772 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.28 / Target: $0.50
+2026-02-24 02:39:30.811 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:39:30.811 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.90 / Target: $0.50
+2026-02-24 02:40:01.847 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:40:01.847 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.98 / Target: $0.50
+2026-02-24 02:40:32.886 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:40:32.886 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.49 / Target: $0.50
+2026-02-24 02:41:03.923 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:41:03.923 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.39 / Target: $0.50
+2026-02-24 02:41:34.956 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:41:34.956 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.50 / Target: $0.50
+2026-02-24 02:42:06.004 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:42:06.005 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.61 / Target: $0.50
+2026-02-24 02:42:37.046 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:42:37.047 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.03 / Target: $0.50
+2026-02-24 02:43:08.076 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:43:08.076 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.14 / Target: $1.00
+2026-02-24 02:43:39.116 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:43:39.116 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.84 / Target: $1.00
+2026-02-24 02:44:10.146 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:44:10.147 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.68 / Target: $1.00
+2026-02-24 02:44:41.183 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:44:41.184 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.00 / Target: $1.50
+2026-02-24 02:45:12.213 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:45:12.213 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.16 / Target: $1.50
+2026-02-24 02:45:43.252 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:45:43.253 | INFO     | __main__:update:886 - 📊 Basket Status: $-6.40 / Target: $2.00
+2026-02-24 02:46:14.286 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:46:14.286 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.84 / Target: $2.00
+2026-02-24 02:46:45.326 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:46:45.327 | INFO     | __main__:update:886 - 📊 Basket Status: $-6.20 / Target: $2.00
+2026-02-24 02:47:16.348 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:47:16.349 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.12 / Target: $2.00
+2026-02-24 02:47:47.370 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:47:47.370 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.28 / Target: $2.00
+2026-02-24 02:48:18.396 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:48:18.397 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.44 / Target: $2.00
+2026-02-24 02:48:49.421 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:48:49.421 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.12 / Target: $2.00
+2026-02-24 02:49:20.463 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:49:20.463 | INFO     | __main__:update:886 - 📊 Basket Status: $3.40 / Target: $2.00
+2026-02-24 02:49:20.465 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $3.40. Closing all active grid trades!
+2026-02-24 02:49:23.499 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:49:23.500 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($3.40). Closing BUY side...
+2026-02-24 02:49:23.500 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:49:23.500 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 02:49:30.941 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 02:50:01.967 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:50:32.991 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:50:32.993 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.61 / Target: $0.50
+2026-02-24 02:51:04.013 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:51:04.013 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $0.50
+2026-02-24 02:51:35.042 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:51:35.043 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.12 / Target: $0.50
+2026-02-24 02:52:06.073 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:52:06.074 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.84 / Target: $0.50
+2026-02-24 02:52:37.118 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:52:37.119 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.71 / Target: $0.50
+2026-02-24 02:53:08.162 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:53:08.163 | INFO     | __main__:update:886 - 📊 Basket Status: $0.26 / Target: $0.50
+2026-02-24 02:53:39.205 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:53:39.206 | INFO     | __main__:update:886 - 📊 Basket Status: $0.67 / Target: $0.50
+2026-02-24 02:53:39.206 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $0.67. Closing all active grid trades!
+2026-02-24 02:53:41.885 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:53:41.887 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($0.67). Closing BUY side...
+2026-02-24 02:53:41.887 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 02:53:41.888 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 02:53:49.231 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 02:54:20.262 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:54:51.300 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:55:22.346 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:55:53.381 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:56:24.408 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:56:55.436 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:57:26.450 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:57:26.452 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.18 / Target: $1.00
+2026-02-24 02:57:57.490 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:57:57.490 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 02:58:28.529 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:58:28.530 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 02:58:59.558 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:58:59.560 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 02:59:30.590 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 02:59:30.591 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:00:01.616 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:00:01.630 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:00:32.677 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:00:32.683 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:01:03.728 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:01:03.734 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:01:34.757 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:01:34.760 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:02:05.797 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:02:05.802 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:02:36.840 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:02:36.843 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:03:07.878 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:03:07.884 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:03:38.902 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:03:38.905 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:04:09.947 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:04:09.954 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:04:40.985 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:04:40.990 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:05:12.024 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:05:12.028 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:05:43.066 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:05:43.069 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:06:14.093 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:06:14.097 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:06:45.147 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:06:45.151 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:07:16.191 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:07:16.197 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:07:47.230 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:07:47.235 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:08:18.256 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:08:18.259 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:08:49.285 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:08:49.289 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:09:20.323 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:09:20.326 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:09:51.345 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:09:51.351 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:10:22.391 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:10:22.395 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:10:53.426 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:10:53.430 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:11:24.464 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:11:24.471 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:11:55.511 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:11:55.518 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:12:26.559 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:12:26.562 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:12:57.612 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:12:57.622 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:13:28.653 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:13:28.656 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:13:59.677 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:13:59.680 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:14:30.711 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:14:30.717 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:15:01.750 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:15:01.755 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:15:32.793 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:15:32.799 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:16:03.852 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:16:03.859 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:16:34.903 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:16:34.917 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:17:05.954 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:17:05.961 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:17:36.998 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:17:37.000 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:18:08.027 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:18:08.030 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:18:39.069 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:18:39.076 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:19:10.103 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:19:10.106 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:19:41.123 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:19:41.129 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:20:12.153 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:20:12.156 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:20:43.193 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:20:43.198 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:21:14.235 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:21:14.241 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:21:45.276 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:21:45.280 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:22:16.299 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:22:16.305 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:22:47.337 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:22:47.345 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:23:18.386 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:23:18.391 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:23:49.422 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:23:49.425 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:24:20.456 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:24:20.461 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:24:51.506 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:24:51.514 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:25:22.542 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:25:22.547 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:25:53.577 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:25:53.582 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:26:24.593 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:26:24.597 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:26:55.617 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:26:55.620 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:27:26.658 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:27:26.665 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:27:57.702 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:27:57.705 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:28:28.742 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:28:28.747 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:28:59.792 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:28:59.798 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:29:30.835 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:29:30.839 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:30:01.862 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:30:01.865 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:30:32.888 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:30:32.891 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:31:03.934 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:31:03.941 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:31:34.956 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:31:34.959 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:32:05.984 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:32:05.988 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:32:37.018 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:32:37.022 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:33:08.050 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:33:08.055 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:33:39.088 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:33:39.097 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:34:10.135 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:34:10.141 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:34:41.172 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:34:41.177 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:35:12.203 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:35:12.209 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:35:43.240 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:35:43.248 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:36:14.276 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:36:14.282 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:36:45.317 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:36:45.326 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:37:16.362 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:37:16.367 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:37:47.388 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:37:47.395 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:38:18.426 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:38:18.431 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:38:49.462 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:38:49.472 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:39:20.500 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:39:20.504 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:39:51.542 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:39:51.545 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:40:22.589 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:40:22.599 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:40:53.625 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:40:53.628 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:41:24.657 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:41:24.661 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:41:55.699 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:41:55.705 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:42:26.741 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:42:26.746 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:42:57.768 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:42:57.775 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:43:28.807 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:43:28.812 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:43:59.858 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:43:59.873 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:44:30.898 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:44:30.902 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:45:01.926 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:45:01.930 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:45:32.946 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:45:32.950 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:46:03.971 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:46:03.973 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:46:35.016 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:46:35.021 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:47:06.047 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:47:06.051 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:47:37.089 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:47:37.100 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:48:08.147 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:48:08.150 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:48:39.172 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:48:39.175 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:49:10.209 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:49:10.214 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:49:41.249 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:49:41.252 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:50:12.275 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:50:12.281 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:50:43.311 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:50:43.313 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:51:14.337 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:51:14.340 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:51:45.381 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:51:45.384 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:52:16.416 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:52:16.422 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:52:47.452 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:52:47.459 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:53:18.499 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:53:18.502 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:53:49.544 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:53:49.550 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:54:20.566 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:54:20.570 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:54:51.615 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:54:51.620 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:55:22.646 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:55:22.649 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:55:53.666 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:55:53.670 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:56:24.689 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:56:24.691 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:56:55.725 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:56:55.728 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:57:26.765 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:57:26.771 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:57:57.814 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:57:57.820 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:58:28.861 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:58:28.867 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:58:59.905 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:58:59.908 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 03:59:30.944 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 03:59:30.949 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 04:00:01.983 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:00:01.983 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 04:00:33.021 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:00:33.022 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.74 / Target: $1.00
+2026-02-24 04:01:04.059 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:01:04.060 | INFO     | __main__:update:886 - 📊 Basket Status: $7.00 / Target: $1.00
+2026-02-24 04:01:04.061 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $7.00. Closing all active grid trades!
+2026-02-24 04:01:06.726 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:01:06.728 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($7.00). Closing BUY side...
+2026-02-24 04:01:06.728 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:01:06.729 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:01:41.845 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:01:41.845 | INFO     | __main__:update:1035 - 🕸️ Starting NEW BUY Grid for XAUUSDm at 5234.008
+2026-02-24 04:02:21.805 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:02:21.807 | INFO     | __main__:update:1035 - 🕸️ Starting NEW BUY Grid for XAUUSDm at 5239.357
+2026-02-24 04:02:30.264 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:03:01.299 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:03:32.331 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:03:32.332 | INFO     | __main__:update:1087 - 📈 Market moved up (5241.126). Shifting BUY grid UP by 1 levels.
+2026-02-24 04:04:03.496 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:04:03.496 | INFO     | __main__:update:1087 - 📈 Market moved up (5244.073). Shifting BUY grid UP by 3 levels.
+2026-02-24 04:04:35.544 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:04:35.546 | INFO     | __main__:update:1087 - 📈 Market moved up (5246.587). Shifting BUY grid UP by 3 levels.
+2026-02-24 04:05:07.417 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:05:07.418 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.59 / Target: $1.50
+2026-02-24 04:05:38.444 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:05:38.445 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.22 / Target: $1.50
+2026-02-24 04:06:09.476 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:06:09.477 | INFO     | __main__:update:886 - 📊 Basket Status: $-16.90 / Target: $5.00
+2026-02-24 04:06:40.510 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:06:40.511 | INFO     | __main__:update:886 - 📊 Basket Status: $-13.00 / Target: $5.00
+2026-02-24 04:07:11.540 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:07:11.542 | INFO     | __main__:update:886 - 📊 Basket Status: $11.00 / Target: $5.00
+2026-02-24 04:07:11.542 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $11.00. Closing all active grid trades!
+2026-02-24 04:07:15.361 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:07:15.362 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($11.00). Closing BUY side...
+2026-02-24 04:07:15.363 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:07:15.364 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:07:22.414 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:07:53.439 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:08:24.470 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:08:24.471 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.26 / Target: $1.00
+2026-02-24 04:08:55.492 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:08:55.492 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.60 / Target: $1.00
+2026-02-24 04:09:26.525 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:09:26.525 | INFO     | __main__:update:886 - 📊 Basket Status: $0.54 / Target: $1.00
+2026-02-24 04:09:57.542 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:09:57.543 | INFO     | __main__:update:886 - 📊 Basket Status: $1.82 / Target: $1.00
+2026-02-24 04:09:57.543 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.82. Closing all active grid trades!
+2026-02-24 04:10:00.231 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:10:00.232 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.82). Closing BUY side...
+2026-02-24 04:10:00.233 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:10:00.233 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:10:07.582 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:10:38.603 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:11:09.623 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:11:09.623 | INFO     | __main__:update:1087 - 📈 Market moved up (5245.054). Shifting BUY grid UP by 3 levels.
+2026-02-24 04:11:41.061 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:11:41.062 | INFO     | __main__:update:1087 - 📈 Market moved up (5247.187). Shifting BUY grid UP by 2 levels.
+2026-02-24 04:12:12.466 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:12:43.496 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:12:43.496 | INFO     | __main__:update:886 - 📊 Basket Status: $0.03 / Target: $1.50
+2026-02-24 04:13:14.528 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:13:14.528 | INFO     | __main__:update:886 - 📊 Basket Status: $0.69 / Target: $1.50
+2026-02-24 04:13:45.550 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:13:45.551 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.15 / Target: $2.50
+2026-02-24 04:14:16.591 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:14:16.592 | INFO     | __main__:update:886 - 📊 Basket Status: $3.85 / Target: $2.50
+2026-02-24 04:14:16.593 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $3.85. Closing all active grid trades!
+2026-02-24 04:14:19.808 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:14:19.809 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($3.85). Closing BUY side...
+2026-02-24 04:14:19.809 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:14:19.811 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:14:26.678 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:14:57.702 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:14:57.703 | INFO     | __main__:update:886 - 📊 Basket Status: $1.06 / Target: $0.50
+2026-02-24 04:14:57.703 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.06. Closing all active grid trades!
+2026-02-24 04:15:00.292 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:15:00.294 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.06). Closing BUY side...
+2026-02-24 04:15:00.294 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:15:00.295 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:15:33.754 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:15:33.756 | INFO     | __main__:update:1035 - 🕸️ Starting NEW BUY Grid for XAUUSDm at 5248.434
+2026-02-24 04:15:41.216 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:16:12.245 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:16:43.279 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:16:43.281 | INFO     | __main__:update:886 - 📊 Basket Status: $0.85 / Target: $0.50
+2026-02-24 04:16:43.281 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $0.85. Closing all active grid trades!
+2026-02-24 04:16:45.892 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:16:45.894 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($0.85). Closing BUY side...
+2026-02-24 04:16:45.894 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:16:45.895 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:16:53.007 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:17:24.067 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:17:24.068 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.67 / Target: $0.50
+2026-02-24 04:17:55.085 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:17:55.085 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.55 / Target: $0.50
+2026-02-24 04:18:26.113 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:18:26.114 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.04 / Target: $1.00
+2026-02-24 04:18:57.134 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:18:57.135 | INFO     | __main__:update:886 - 📊 Basket Status: $0.92 / Target: $1.00
+2026-02-24 04:19:28.169 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:19:28.170 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.83 / Target: $1.50
+2026-02-24 04:19:59.209 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:19:59.210 | INFO     | __main__:update:886 - 📊 Basket Status: $1.77 / Target: $1.50
+2026-02-24 04:19:59.210 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.77. Closing all active grid trades!
+2026-02-24 04:20:02.218 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:20:02.220 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.77). Closing BUY side...
+2026-02-24 04:20:02.221 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:20:02.221 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:20:12.040 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:20:43.084 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:20:43.085 | INFO     | __main__:update:1087 - 📈 Market moved up (5248.62). Shifting BUY grid UP by 1 levels.
+2026-02-24 04:21:14.273 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:21:14.274 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.64 / Target: $1.00
+2026-02-24 04:21:45.308 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:21:45.308 | INFO     | __main__:update:886 - 📊 Basket Status: $2.64 / Target: $1.00
+2026-02-24 04:21:45.308 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $2.64. Closing all active grid trades!
+2026-02-24 04:21:48.075 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:21:48.077 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($2.64). Closing BUY side...
+2026-02-24 04:21:48.077 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:21:48.078 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:21:55.360 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:22:26.382 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:22:57.423 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:22:57.424 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.86 / Target: $0.50
+2026-02-24 04:23:28.450 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:23:28.451 | INFO     | __main__:update:886 - 📊 Basket Status: $-16.98 / Target: $3.00
+2026-02-24 04:23:59.474 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:23:59.475 | INFO     | __main__:update:886 - 📊 Basket Status: $-16.20 / Target: $3.00
+2026-02-24 04:24:30.517 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:24:30.519 | INFO     | __main__:update:886 - 📊 Basket Status: $-13.50 / Target: $3.00
+2026-02-24 04:25:01.548 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:25:01.549 | INFO     | __main__:update:886 - 📊 Basket Status: $-31.28 / Target: $4.00
+2026-02-24 04:25:32.583 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:25:32.585 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.40 / Target: $4.00
+2026-02-24 04:26:03.628 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:26:03.629 | INFO     | __main__:update:886 - 📊 Basket Status: $-12.32 / Target: $4.00
+2026-02-24 04:26:34.654 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:26:34.654 | INFO     | __main__:update:886 - 📊 Basket Status: $-24.72 / Target: $4.00
+2026-02-24 04:27:05.691 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:27:05.691 | INFO     | __main__:update:886 - 📊 Basket Status: $-47.60 / Target: $5.00
+2026-02-24 04:27:36.730 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:27:36.730 | INFO     | __main__:update:886 - 📊 Basket Status: $-67.08 / Target: $6.00
+2026-02-24 04:28:07.769 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:28:07.769 | INFO     | __main__:update:886 - 📊 Basket Status: $-24.96 / Target: $6.00
+2026-02-24 04:28:38.809 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:28:38.809 | INFO     | __main__:update:886 - 📊 Basket Status: $-41.04 / Target: $6.00
+2026-02-24 04:29:09.846 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:29:09.849 | INFO     | __main__:update:886 - 📊 Basket Status: $-59.80 / Target: $6.50
+2026-02-24 04:29:40.872 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:29:40.872 | INFO     | __main__:update:886 - 📊 Basket Status: $-54.60 / Target: $6.50
+2026-02-24 04:30:11.894 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:30:11.895 | INFO     | __main__:update:886 - 📊 Basket Status: $-46.54 / Target: $6.50
+2026-02-24 04:30:42.922 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:30:42.922 | INFO     | __main__:update:886 - 📊 Basket Status: $-6.63 / Target: $6.50
+2026-02-24 04:31:13.950 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:31:13.951 | INFO     | __main__:update:886 - 📊 Basket Status: $10.66 / Target: $6.50
+2026-02-24 04:31:13.952 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $10.66. Closing all active grid trades!
+2026-02-24 04:31:17.521 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:31:17.522 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($10.66). Closing BUY side...
+2026-02-24 04:31:17.522 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:31:17.523 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:31:24.527 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:31:55.555 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:31:55.556 | INFO     | __main__:update:1087 - 📈 Market moved up (5242.762). Shifting BUY grid UP by 1 levels.
+2026-02-24 04:32:26.747 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:32:26.748 | INFO     | __main__:update:886 - 📊 Basket Status: $0.11 / Target: $0.50
+2026-02-24 04:32:57.791 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:32:57.791 | INFO     | __main__:update:886 - 📊 Basket Status: $1.33 / Target: $0.50
+2026-02-24 04:32:57.791 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.33. Closing all active grid trades!
+2026-02-24 04:33:00.401 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:33:00.402 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.33). Closing BUY side...
+2026-02-24 04:33:00.403 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:33:00.403 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:33:07.474 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:33:38.503 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:33:38.503 | INFO     | __main__:update:886 - 📊 Basket Status: $1.11 / Target: $0.50
+2026-02-24 04:33:38.504 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.11. Closing all active grid trades!
+2026-02-24 04:33:41.081 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:33:41.082 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.11). Closing BUY side...
+2026-02-24 04:33:41.082 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:33:41.083 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:34:14.539 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:34:14.539 | INFO     | __main__:update:1035 - 🕸️ Starting NEW BUY Grid for XAUUSDm at 5244.68
+2026-02-24 04:34:21.413 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:34:52.438 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:34:52.439 | INFO     | __main__:update:1087 - 📈 Market moved up (5246.359). Shifting BUY grid UP by 1 levels.
+2026-02-24 04:35:23.639 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:35:23.639 | INFO     | __main__:update:886 - 📊 Basket Status: $1.04 / Target: $1.00
+2026-02-24 04:35:23.640 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.04. Closing all active grid trades!
+2026-02-24 04:35:26.309 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:35:26.310 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.04). Closing BUY side...
+2026-02-24 04:35:26.310 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:35:26.311 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:35:33.193 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:36:04.234 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:36:04.235 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.99 / Target: $1.50
+2026-02-24 04:36:35.261 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:36:35.261 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.15 / Target: $1.50
+2026-02-24 04:37:06.313 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:37:06.314 | INFO     | __main__:update:886 - 📊 Basket Status: $-14.64 / Target: $3.00
+2026-02-24 04:37:37.340 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:37:37.340 | INFO     | __main__:update:886 - 📊 Basket Status: $0.48 / Target: $3.00
+2026-02-24 04:38:08.373 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:38:08.374 | INFO     | __main__:update:886 - 📊 Basket Status: $3.18 / Target: $3.00
+2026-02-24 04:38:08.374 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $3.18. Closing all active grid trades!
+2026-02-24 04:38:11.464 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:38:11.465 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($3.18). Closing BUY side...
+2026-02-24 04:38:11.466 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:38:11.466 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:38:18.435 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:38:49.467 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:39:20.486 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:39:51.511 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:39:51.512 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.34 / Target: $0.50
+2026-02-24 04:40:22.532 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:40:22.532 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.76 / Target: $0.50
+2026-02-24 04:40:53.579 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:40:53.581 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.91 / Target: $1.50
+2026-02-24 04:41:24.622 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:41:24.622 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.31 / Target: $1.50
+2026-02-24 04:41:55.654 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:41:55.655 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.24 / Target: $1.50
+2026-02-24 04:42:26.694 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:42:26.694 | INFO     | __main__:update:886 - 📊 Basket Status: $2.01 / Target: $1.50
+2026-02-24 04:42:26.695 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $2.01. Closing all active grid trades!
+2026-02-24 04:42:29.469 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:42:29.470 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($2.01). Closing BUY side...
+2026-02-24 04:42:29.471 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:42:29.471 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:42:36.370 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:43:07.405 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:43:38.435 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:43:38.437 | INFO     | __main__:update:1087 - 📈 Market moved up (5241.659). Shifting BUY grid UP by 1 levels.
+2026-02-24 04:44:09.627 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:44:40.653 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:45:11.673 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:45:42.692 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:45:42.692 | INFO     | __main__:update:886 - 📊 Basket Status: $0.09 / Target: $0.50
+2026-02-24 04:46:13.709 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:46:13.709 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.79 / Target: $0.50
+2026-02-24 04:46:44.741 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:46:44.741 | INFO     | __main__:update:886 - 📊 Basket Status: $0.21 / Target: $0.50
+2026-02-24 04:47:15.771 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:47:15.771 | INFO     | __main__:update:886 - 📊 Basket Status: $0.41 / Target: $0.50
+2026-02-24 04:47:46.806 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:47:46.806 | INFO     | __main__:update:886 - 📊 Basket Status: $1.09 / Target: $0.50
+2026-02-24 04:47:46.806 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.09. Closing all active grid trades!
+2026-02-24 04:47:50.209 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:47:50.211 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.09). Closing BUY side...
+2026-02-24 04:47:50.211 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:47:50.212 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:47:57.488 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:48:28.526 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:48:59.559 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:49:30.610 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:50:01.646 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:50:32.687 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:51:03.731 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:51:03.732 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.74 / Target: $1.00
+2026-02-24 04:51:34.776 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:51:34.776 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.94 / Target: $1.00
+2026-02-24 04:52:05.801 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:52:05.801 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.27 / Target: $1.50
+2026-02-24 04:52:36.824 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:52:36.824 | INFO     | __main__:update:886 - 📊 Basket Status: $-6.20 / Target: $2.50
+2026-02-24 04:53:07.860 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:53:07.861 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.65 / Target: $2.50
+2026-02-24 04:53:38.887 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:53:38.887 | INFO     | __main__:update:886 - 📊 Basket Status: $-9.35 / Target: $2.50
+2026-02-24 04:54:09.916 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:54:09.916 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.05 / Target: $2.50
+2026-02-24 04:54:40.944 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:54:40.945 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.75 / Target: $2.50
+2026-02-24 04:55:11.981 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:55:11.981 | INFO     | __main__:update:886 - 📊 Basket Status: $-16.80 / Target: $3.00
+2026-02-24 04:55:43.014 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:55:43.014 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.48 / Target: $3.00
+2026-02-24 04:56:14.043 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:56:14.044 | INFO     | __main__:update:886 - 📊 Basket Status: $6.18 / Target: $3.00
+2026-02-24 04:56:14.044 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $6.18. Closing all active grid trades!
+2026-02-24 04:56:18.523 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:56:18.523 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($6.18). Closing BUY side...
+2026-02-24 04:56:18.524 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:56:18.524 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:56:39.774 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 04:57:10.795 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:57:41.829 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:57:41.831 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.27 / Target: $0.50
+2026-02-24 04:58:12.851 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:58:12.851 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.17 / Target: $0.50
+2026-02-24 04:58:43.887 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:58:43.888 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.96 / Target: $0.50
+2026-02-24 04:59:14.915 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 04:59:14.915 | INFO     | __main__:update:886 - 📊 Basket Status: $1.68 / Target: $1.50
+2026-02-24 04:59:14.916 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.68. Closing all active grid trades!
+2026-02-24 04:59:25.040 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:59:25.042 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.68). Closing BUY side...
+2026-02-24 04:59:25.042 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 04:59:25.043 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 04:59:36.978 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:00:08.066 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:00:08.066 | INFO     | __main__:update:886 - 📊 Basket Status: $-2.28 / Target: $2.00
+2026-02-24 05:00:39.087 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:00:39.087 | INFO     | __main__:update:886 - 📊 Basket Status: $-8.75 / Target: $3.50
+2026-02-24 05:01:10.109 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:01:10.110 | INFO     | __main__:update:886 - 📊 Basket Status: $-11.62 / Target: $3.50
+2026-02-24 05:01:41.143 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:01:41.143 | INFO     | __main__:update:886 - 📊 Basket Status: $-98.98 / Target: $7.00
+2026-02-24 05:02:12.169 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:02:12.170 | INFO     | __main__:update:886 - 📊 Basket Status: $-126.16 / Target: $9.50
+2026-02-24 05:02:43.197 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:02:43.197 | INFO     | __main__:update:886 - 📊 Basket Status: $-132.81 / Target: $9.50
+2026-02-24 05:03:14.232 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:03:14.233 | INFO     | __main__:update:886 - 📊 Basket Status: $-105.45 / Target: $9.50
+2026-02-24 05:03:45.263 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:03:45.264 | INFO     | __main__:update:886 - 📊 Basket Status: $-129.96 / Target: $9.50
+2026-02-24 05:04:16.292 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:04:16.293 | INFO     | __main__:update:886 - 📊 Basket Status: $-92.53 / Target: $9.50
+2026-02-24 05:04:47.318 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:04:47.319 | INFO     | __main__:update:886 - 📊 Basket Status: $56.05 / Target: $9.50
+2026-02-24 05:04:47.320 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $56.05. Closing all active grid trades!
+2026-02-24 05:04:53.799 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:04:53.801 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($56.05). Closing BUY side...
+2026-02-24 05:04:53.801 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:04:53.801 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:05:00.784 | INFO     | __main__:update:1056 - ✅ 49 BUY orders added. Total placed in sequence: 49/300
+2026-02-24 05:05:31.819 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:05:31.820 | INFO     | __main__:update:886 - 📊 Basket Status: $-6.33 / Target: $1.50
+2026-02-24 05:06:02.850 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:06:02.850 | INFO     | __main__:update:886 - 📊 Basket Status: $-1.05 / Target: $2.50
+2026-02-24 05:06:33.871 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:06:33.872 | INFO     | __main__:update:886 - 📊 Basket Status: $8.35 / Target: $2.50
+2026-02-24 05:06:33.872 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $8.35. Closing all active grid trades!
+2026-02-24 05:06:36.906 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:06:36.908 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($8.35). Closing BUY side...
+2026-02-24 05:06:36.908 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:06:36.909 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:06:43.978 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:07:15.013 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:07:15.015 | INFO     | __main__:update:886 - 📊 Basket Status: $4.09 / Target: $0.50
+2026-02-24 05:07:15.016 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $4.09. Closing all active grid trades!
+2026-02-24 05:07:17.720 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:07:17.722 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($4.09). Closing BUY side...
+2026-02-24 05:07:17.722 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:07:17.723 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:07:51.178 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:07:51.179 | INFO     | __main__:update:1035 - 🕸️ Starting NEW BUY Grid for XAUUSDm at 5232.983
+2026-02-24 05:07:58.459 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:08:29.503 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:08:29.504 | INFO     | __main__:update:886 - 📊 Basket Status: $0.70 / Target: $1.00
+2026-02-24 05:09:00.541 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:09:00.541 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.04 / Target: $2.00
+2026-02-24 05:09:31.569 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:09:31.574 | INFO     | __main__:update:886 - 📊 Basket Status: $-20.86 / Target: $3.50
+2026-02-24 05:10:02.597 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:10:02.598 | INFO     | __main__:update:886 - 📊 Basket Status: $-8.96 / Target: $3.50
+2026-02-24 05:10:33.619 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:10:33.620 | INFO     | __main__:update:886 - 📊 Basket Status: $-5.74 / Target: $3.50
+2026-02-24 05:11:04.652 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:11:04.653 | INFO     | __main__:update:886 - 📊 Basket Status: $1.19 / Target: $3.50
+2026-02-24 05:11:35.676 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:11:35.677 | INFO     | __main__:update:886 - 📊 Basket Status: $10.71 / Target: $3.50
+2026-02-24 05:11:35.677 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $10.71. Closing all active grid trades!
+2026-02-24 05:11:39.437 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:11:39.437 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($10.71). Closing BUY side...
+2026-02-24 05:11:39.438 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:11:39.439 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:11:46.941 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:12:17.976 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:12:17.977 | INFO     | __main__:update:1087 - 📈 Market moved up (5231.742). Shifting BUY grid UP by 1 levels.
+2026-02-24 05:12:49.179 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:13:20.199 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:13:20.199 | INFO     | __main__:update:886 - 📊 Basket Status: $-7.76 / Target: $2.00
+2026-02-24 05:13:51.238 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:13:51.240 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.44 / Target: $2.00
+2026-02-24 05:14:22.281 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:14:22.282 | INFO     | __main__:update:886 - 📊 Basket Status: $2.64 / Target: $2.00
+2026-02-24 05:14:22.282 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $2.64. Closing all active grid trades!
+2026-02-24 05:14:41.916 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:14:41.917 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($2.64). Closing BUY side...
+2026-02-24 05:14:41.918 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:14:41.919 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:15:38.728 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:16:09.763 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:16:09.764 | INFO     | __main__:update:1087 - 📈 Market moved up (5231.03). Shifting BUY grid UP by 1 levels.
+2026-02-24 05:16:53.095 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:16:53.096 | INFO     | __main__:update:1087 - 📈 Market moved up (5231.38). Shifting BUY grid UP by 1 levels.
+2026-02-24 05:17:24.277 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:17:24.278 | INFO     | __main__:update:1087 - 📈 Market moved up (5233.335). Shifting BUY grid UP by 2 levels.
+2026-02-24 05:17:55.586 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:17:55.587 | INFO     | __main__:update:1087 - 📈 Market moved up (5234.101). Shifting BUY grid UP by 1 levels.
+2026-02-24 05:18:26.734 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:18:57.766 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:19:28.797 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:19:59.818 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:19:59.818 | INFO     | __main__:update:886 - 📊 Basket Status: $-0.68 / Target: $0.50
+2026-02-24 05:20:30.836 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:20:30.837 | INFO     | __main__:update:886 - 📊 Basket Status: $1.50 / Target: $0.50
+2026-02-24 05:20:30.837 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.50. Closing all active grid trades!
+2026-02-24 05:20:33.657 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:20:33.659 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.50). Closing BUY side...
+2026-02-24 05:20:33.659 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:20:33.659 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:20:40.449 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:21:11.478 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:21:42.504 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:21:42.505 | INFO     | __main__:update:1087 - 📈 Market moved up (5237.212). Shifting BUY grid UP by 3 levels.
+2026-02-24 05:22:13.906 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:22:44.950 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:22:44.950 | INFO     | __main__:update:886 - 📊 Basket Status: $-7.40 / Target: $2.50
+2026-02-24 05:23:15.973 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:23:15.973 | INFO     | __main__:update:886 - 📊 Basket Status: $-8.80 / Target: $2.50
+2026-02-24 05:23:47.022 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:23:47.024 | INFO     | __main__:update:886 - 📊 Basket Status: $-4.70 / Target: $2.50
+2026-02-24 05:24:18.056 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:24:18.057 | INFO     | __main__:update:886 - 📊 Basket Status: $-15.26 / Target: $3.50
+2026-02-24 05:24:49.096 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:24:49.096 | INFO     | __main__:update:886 - 📊 Basket Status: $12.18 / Target: $3.50
+2026-02-24 05:24:49.097 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $12.18. Closing all active grid trades!
+2026-02-24 05:24:56.322 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:24:56.324 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($12.18). Closing BUY side...
+2026-02-24 05:24:56.324 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:24:56.324 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:27:19.522 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:27:50.547 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:27:50.547 | INFO     | __main__:update:886 - 📊 Basket Status: $-12.42 / Target: $3.00
+2026-02-24 05:28:21.587 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:28:21.587 | INFO     | __main__:update:886 - 📊 Basket Status: $-22.19 / Target: $3.50
+2026-02-24 05:28:52.618 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:28:52.618 | INFO     | __main__:update:886 - 📊 Basket Status: $-36.54 / Target: $4.50
+2026-02-24 05:29:23.640 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:29:23.641 | INFO     | __main__:update:886 - 📊 Basket Status: $-36.09 / Target: $4.50
+2026-02-24 05:29:54.685 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:29:54.686 | INFO     | __main__:update:886 - 📊 Basket Status: $-35.37 / Target: $4.50
+2026-02-24 05:30:25.714 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:30:25.714 | INFO     | __main__:update:886 - 📊 Basket Status: $-36.00 / Target: $4.50
+2026-02-24 05:30:56.755 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:30:56.756 | INFO     | __main__:update:886 - 📊 Basket Status: $-36.00 / Target: $4.50
+2026-02-24 05:31:27.782 | WARNING  | __main__:run:1332 - 📡 Connection lost! Attempting to reconnect...
+2026-02-24 05:31:28.794 | INFO     | __main__:connect:520 - Connecting to MT5 (Attempt 1/3)...
+2026-02-24 05:32:00.265 | INFO     | __main__:connect:536 - Logging into Exness-MT5Trial15 (Account: 260314034)...
+2026-02-24 05:32:00.266 | INFO     | __main__:connect:550 - Connected to MT5 - Balance: $10433.05
+2026-02-24 05:32:00.266 | INFO     | __main__:run:1335 - ✅ Reconnected successfully!
+2026-02-24 05:32:00.276 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:32:00.277 | INFO     | __main__:update:886 - 📊 Basket Status: $0.27 / Target: $4.50
+2026-02-24 05:32:31.300 | WARNING  | __main__:run:1332 - 📡 Connection lost! Attempting to reconnect...
+2026-02-24 05:32:32.308 | INFO     | __main__:connect:520 - Connecting to MT5 (Attempt 1/3)...
+2026-02-24 05:33:05.517 | INFO     | __main__:connect:536 - Logging into Exness-MT5Trial15 (Account: 260314034)...
+2026-02-24 05:33:05.517 | INFO     | __main__:connect:550 - Connected to MT5 - Balance: $10433.05
+2026-02-24 05:33:05.517 | INFO     | __main__:run:1335 - ✅ Reconnected successfully!
+2026-02-24 05:33:05.540 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:33:05.540 | INFO     | __main__:update:886 - 📊 Basket Status: $1.44 / Target: $4.50
+2026-02-24 05:33:36.572 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:33:36.572 | INFO     | __main__:update:886 - 📊 Basket Status: $-7.83 / Target: $4.50
+2026-02-24 05:34:07.603 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:34:07.604 | INFO     | __main__:update:886 - 📊 Basket Status: $-7.20 / Target: $4.50
+2026-02-24 05:34:38.632 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:34:38.634 | INFO     | __main__:update:886 - 📊 Basket Status: $-10.98 / Target: $4.50
+2026-02-24 05:35:09.661 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:35:09.662 | INFO     | __main__:update:886 - 📊 Basket Status: $-19.17 / Target: $4.50
+2026-02-24 05:35:40.688 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:35:40.689 | INFO     | __main__:update:886 - 📊 Basket Status: $-13.05 / Target: $4.50
+2026-02-24 05:36:11.810 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:36:11.811 | INFO     | __main__:update:886 - 📊 Basket Status: $-20.25 / Target: $4.50
+2026-02-24 05:36:42.837 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:36:42.837 | INFO     | __main__:update:886 - 📊 Basket Status: $14.04 / Target: $4.50
+2026-02-24 05:36:42.837 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $14.04. Closing all active grid trades!
+2026-02-24 05:36:46.224 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:36:46.224 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($14.04). Closing BUY side...
+2026-02-24 05:36:46.226 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:36:46.226 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:36:54.085 | INFO     | __main__:update:1056 - ✅ 50 BUY orders added. Total placed in sequence: 50/300
+2026-02-24 05:37:25.115 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:37:25.116 | INFO     | __main__:update:886 - 📊 Basket Status: $1.13 / Target: $0.50
+2026-02-24 05:37:25.117 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $1.13. Closing all active grid trades!
+2026-02-24 05:37:41.419 | ERROR    | __main__:cancel_all_pendings:646 - Failed to cancel order 1086910849: 10013
+2026-02-24 05:37:41.420 | ERROR    | __main__:cancel_all_pendings:646 - Failed to cancel order 1086910867: 10013
+2026-02-24 05:38:36.528 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:38:36.529 | INFO     | __main__:update:903 - 🎯 BUY Basket Target Hit ($1.13). Closing BUY side...
+2026-02-24 05:38:36.829 | INFO     | __main__:cancel_all_pendings:647 - 🧹 Cleaned all existing pending orders for XAUUSDm
+2026-02-24 05:38:36.830 | INFO     | __main__:update:1038 - 🔄 Staggered Batch: Placing next set of BUY orders for XAUUSDm (Last Index: 0)
+2026-02-24 05:39:04.828 | INFO     | __main__:update:1056 - ✅ 47 BUY orders added. Total placed in sequence: 47/300
+2026-02-24 05:39:35.882 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:39:35.882 | INFO     | __main__:update:886 - 📊 Basket Status: $-3.24 / Target: $1.50
+2026-02-24 05:40:06.946 | INFO     | __main__:_check_sentiment_bias:60 - 📡 Market Intelligence: ALLOW
+2026-02-24 05:40:06.948 | INFO     | __main__:update:886 - 📊 Basket Status: $5.40 / Target: $1.50
+2026-02-24 05:40:06.949 | INFO     | __main__:update:890 - 🚀 PROFITS DETECTED: $5.40. Closing all active grid trades!
