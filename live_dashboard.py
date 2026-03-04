@@ -273,18 +273,33 @@ class LivePortfolioDashboard:
         if not messagebox.askyesno("Confirm Clear", "This will wipe the Equity Curve chart and reset session stats. Active trades will NOT be affected.\n\nContinue?"):
             return
             
-        # 1. Reset metrics
+        # 1. Reset metrics and timestamps
         acc = mt5.account_info()
-        self.start_balance = acc.balance if acc else 0
+        self.start_balance = acc.balance if acc else 0.0
         self.reset_timestamp = int(time.time())
+        self.session_max_drawdown = 0.0 # Clear session drawdown too
         self._save_reset_config()
         
-        # 2. Reset chart
+        # 2. Reset internal data
+        self.trade_history = []
         self.equity_history = [self.start_balance]
         self._save_chart_history()
+        self.metrics = {
+            'total_trades': 0, 'win_rate': 0.0, 'total_pnl': 0.0,
+            'profit_factor': 0.0, 'max_drawdown': 0.0
+        }
         
-        # 3. Clear local trade list
-        self.trade_history = []
+        # 3. IMMEDIATELY update UI to show zero/cleaned state
+        for key in self.metric_labels:
+            default_val = "0.0%" if "rate" in key or "drawdown" in key else ("0" if "trades" in key else "$0.00")
+            self.metric_labels[key].config(text=default_val, foreground="#00e676")
+            
+        self.cards['session_val'].config(text="$0.00", fg="#00e676")
+        self.cards['drawdown_val'].config(text="$0.00", fg="#ff5252")
+        self.cards['start_val'].config(text=f"${self.start_balance:,.2f}")
+        
+        # 4. Clear chart visual
+        self.chart_canvas.delete("all")
         
         messagebox.showinfo("History Cleared", "Dashboard metrics and chart history have been reset successfully.")
 
@@ -1103,6 +1118,17 @@ class LivePortfolioDashboard:
                 self.metric_labels['total_pnl'].config(text=f"${total_pnl:,.2f}", foreground=pnl_color)
                 self.metric_labels['profit_factor'].config(text=f"{profit_factor:.2f}")
                 self.metric_labels['max_drawdown'].config(text=f"{max_dd_pct:.2f}%")
+            else:
+                # RESET labels if history is empty
+                self.metric_labels['total_trades'].config(text="0")
+                self.metric_labels['win_rate'].config(text="0.0%")
+                self.metric_labels['total_pnl'].config(text="$0.00", foreground="#00e676")
+                self.metric_labels['profit_factor'].config(text="0.00")
+                self.metric_labels['max_drawdown'].config(text="0.00%")
+                self.metrics = {
+                    'total_trades': 0, 'win_rate': 0.0, 'total_pnl': 0.0,
+                    'profit_factor': 0.0, 'max_drawdown': 0.0
+                }
                 
                 # Session PNL (Last 24h) removed to avoid overwriting the Session Growth metric 
                 # (Balance - StartBalance) calculated in the main update loop.
