@@ -2,6 +2,10 @@
 ## The Ultimate AI-Powered Trading Ecosystem
 
 ---
+[![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)](https://python.org)
+[![MT5](https://img.shields.io/badge/Platform-MetaTrader%205-orange)](https://metatrader5.com)
+[![Broker](https://img.shields.io/badge/Broker-Exness-green)](https://exness.com)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
 ### 👤 **PREPARED BY**
 **Aleem Shahzad**  
@@ -9,6 +13,10 @@
 *Visionary of Integrated Trading Intelligence*
 
 ---
+## 📌 What Does This Bot Do?
+
+NEXT LEVEL TRADING SYSTEM is a professional automated trading bot that connects to MetaTrader 5 and executes a **dynamic grid strategy** on real market data. It does **not** use any mocked, simulated, or fake data — all prices, fills, and account information come directly from your live MT5 terminal.
+
 
 ## 🚀 **1. WHAT IS SC-RIG-D?**
 
