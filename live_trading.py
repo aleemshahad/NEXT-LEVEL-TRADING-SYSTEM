@@ -20,6 +20,8 @@ import time
 from typing import Dict, List, Optional, Tuple
 import os
 import json
+import aiohttp
+import requests
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -29,6 +31,73 @@ load_dotenv()
 logger.remove()
 logger.add(sys.stdout, format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <cyan>{message}</cyan>", level="INFO")
 logger.add("logs/live_trading_{time:YYYY-MM-DD}.log", rotation="1 day", retention="30 days")
+
+# Dashboard Log Pipe: Mirror all INFO/WARNING/ERROR to a separate text file for the console UI
+logger.add("logs/latest_intelligence_report.txt", format="{time:HH:mm:ss} | {level} | {message}", 
+           level="INFO", rotation="5 MB", mode="w")
+
+class DiscordNotifier:
+    """Discord Webhook Notifier for Real-time Trading Signals & Updates"""
+    def __init__(self, webhook_url: str = None):
+        self.webhook_url = webhook_url or os.getenv("DISCORD_WEBHOOK_URL")
+        self._session = None
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def close(self):
+        if self.webhook_url:
+            await self.send_message("👋 Trading Session Terminated. Bot is going offline.", title="System Shutdown", color=0x888888)
+        if self._session and not self._session.closed:
+            await self._session.close()
+
+    async def send_message(self, content: str, title: str = "Trading Update", color: int = 0x58a6ff):
+        if not self.webhook_url:
+            return
+        
+        try:
+            session = await self._get_session()
+            payload = {
+                "embeds": [{
+                    "title": title,
+                    "description": content,
+                    "color": color,
+                    "timestamp": datetime.utcnow().isoformat()
+                }]
+            }
+            async with session.post(self.webhook_url, json=payload) as resp:
+                if resp.status not in [200, 204]:
+                    txt = await resp.text()
+                    logger.error(f"Discord Webhook Error ({resp.status}): {txt}")
+        except Exception as e:
+            logger.error(f"Discord send failed: {e}")
+
+    async def send_signal(self, symbol: str, action: str, confidence: float, reasoning: str, price: float, tp: float, sl: float):
+        # 🟢 Bullish for BUY, 🔴 Bearish for SELL
+        color = 0x00e676 if action == "BUY" else 0xff5252
+        content = (
+            f"🚀 **Symbol**: `{symbol}`\n"
+            f"🎯 **Action**: `{action}`\n"
+            f"💎 **Confidence**: `{confidence:.2f}`\n"
+            f"💰 **Entry Price**: `{price:.5f}`\n"
+            f"✅ **Take Profit**: `{tp:.5f}`\n"
+            f"🛡️ **Stop Loss**: `{sl:.5f}`\n\n"
+            f"🧠 **Logic**: {reasoning}"
+        )
+        await self.send_message(content, title=f"🚨 New ICT Signal: {action} on {symbol}", color=color)
+
+    async def send_heartbeat(self, account_info, daily_pnl, trades_today, active_positions):
+        content = (
+            f"📈 **Account Balance**: `${account_info.balance:.2f}`\n"
+            f"💵 **Daily P&L**: `{'+' if daily_pnl >= 0 else ''}${daily_pnl:.2f}`\n"
+            f"📊 **Trades Today**: `{trades_today}`\n"
+            f"📋 **Open Positions**: `{active_positions}`\n"
+            f"⚖️ **Equity**: `${account_info.equity:.2f}`\n"
+            f"⚓ **Margin Level**: `{account_info.margin_level:.1f}%`"
+        )
+        await self.send_message(content, title="🕒 Scheduled Hourly Update", color=0x58a6ff)
 
 class TradingBrain:
     """AI Trading Brain with Neural Network"""
@@ -41,6 +110,21 @@ class TradingBrain:
         self.risk_modifier = 1.0
         self._load_memories()
         self._check_sentiment_bias()
+
+    def _get_market_timestamp(self) -> datetime:
+        """Get current market time (Server time) synchronized with MT5."""
+        try:
+            if not mt5.terminal_info():
+                return datetime.utcnow()
+            # Try Gold or other active symbols to get the latest server tick time
+            for sym in ["XAUUSDm", "EURUSDm", "XAUUSDm", "XAUUSD"]:
+                tick = mt5.symbol_info_tick(sym)
+                if tick:
+                    # Broker server time (stored as seconds since epoch, treated as naive UTC-like)
+                    return datetime.utcfromtimestamp(tick.time)
+        except:
+            pass
+        return datetime.utcnow()
 
     def _check_sentiment_bias(self):
         """
@@ -92,17 +176,13 @@ class TradingBrain:
                 logger.info("[FF Calendar] No data available. Defaulting to ALLOW.")
                 return
 
-            # --- STEP 2: TIME SYNC (UTC reference) ---
-            now_local_utc = datetime.utcnow()
-            mt5_tick = mt5.symbol_info_tick("XAUUSDm") if mt5.terminal_info() else None
-            if mt5_tick:
-                mt5_server_utc = datetime.utcfromtimestamp(mt5_tick.time)
-                time_diff_sec = abs((now_local_utc - mt5_server_utc).total_seconds())
-                if time_diff_sec > 60:
-                    logger.warning(f"[TIME] Clock drift! Local UTC: {now_local_utc.strftime('%H:%M:%S')} | MT5 UTC: {mt5_server_utc.strftime('%H:%M:%S')} | Diff: {time_diff_sec:.0f}s")
-                now_utc = mt5_server_utc
-            else:
-                now_utc = now_local_utc
+            # --- STEP 2: CLOCK SYNC (Critical Fix for Drift) ---
+            now_utc = self._get_market_timestamp()
+            local_utc = datetime.utcnow()
+            drift = (local_utc - now_utc).total_seconds()
+            
+            if abs(drift) > 60:
+                logger.warning(f"[TIME] System clock drift detected ({drift:.0f}s). Anchoring analysis to Broker Time: {now_utc.strftime('%H:%M:%S')}")
 
             # --- STEP 3: CHECK EVENTS FROM LOCAL CACHE ---
             block_window_min = 15
@@ -193,136 +273,99 @@ class TradingBrain:
             return True
         return False
 
-    def analyze_market(self, symbol: str, data: pd.DataFrame) -> Dict:
-        """ICT/SMC AI market analysis"""
+    async def analyze_market(self, symbol: str, data: pd.DataFrame) -> Dict:
+        """ICT/SMC AI market analysis matching Notebook Accuracy"""
         try:
             if len(data) < 50:
                 return {'action': 'HOLD', 'bias': 'NEUTRAL', 'confidence': 0.0, 'reasoning': 'Insufficient data'}
             
             # Add technical indicators
             data = self._add_indicators(data)
-            index = len(data) - 1  # Current bar index
+            index = len(data) - 1
+
+            # 1. Core Structure (Notebook logic)
+            mss_r = await self._detect_market_structure(data)
+            bias = mss_r['bias']
+            structure = mss_r['structure']
             
-            # ALWAYS determine market bias for systems like Grid
-            market_bias = self._determine_market_bias(data, index)
+            # 2. Key ICT Concepts (Notebook logic)
+            sweep = self._detect_liquidity_sweep(data, index)
+            fvg = self._detect_fair_value_gap(data, index)
+            ob = self._detect_order_block(data, index, bias)
+            range_info = self._analyze_dealing_range(data, index)
+            ote_level = self._check_ote_levels(data, index, fvg)
+            rr_tracks = self._detect_railroad_tracks(data)
             
-            # Check Silver Bullet Time (Only blocks ICT execution, not bias detection)
-            current_time = datetime.now()
-            is_sb_time = self._is_silver_bullet_time(current_time)
+            # 3. Decision Logic (Notebook weighted score)
+            score = 0
+            signals_present = [f"MSS: {structure}"]
             
-            # Update sentiment from file regularly
+            if sweep['detected']:
+                if (bias == 'BULLISH' and sweep['type'] == 'BELOW_LOW') or (bias == 'BEARISH' and sweep['type'] == 'ABOVE_HIGH'):
+                    score += 1.0
+                    signals_present.append(f"Sweep ({sweep['type']})")
+                else:
+                    score += 0.5
+            
+            if fvg['detected'] and fvg.get('type') == bias:
+                score += 1.0
+                signals_present.append(f"FVG ({fvg['type']})")
+            
+            if ob['detected'] and ob.get('type') == bias:
+                score += 0.5
+                signals_present.append(f"OB ({ob['type']})")
+            
+            if rr_tracks['detected'] and rr_tracks.get('type') == bias:
+                score += 0.5
+                signals_present.append("RR Tracks")
+            
+            # Confluence check
+            confidence = min(1.0, score / 2.5)
+            
+            # Filter by Silver Bullet and Sentiment
+            market_now = self._get_market_timestamp()
+            is_sb_time = self._is_silver_bullet_time(market_now)
             self._check_sentiment_bias()
             
             if self.sentiment_decision == "BLOCK":
-                return {'action': 'HOLD', 'bias': market_bias, 'confidence': 0.0, 'reasoning': 'Intelligence Engine Decision: BLOCK'}
-
-            # ICT Signal filtering
-            if not is_sb_time:
-                 # We still return the bias so Grid can work, but signal is HOLD for ICT
-                 return {'action': 'HOLD', 'bias': market_bias, 'confidence': 0.0, 'reasoning': 'Outside Silver Bullet Windows'}
+                return {'action': 'HOLD', 'bias': bias, 'confidence': 0.0, 'reasoning': 'Sentiment: BLOCK', 'ict_status': {'mss': structure}}
             
-            # Check for liquidity sweeps
-            liquidity_sweep = self._detect_liquidity_sweep(data, index)
+            action = 'HOLD'
+            if score >= 1.5 and bias != 'NEUTRAL':
+                if (bias == 'BULLISH' and range_info['zone'] == 'DISCOUNT') or (bias == 'BEARISH' and range_info['zone'] == 'PREMIUM'):
+                    action = 'BUY' if bias == 'BULLISH' else 'SELL'
             
-            # Check for displacement and FVG
-            fvg = self._detect_fair_value_gap(data, index)
+            # Final Return
+            current = data.iloc[-1]
+            stop_loss = current['close'] * (0.995 if action == 'BUY' else 1.005)
+            if sweep['detected'] and ((action == 'BUY' and sweep['type'] == 'BELOW_LOW') or (action == 'SELL' and sweep['type'] == 'ABOVE_HIGH')):
+                stop_loss = sweep['swept_level'] - (current['close'] * 0.0005) if action == 'BUY' else sweep['swept_level'] + (current['close'] * 0.0005)
             
-            # Check dealing range and discount/premium zones
-            dealing_range = self._analyze_dealing_range(data, index)
+            ict_status = {
+                'mss': structure,
+                'sweep': sweep['type'] if sweep['detected'] else "OFF",
+                'fvg': fvg['type'] if fvg['detected'] else "OFF",
+                'ob': ob['type'] if ob['detected'] else "OFF",
+                'rr': rr_tracks['type'] if rr_tracks['detected'] else "OFF",
+                'range': range_info['zone'],
+                'ote': "VALID" if ote_level['valid'] else "OFF"
+            }
             
-            # Check for order blocks
-            order_block = self._detect_order_block(data, index, market_bias)
-            
-            # Check OTE (Optimal Trade Entry) levels
-            ote_level = self._check_ote_levels(data, index, fvg)
-            
-            current = data.iloc[index]
-            
-            # Calculate confluence score for available signals
-            signals_present = []
-            signal_strengths = []
-            
-            if liquidity_sweep['detected']:
-                signals_present.append(f"Liquidity Sweep ({liquidity_sweep['type']})")
-                signal_strengths.append(liquidity_sweep['strength'])
-            
-            if fvg['detected']:
-                signals_present.append(f"FVG ({fvg['type']})")
-                signal_strengths.append(fvg['strength'])
-            
-            if order_block['detected']:
-                signals_present.append(f"Order Block ({order_block['type']})")
-                signal_strengths.append(order_block['strength'])
-            
-            # BULLISH SETUP - Need at least 2 of 3 main signals
-            if market_bias == 'BULLISH':
-                bullish_conditions = 0
+            return {
+                'action': action,
+                'bias': bias,
+                'confidence': confidence,
+                'reasoning': f"ICT {action}: {', '.join(signals_present)} (Score: {score:.1f})",
+                'entry_price': current['close'],
+                'use_limit': False,
+                'stop_loss': stop_loss,
+                'take_profit': self._find_next_liquidity_pool(data, index, 'UP' if action == 'BUY' else 'DOWN'),
+                'ict_status': ict_status
+            }
                 
-                if liquidity_sweep.get('type') == 'BELOW_LOW':
-                    bullish_conditions += 1
-                if fvg.get('type') == 'BULLISH':
-                    bullish_conditions += 1
-                if order_block.get('type') == 'BULLISH':
-                    bullish_conditions += 1
-                if dealing_range['zone'] == 'DISCOUNT':
-                    bullish_conditions += 0.5
-                if ote_level['valid']:
-                    bullish_conditions += 0.5
-                
-                if bullish_conditions >= 2.0:
-                    confidence = self._calculate_confluence_score(signal_strengths)
-                    
-                    if liquidity_sweep['detected']:
-                        stop_loss = liquidity_sweep['swept_level'] - (current['close'] * 0.001)
-                    else:
-                        stop_loss = current['close'] * 0.98
-                    
-                    return {
-                        'action': 'BUY',
-                        'bias': 'BULLISH',
-                        'confidence': confidence,
-                        'reasoning': f'ICT Bullish: {", ".join(signals_present)} (Score: {bullish_conditions:.1f})',
-                        'entry_price': current['close'],
-                        'stop_loss': stop_loss,
-                        'take_profit': self._find_next_liquidity_pool(data, index, 'UP')
-                    }
-                return {'action': 'HOLD', 'bias': 'BULLISH', 'confidence': 0.0, 'reasoning': 'ICT conditions not aligned'}
-            
-            # BEARISH SETUP - Need at least 2 of 3 main signals
-            elif market_bias == 'BEARISH':
-                bearish_conditions = 0
-                
-                if liquidity_sweep.get('type') == 'ABOVE_HIGH':
-                    bearish_conditions += 1
-                if fvg.get('type') == 'BEARISH':
-                    bearish_conditions += 1
-                if order_block.get('type') == 'BEARISH':
-                    bearish_conditions += 1
-                if dealing_range['zone'] == 'PREMIUM':
-                    bearish_conditions += 0.5
-                if ote_level['valid']:
-                    bearish_conditions += 0.5
-                
-                if bearish_conditions >= 2.0:
-                    confidence = self._calculate_confluence_score(signal_strengths)
-                    
-                    if liquidity_sweep['detected']:
-                        stop_loss = liquidity_sweep['swept_level'] + (current['close'] * 0.001)
-                    else:
-                        stop_loss = current['close'] * 1.02
-                    
-                    return {
-                        'action': 'SELL',
-                        'bias': 'BEARISH',
-                        'confidence': confidence,
-                        'reasoning': f'ICT Bearish: {", ".join(signals_present)} (Score: {bearish_conditions:.1f})',
-                        'entry_price': current['close'],
-                        'stop_loss': stop_loss,
-                        'take_profit': self._find_next_liquidity_pool(data, index, 'DOWN')
-                    }
-                return {'action': 'HOLD', 'bias': 'BEARISH', 'confidence': 0.0, 'reasoning': 'ICT conditions not aligned'}
-            
-            return {'action': 'HOLD', 'bias': 'NEUTRAL', 'confidence': 0.0, 'reasoning': 'ICT conditions not fully aligned'}
+        except Exception as e:
+            logger.error(f"ICT AI analysis error: {e}")
+            return {'action': 'HOLD', 'bias': 'NEUTRAL', 'confidence': 0.0, 'reasoning': 'Analysis failed'}
                 
         except Exception as e:
             logger.error(f"ICT AI analysis error: {e}")
@@ -362,34 +405,83 @@ class TradingBrain:
             logger.error(f"Error adding indicators: {e}")
             return df
     
-    def _determine_market_bias(self, df: pd.DataFrame, index: int) -> str:
-        """Determine market bias using MSS (Market Structure Shift)"""
+    async def _detect_market_structure(self, df: pd.DataFrame, lookback: int = 20) -> Dict:
+        """Concept 1: Market Structure (MSS / BOS / ChoCH) - Notebook Match"""
         try:
-            lookback = 50  # More lookback for M5 timeframe
-            if index < lookback:
-                return 'NEUTRAL'
+            if len(df) < lookback + 2: return {'structure': "NEUTRAL", 'bias': "NEUTRAL"}
             
-            recent_data = df.iloc[index-lookback:index+1]
-            highs = recent_data['high'].rolling(3, center=True).max()  # Smaller window for M5
-            lows = recent_data['low'].rolling(3, center=True).min()
-            current_price = df.iloc[index]['close']
+            index = len(df) - 1
+            recent = df.iloc[max(0, index-lookback): index+1]
             
-            recent_high = highs.max()
-            recent_low = lows.min()
+            # Using 3-bar rolling window for swing points like notebook
+            swing_highs = recent['high'].rolling(3, center=True).max()
+            swing_lows  = recent['low'].rolling(3, center=True).min()
             
-            if current_price > recent_high * 0.9995:  # More sensitive for M5
-                return 'BULLISH'
-            elif current_price < recent_low * 1.0005:  # More sensitive for M5
-                return 'BEARISH'
+            prev_high   = swing_highs.iloc[-2]
+            prev_low    = swing_lows.iloc[-2]
+            curr_high   = df['high'].iloc[-1]
+            curr_low    = df['low'].iloc[-1]
+
+            if curr_high > prev_high and curr_low > prev_low:
+                structure = "BULLISH_BOS"
+                bias = "BULLISH"
+            elif curr_low < prev_low and curr_high < prev_high:
+                structure = "BEARISH_BOS"
+                bias = "BEARISH"
+            elif (curr_low < prev_low and curr_high > prev_high) or (curr_high > prev_high and curr_low < prev_low):
+                structure = "CHOCH"
+                bias = "NEUTRAL" # Character change is transitional
             else:
-                return 'NEUTRAL'
-        except Exception:
-            return 'NEUTRAL'
+                structure = "NEUTRAL"
+                bias = "NEUTRAL"
+
+            return {'structure': structure, 'bias': bias, 'prev_high': prev_high, 'prev_low': prev_low}
+        except Exception as e:
+            logger.error(f"Market structure error: {e}")
+            return {'structure': "NEUTRAL", 'bias': "NEUTRAL"}
+
+    def _detect_railroad_tracks(self, df: pd.DataFrame) -> Dict:
+        """Concept 12: Railroad Tracks (Major Reversal Pattern)"""
+        try:
+            if len(df) < 5: return {'detected': False}
+            
+            bar1 = df.iloc[-2]
+            bar2 = df.iloc[-1]
+            
+            # 1. Opposite Directions
+            dir1 = 1 if bar1['close'] > bar1['open'] else -1
+            dir2 = 1 if bar2['close'] > bar2['open'] else -1
+            
+            if dir1 == dir2: return {'detected': False}
+            
+            # 2. Similar Size (Relaxed to 75% for more frequent detection)
+            size1 = abs(bar1['close'] - bar1['open'])
+            size2 = abs(bar2['close'] - bar2['open'])
+            
+            if size1 == 0 or size2 == 0: return {'detected': False}
+            
+            similarity = min(size1, size2) / max(size1, size2)
+            
+            # 3. Size must be significant (Relaxed to 0.3 ATR)
+            atr = (df['high'] - df['low']).rolling(14).mean().iloc[-1]
+            if size1 < atr * 0.3: return {'detected': False}
+            
+            if similarity > 0.75:
+                track_type = "BULLISH" if dir2 == 1 else "BEARISH"
+                return {
+                    'detected': True,
+                    'type': track_type,
+                    'strength': similarity,
+                    'msg': f"🚂 Railroad Tracks Found! ({track_type})"
+                }
+            
+            return {'detected': False}
+        except: return {'detected': False}
     
     def _detect_liquidity_sweep(self, df: pd.DataFrame, index: int) -> Dict:
         """Detect liquidity sweeps below lows or above highs"""
         try:
-            lookback = 20  # More lookback for M5 timeframe
+            lookback = 40  # Increased lookback for higher probability sweeps
             if index < lookback:
                 return {'detected': False}
             
@@ -408,27 +500,62 @@ class TradingBrain:
             return {'detected': False}
     
     def _detect_fair_value_gap(self, df: pd.DataFrame, index: int) -> Dict:
-        """Detect Fair Value Gaps (FVG)"""
+        """Detect Fair Value Gaps (FVG) and Active Gaps (Notebook Scan Match)"""
         try:
-            if index < 3:
-                return {'detected': False}
+            if index < 3: return {'detected': False}
             
+            # 1. Immediate Gap on Current/Recent Bars
             bar1 = df.iloc[index-2]
             bar2 = df.iloc[index-1]
             bar3 = df.iloc[index]
             
+            # Detect Bullish Gap (BISI)
             if bar1['high'] < bar3['low']:
                 gap_size = bar3['low'] - bar1['high']
-                if gap_size > (bar2['close'] * 0.0005):
-                    return {'detected': True, 'type': 'BULLISH', 'high': bar3['low'], 'low': bar1['high'], 'strength': min(gap_size / (bar2['close'] * 0.002), 1.0)}
+                if gap_size > (bar2['close'] * 0.0003):
+                    return {'detected': True, 'type': 'BULLISH', 'high': bar3['low'], 'low': bar1['high'], 'strength': 0.8}
+            # Detect Bearish Gap (SIBI)
             elif bar1['low'] > bar3['high']:
                 gap_size = bar1['low'] - bar3['high']
-                if gap_size > (bar2['close'] * 0.0005):
-                    return {'detected': True, 'type': 'BEARISH', 'high': bar1['low'], 'low': bar3['high'], 'strength': min(gap_size / (bar2['close'] * 0.002), 1.0)}
+                if gap_size > (bar2['close'] * 0.0003):
+                    return {'detected': True, 'type': 'BEARISH', 'high': bar1['low'], 'low': bar3['high'], 'strength': 0.8}
             
+            # 2. Scanning for Active (Unfilled) Gaps - Higher time preference
+            active_gaps = self._scan_active_fvgs(df)
+            if active_gaps:
+                # Return the nearest active gap if no immediate gap found
+                nearest = active_gaps[0]
+                return {'detected': True, 'active_only': True, **nearest}
+
             return {'detected': False}
         except Exception:
             return {'detected': False}
+
+    def _scan_active_fvgs(self, df: pd.DataFrame, lookback: int = 50) -> List[Dict]:
+        """Scan for historical FVGs that remain unfilled (Magnets)"""
+        unfilled = []
+        try:
+            for i in range(len(df)-lookback, len(df)-2):
+                b1, b2, b3 = df.iloc[i], df.iloc[i+1], df.iloc[i+2]
+                gap = None
+                if b1['high'] < b3['low']: # Bullish
+                    gap = {'type': 'BULLISH', 'high': b3['low'], 'low': b1['high']}
+                elif b1['low'] > b3['high']: # Bearish
+                    gap = {'type': 'BEARISH', 'high': b1['low'], 'low': b3['high']}
+                
+                if gap:
+                    # Check if filled since detected
+                    is_filled = False
+                    for j in range(i+3, len(df)):
+                        price = df.iloc[j]['low'] if gap['type'] == 'BULLISH' else df.iloc[j]['high']
+                        if (gap['type'] == 'BULLISH' and price <= gap['low']) or \
+                           (gap['type'] == 'BEARISH' and price >= gap['high']):
+                            is_filled = True
+                            break
+                    if not is_filled:
+                        unfilled.append(gap)
+            return unfilled[::-1] # Newest first
+        except: return []
     
     def _analyze_dealing_range(self, df: pd.DataFrame, index: int) -> Dict:
         """Analyze if price is in discount or premium zone"""
@@ -462,10 +589,11 @@ class TradingBrain:
                 next_bar = df.iloc[i+1]
                 price_change = abs(next_bar['close'] - bar['close']) / bar['close']
                 
-                if bias == 'BULLISH' and price_change > 0.002 and next_bar['close'] > bar['close']:  # 0.2% for M5
-                    return {'detected': True, 'type': 'BULLISH', 'high': bar['high'], 'low': bar['low'], 'strength': min(price_change * 10, 1.0)}
-                elif bias == 'BEARISH' and price_change > 0.002 and next_bar['close'] < bar['close']:  # 0.2% for M5
-                    return {'detected': True, 'type': 'BEARISH', 'high': bar['high'], 'low': bar['low'], 'strength': min(price_change * 10, 1.0)}
+                # Relaxed price change threshold to 0.1% (0.001) for M5
+                if bias == 'BULLISH' and price_change > 0.001 and next_bar['close'] > bar['close']: 
+                    return {'detected': True, 'type': 'BULLISH', 'high': bar['high'], 'low': bar['low'], 'strength': min(price_change * 15, 1.0)}
+                elif bias == 'BEARISH' and price_change > 0.001 and next_bar['close'] < bar['close']: 
+                    return {'detected': True, 'type': 'BEARISH', 'high': bar['high'], 'low': bar['low'], 'strength': min(price_change * 15, 1.0)}
             
             return {'detected': False}
         except Exception:
@@ -761,41 +889,65 @@ class MT5Broker:
             for p in positions:
                 pos_side = 'BUY' if p.type == mt5.POSITION_TYPE_BUY else 'SELL'
                 if pos_side == side and (magic is None or p.magic == magic):
-                    # Close position
-                    action = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
-                    tick = mt5.symbol_info_tick(symbol)
-                    if tick is None:
-                        continue
-                    price = tick.bid if p.type == mt5.POSITION_TYPE_BUY else tick.ask
-                    
-                    request = {
-                        "action": mt5.TRADE_ACTION_DEAL,
-                        "symbol": symbol,
-                        "volume": p.volume,
-                        "type": action,
-                        "position": p.ticket,
-                        "price": price,
-                        "deviation": 200,
-                        "magic": p.magic,
-                        "comment": "CLOSE_GRID",
-                        "type_time": mt5.ORDER_TIME_GTC,
-                        "type_filling": mt5.ORDER_FILLING_IOC,
-                    }
-                    mt5.order_send(request)
+                    self.close_position(symbol, p.ticket)
         except Exception as e:
             logger.error(f"Error closing side {side}: {e}")
 
+    def close_position(self, symbol: str, ticket: int) -> bool:
+        """Close a specific position by ticket"""
+        try:
+            position = mt5.positions_get(ticket=ticket)
+            if not position:
+                return False
+            
+            p = position[0]
+            action = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
+            tick = mt5.symbol_info_tick(symbol)
+            if tick is None:
+                return False
+            
+            price = tick.bid if p.type == mt5.POSITION_TYPE_BUY else tick.ask
+            
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": p.volume,
+                "type": action,
+                "position": p.ticket,
+                "price": price,
+                "deviation": 200,
+                "magic": p.magic,
+                "comment": "CLOSE_POSITION",
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": mt5.ORDER_FILLING_IOC,
+            }
+            
+            result = mt5.order_send(request)
+            return result.retcode == mt5.TRADE_RETCODE_DONE
+        except Exception as e:
+            logger.error(f"Error closing position {ticket}: {e}")
+            return False
+
+
     def place_order(self, symbol: str, action: str, volume: float, price: float, 
-                   stop_loss: float = None, take_profit: float = None) -> Dict:
-        """Place trading order"""
+                   stop_loss: float = None, take_profit: float = None,
+                   use_limit: bool = False) -> Dict:
+        """Place trading order (Market or Limit)"""
         try:
             # Get symbol info
             symbol_info = mt5.symbol_info(symbol)
             if not symbol_info:
                 return {'success': False, 'error': f'Symbol {symbol} not found'}
             
-            # Prepare order request
-            order_type = mt5.ORDER_TYPE_BUY if action == "BUY" else mt5.ORDER_TYPE_SELL
+            # Determine order and action type
+            if use_limit:
+                trade_action = mt5.TRADE_ACTION_PENDING
+                order_type = mt5.ORDER_TYPE_BUY_LIMIT if action == "BUY" else mt5.ORDER_TYPE_SELL_LIMIT
+                filling_type = mt5.ORDER_FILLING_RETURN # Pendings prefer RETURN
+            else:
+                trade_action = mt5.TRADE_ACTION_DEAL
+                order_type = mt5.ORDER_TYPE_BUY if action == "BUY" else mt5.ORDER_TYPE_SELL
+                filling_type = mt5.ORDER_FILLING_IOC   # Instant orders use IOC
             
             # CRITICAL: Round all prices
             price = self.round_price(symbol, price)
@@ -803,16 +955,16 @@ class MT5Broker:
             if take_profit: take_profit = self.round_price(symbol, take_profit)
 
             request = {
-                "action": mt5.TRADE_ACTION_DEAL,
+                "action": trade_action,
                 "symbol": symbol,
                 "volume": volume,
                 "type": order_type,
                 "price": price,
-                "deviation": 200,
+                "deviation": 20,
                 "magic": 234000,
-                "comment": "NEXT_LEVEL_BRAIN",
+                "comment": "ICT_SMC_TRADE",
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_filling": filling_type,
             }
             
             if stop_loss:
@@ -838,6 +990,25 @@ class MT5Broker:
             logger.error(f"Order placement error: {e}")
             return {'success': False, 'error': str(e)}
     
+    def modify_sl_tp(self, ticket: int, sl: float = 0.0, tp: float = 0.0) -> bool:
+        """Modify SL/TP for an open position"""
+        try:
+            # Prepare modify request
+            request = {
+                "action": mt5.TRADE_ACTION_SLTP,
+                "position": ticket,
+                "sl": sl,
+                "tp": tp
+            }
+            result = mt5.order_send(request)
+            if result.retcode != mt5.TRADE_RETCODE_DONE:
+                logger.error(f"Failed to modify SL/TP for {ticket}: {result.retcode}")
+                return False
+            return True
+        except Exception as e:
+            logger.error(f"Modify error: {e}")
+            return False
+
     def get_positions(self) -> List[Dict]:
         """Get open positions"""
         try:
@@ -853,6 +1024,8 @@ class MT5Broker:
                     'volume': pos.volume,
                     'price_open': pos.price_open,
                     'price_current': pos.price_current,
+                    'sl': pos.sl,
+                    'tp': pos.tp,
                     'profit': pos.profit,
                     'swap': pos.swap,
                     'magic': pos.magic,
@@ -864,6 +1037,9 @@ class MT5Broker:
         except Exception as e:
             logger.error(f"Error getting positions: {e}")
             return []
+
+    def get_symbol_info(self, symbol: str):
+        return mt5.symbol_info(symbol)
 
     def round_price(self, symbol: str, price: float) -> float:
         """Round price to valid symbol digits"""
@@ -897,7 +1073,7 @@ class RiskManager:
                 return 0.01  # Minimum position size
             
             # Calculate position size based on asset type
-            if 'BTC' in symbol or 'ETH' in symbol:
+            if 'XAU' in symbol or 'ETH' in symbol:
                 # For crypto, use smaller position sizes
                 position_size = min(risk_amount / (price_diff * 10), 0.1)
             elif 'XAU' in symbol or 'XAG' in symbol:
@@ -939,17 +1115,20 @@ class GridManager:
         
         self.magic_buy = 777001
         self.magic_sell = 777002
-        self.grid_size = grid_config.get('size', 300)
-        self.spacing = grid_config.get('spacing', 1.0)  # Spacing in $
-        self.lot_size = grid_config.get('lot_size', 0.01)
-        self.profit_threshold_pct = grid_config.get('profit_target_pct', 0.25) # 25% profit target
-        self.profit_target_usd = grid_config.get('profit_target_usd', 0) # Fixed $ profit target
-        self.mode = grid_config.get('mode', 'BOTH') # Added mode: BOTH, BUY_ONLY, SELL_ONLY
-        self.active_grids = {} # symbol -> {'type': 'BUY/SELL', 'base_price': float, 'last_index': int}
-        self.batch_size = 10
-        self.trigger_threshold = 2 # Place next batch if 8 orders are hit (only 2 pendings left)
-        self.total_target = self.grid_size # Default 300
-        self.time_frame_str = "M5" # Default, synced from terminal input
+        self.base_lot = grid_config.get('lot_size', 0.01)
+        self.lot_multiplier = 1.5 # Martingale multiplier (DCA Upgrade)
+        self.spacing_multiplier = grid_config.get('spacing', 0.4) # Optimized for proximity
+        self.max_dca_levels = 10
+        self.max_lot_cap = 5.0
+        self.batch_size = 5
+        self.time_frame_str = "M1" # High-Frequency DCA
+        self.state_file = Path("logs/grid_state.json")
+        self.strategy = "Grid Both" # Initial default
+        self.active_grids = {}
+        self._load_state()
+        
+        self.mode = grid_config.get('mode', 'BOTH')
+        self.trigger_threshold = 2
         
         # Mapping for MT5 Timeframes
         self.TIMEFRAME_MAP = {
@@ -960,7 +1139,6 @@ class GridManager:
         
         # State Persistence
         self.state_file = Path("logs/grid_state.json")
-        self.is_closing = False # Guard to prevent multiple close calls in rapid loops
         self._load_state()
 
     def _save_state(self):
@@ -972,21 +1150,23 @@ class GridManager:
         except Exception as e:
             logger.error(f"Failed to save grid state: {e}")
 
-    def _calculate_grid_offset(self, k: int) -> float:
-        """Calculate cumulative offset for k-th grid level with dynamic spacing"""
-        offset = 0.0
-        for i in range(1, k + 1):
-            if i <= 10:
-                offset += 1.0 # 1st 10: $1 space
-            elif i <= 20:
-                offset += 2.0 # 2nd 10: $2 space
-            elif i <= 30:
-                offset += 3.0 # 3rd 10: $3 space
-            elif i <= 40:
-                offset += 4.0 # 4th 10: $4 space
-            else:
-                offset += 5.0 # 5th to 300th: $5 space
-        return offset
+    def _get_dynamic_multiplier(self, atr: float) -> float:
+        """DYNAMIC LOT MULTIPLIER (The 'Shock Absorber')"""
+        if atr > 3.0: return 1.2  # Survival Mode (High Volatility)
+        if atr < 1.5: return 1.6  # Aggressive Mode (Low Volatility)
+        return 1.4                # Balanced Default
+
+    def _calculate_martingale_lot(self, index: int, atr: float) -> float:
+        """Calculate lot size for DCA level using ATR-driven dynamic multiplier"""
+        multiplier = self._get_dynamic_multiplier(atr)
+        lot = self.base_lot * (multiplier ** (index - 1))
+        return min(round(lot, 2), self.max_lot_cap)
+
+    def _calculate_grid_price(self, base_price: float, index: int, atr: float, direction: str) -> float:
+        """Calculate price for k-th DCA level using ATR-based spacing"""
+        spacing = atr * self.spacing_multiplier
+        offset = spacing * index
+        return base_price - offset if direction == 'BUY' else base_price + offset
 
     async def _detect_market_condition(self, symbol):
         """Detect trend, ranges, and volatility (ATR/ADX) based on selected timeframe (Last 50 candles)"""
@@ -1027,8 +1207,8 @@ class GridManager:
                 adx = df['dx'].rolling(14).mean().iloc[-1]
                 
                 # Safety Thresholds
-                # DANGEROUS if ADX > 35 (Strong Trend) OR ATR is 2x normal (High Volatility)
-                volatility_dangerous = (adx > 35) or (atr > avg_atr_long * 2.0)
+                # DANGEROUS if ADX > 60 (Extremely Strong Trend) OR ATR is 5x normal
+                volatility_dangerous = (adx > 60) or (atr > avg_atr_long * 5.0)
                 
                 trend = 'BULLISH' if close_now > open_start else ('BEARISH' if close_now < open_start else 'NEUTRAL')
                 return {
@@ -1057,408 +1237,194 @@ class GridManager:
             self.active_grids = {}
 
     async def update(self, symbol, current_price, bias, balance):
-        """Update grid logic based on bias and profit"""
+        """Update grid logic: 1-3-5 Spacing + Individual Breakeven management"""
         if not hasattr(self, '_last_vol_warn'): self._last_vol_warn = {}
         if not hasattr(self, '_last_grid_log'): self._last_grid_log = {}
+        
         try:
-            # Option 1: Grid Both Logic
-            if self.mode == "GRID_BOTH":
-                # Check for existing positions first to decide if we can switch
-                positions = self.broker.get_positions()
-                symbol_positions = [p for p in positions if p['symbol'] == symbol]
-                grid_info = self.active_grids.get(symbol, {})
-                
-                # Check for Switch (If no positions are open and market moves $20.0)
-                if grid_info and not symbol_positions:
-                    bp = grid_info.get('base_price', current_price)
-                    # If market moves UP -> Switch to SELL Grid (Catching pullback)
-                    if current_price > bp + 20.0:
-                        logger.info(f"🔄 Grid Both Switch: Market moved UP ${current_price - bp:.2f} ($20 threshold hit). Switching to SELL Grid to catch pullback.")
-                        self.broker.cancel_all_pendings(symbol)
-                        del self.active_grids[symbol]
-                        bias = "BULLISH" # SELL direction
-                    # If market moves DOWN -> Switch to BUY Grid
-                    elif current_price < bp - 20.0:
-                        logger.info(f"🔄 Grid Both Switch: Market moved DOWN ${bp - current_price:.2f} ($20 threshold hit). Switching to BUY Grid to catch bounce.")
-                        self.broker.cancel_all_pendings(symbol)
-                        del self.active_grids[symbol]
-                        bias = "BEARISH" # BUY direction
-                
-                # Decision if no grid active
-                if not self.active_grids.get(symbol):
-                    data = await self._detect_market_condition(symbol)
-                    
-                    pivot = data['pivot']
-                    h20   = data.get('high', 0)
-                    l20   = data.get('low', 0)
-                    adx   = data.get('adx', 0)
-                    atr   = data.get('atr', 0)
-
-                    if pivot > 0:
-                        now_t = time.time()
-                        if now_t - self._last_grid_log.get(symbol, 0) > 30:
-                            # Full indicator log — matches TradingView indicator panel
-                            logger.info(
-                                f"[Indicator] TF:{self.time_frame_str} | "
-                                f"H20:{h20:.2f} | L20:{l20:.2f} | "
-                                f"Pivot:{pivot:.2f} | Price:{current_price:.2f} | "
-                                f"ADX:{adx:.1f} | ATR:{atr:.2f}"
-                            )
-                            self._last_grid_log[symbol] = now_t
-
-                        if current_price > pivot:
-                            bias = 'BULLISH' # SELL direction
-                            logger.info(f"[Grid Both] Price ABOVE Pivot -> SELL Grid selected")
-                        elif current_price < pivot:
-                            bias = 'BEARISH' # BUY direction
-                            logger.info(f"[Grid Both] Price BELOW Pivot -> BUY Grid selected")
-                        else:
-                            bias = 'NEUTRAL'
-                    
-                    # VOLATILITY FILTER Relocated: Moved after trailing profit check
-
-            # 1. Check profit targets for existing positions
+            # 1. Pre-fetch market conditions and positions
+            data = await self._detect_market_condition(symbol)
             positions = self.broker.get_positions()
             symbol_positions = [p for p in positions if p['symbol'] == symbol]
             
-            # Filter Grid positions
+            # 2. Status Logging for Basket PnL
             buy_positions = [p for p in symbol_positions if p['type'] == 'BUY' and p.get('magic') == self.magic_buy]
             sell_positions = [p for p in symbol_positions if p['type'] == 'SELL' and p.get('magic') == self.magic_sell]
+            total_grid_profit = sum(p['profit'] + p.get('swap', 0) for p in buy_positions + sell_positions)
             
-            # Net PnL (including swap)
-            buy_profit = sum(p['profit'] + p.get('swap', 0) for p in buy_positions)
-            sell_profit = sum(p['profit'] + p.get('swap', 0) for p in sell_positions)
-            total_grid_profit = buy_profit + sell_profit
+            now_t = time.time()
+            if now_t - self._last_grid_log.get(f"{symbol}_pnl", 0) > 30:
+                logger.info(f"📊 [Monitor] {symbol} | Price: {current_price:.2f} | Pivot: {data['pivot']:.2f} | ADX: {data['adx']:.1f} | PnL: ${total_grid_profit:.2f}")
+                self._last_grid_log[f"{symbol}_pnl"] = now_t
+
+            # 3. Dynamic Bias Selection for GRID_BOTH
+            pivot = data['pivot']
+            atr = data.get('atr', 1.0)
             
-            # Updated Trailing: No Balance Target, Start as soon as profit is positive ($1+)
-            if symbol not in self.active_grids:
-                self.active_grids[symbol] = {}
-            grid_info = self.active_grids[symbol]
+            # BUG FIX: Always define has_active before use (needed for drawdown guard below)
+            has_active = len(buy_positions + sell_positions) > 0 or (len(mt5.orders_get(symbol=symbol)) if mt5.orders_get(symbol=symbol) else 0) > 0
             
-            # Start tracking peak immediately when in profit
-            if total_grid_profit > 1.0:
-                if 'peak_usd' not in grid_info:
-                    grid_info['peak_usd'] = total_grid_profit
-                    logger.info(f"🛡️ Trailing Activated for {symbol}: Booking Style - 1% Drop from Peak Profit")
-                elif total_grid_profit > grid_info.get('peak_usd', 0):
-                    grid_info['peak_usd'] = total_grid_profit
+            if self.mode == "GRID_BOTH":
+                if not has_active:
+                    if pivot > 0:
+                        # Increased sensitivity: 0.1 ATR instead of 0.3
+                        if current_price > pivot + (atr * 0.1): 
+                            bias = 'BULLISH' # SELL Bias
+                        elif current_price < pivot - (atr * 0.1):
+                            bias = 'BEARISH' # BUY Bias
+                        else:
+                            bias = 'BULLISH' if data['trend'] == 'BULLISH' else 'BEARISH'
+                        
+                        grid_type = 'SELL' if bias == 'BULLISH' else 'BUY'
+                        if self.active_grids.get(symbol, {}).get('type') != grid_type:
+                            logger.info(f"[Grid Both] Mode Logic -> Biasing {grid_type} based on Price relative to Pivot/Trend.")
+                            if symbol not in self.active_grids:
+                                self.active_grids[symbol] = {'ict_status': {}}
 
-            if 'peak_usd' in grid_info:
-                if self.is_closing: return
-                # NEW LOGIC: Tight Trailing that NEVER goes into loss
-                # Distance is 10% of peak, but at least $2.0 for stability
-                trailing_dist = max(grid_info['peak_usd'] * 0.10, 2.0)
-                lock_level_usd = grid_info['peak_usd'] - trailing_dist
-                
-                # FINAL PROTECTION: Lock must NEVER be below $1.0 (Minimum base profit)
-                if lock_level_usd < 1.0:
-                    lock_level_usd = 1.0
-
-                now = time.time()
-                if not hasattr(self, '_last_log_time'): self._last_log_time = 0
-                if now - self._last_log_time > 10:
-                    logger.info(f"📊 Trailing {symbol}: Current ${total_grid_profit:.2f} | Lock: ${lock_level_usd:.2f} (Peak: ${grid_info['peak_usd']:.2f})")
-                    self._last_log_time = now
-
-                # CRITICAL: Only close if we are still in POSITIVE profit
-                # This prevents slippage from turning a trail into a loss-cut
-                if total_grid_profit < lock_level_usd:
-                    if total_grid_profit > 0.50: # Must be at least $0.50 to book
-                        self.is_closing = True # Set guard
-                        logger.info(f"⏹️ Trailing Lock Hit: ${total_grid_profit:.2f} < ${lock_level_usd:.2f}. Closing All Orders.")
-                        self.broker.close_all_side(symbol, 'BUY', self.magic_buy)
-                        self.broker.close_all_side(symbol, 'SELL', self.magic_sell)
-                        self.broker.cancel_all_pendings(symbol)
-                        if symbol in self.active_grids:
-                            del self.active_grids[symbol]
+                            self.active_grids[symbol].update({
+                                'type': grid_type, 
+                                'last_index': 0,
+                                'strategy': self.strategy,
+                                'bias': bias,
+                                'atr': atr
+                            })
+                            self._save_state()
+                    else:
+                        logger.warning(f"⚠️ [Grid] Pivot calculation returned 0 for {symbol}. Check market data.")
+                else:
+                    # If we have active trades, deduce grid type from positions/orders
+                    grid_type = self.active_grids.get(symbol, {}).get('type')
+                    if not grid_type:
+                        if len(buy_positions) > 0: grid_type = 'BUY'
+                        elif len(sell_positions) > 0: grid_type = 'SELL'
+                        elif len(mt5.orders_get(symbol=symbol) or []) > 0:
+                            pendings = mt5.orders_get(symbol=symbol)
+                            if any(o.magic == self.magic_buy for o in pendings): grid_type = 'BUY'
+                            elif any(o.magic == self.magic_sell for o in pendings): grid_type = 'SELL'
+                    
+                    if grid_type:
+                        if symbol not in self.active_grids: 
+                            self.active_grids[symbol] = {'ict_status': {}}
+                            self.active_grids[symbol].update({
+                                'type': grid_type, 
+                                'last_index': 0,
+                                'strategy': self.strategy,
+                                'bias': bias,
+                                'atr': atr
+                            })
+                        else:
+                            # Keep metadata updated for dashboard
+                            self.active_grids[symbol]['strategy'] = self.strategy
+                            self.active_grids[symbol]['bias'] = bias
+                            self.active_grids[symbol]['atr'] = atr
+                        
+                        if grid_type == 'BUY': bias = 'BEARISH'
+                        elif grid_type == 'SELL': bias = 'BULLISH'
                         self._save_state()
-                        self.is_closing = False # Reset guard
-                        return 
-                    else:
-                        # Profit dropped below safety, reset peak and wait for recovery
-                        # This prevents 'Trailing Lock Hit: $-7.51' issues
-                        if total_grid_profit < 0:
-                            logger.warning(f"⚠️ Trail slipped into loss (${total_grid_profit:.2f}). Waiting for recovery.")
-                            if 'peak_usd' in grid_info: del grid_info['peak_usd'] 
-            else:
-                # Basic status log before entering profit
-                now = time.time()
-                if not hasattr(self, '_last_log_time'): self._last_log_time = 0
-                if now - self._last_log_time > 10:
-                    logger.info(f"📊 Basket {symbol} Current PnL: ${total_grid_profit:.2f} (Waiting for profit to start trailing)")
-                    self._last_log_time = now
 
-            # 2. Place Grid
-            # Check Account Limits (Fix for Error 10033)
-            acc_info = mt5.account_info()
-            effective_grid_size = self.grid_size
-            if acc_info and acc_info.limit_orders > 0:
-                # If broker limit is e.g. 100, we must stay below it
-                # We subtract current positions/pendings to be safe
-                active_count = len(positions) + (len(mt5.orders_get()) if mt5.orders_get() else 0)
-                available = max(0, acc_info.limit_orders - active_count - 5)
-                if effective_grid_size > available:
-                    effective_grid_size = available
-                    if available < 5: 
-                        return # Not enough room for a grid
+            # 4. Placement Permissions
+            can_place_sell = (self.mode == 'SELL_ONLY') or (self.mode == 'GRID_BOTH' and bias == 'BULLISH')
+            can_place_buy = (self.mode == 'BUY_ONLY') or (self.mode == 'GRID_BOTH' and bias == 'BEARISH')
 
-            # SELL Grid Placement
-            # Mode SELL_ONLY OR (BOTH with Bullish bias) OR (GRID_BOTH with Bullish bias)
-            can_place_sell = (self.mode == 'SELL_ONLY') or \
-                             (self.mode == 'BOTH' and bias == 'BULLISH') or \
-                             (self.mode == 'GRID_BOTH' and bias == 'BULLISH')
+            # 5. DRAWDOWN PAUSE LOGIC (The 'Breathing Room')
+            equity = mt5.account_info().equity if mt5.account_info() else balance
+            drawdown_pct = (balance - equity) / balance if balance > 0 else 0
             
-            if can_place_sell:
-                # In GRID_BOTH, don't place SELL if a BUY grid already exists for this symbol
-                if self.mode == 'GRID_BOTH' and symbol in self.active_grids and self.active_grids[symbol].get('type') == 'BUY':
-                    can_place_sell = False # Block placement
-                
-            if can_place_sell:
-                active_pendings = mt5.orders_get(symbol=symbol)
-                sell_pendings = [o for o in active_pendings if o.magic == self.magic_sell] if active_pendings else []
-                sell_positions = [p for p in symbol_positions if p['type'] == 'SELL' and p.get('magic') == self.magic_sell]
-                
-                # Check if we need to start or add a batch
-                grid_info = self.active_grids.get(symbol, {})
-                if grid_info.get('type') != 'SELL': grid_info = {} # Reset if direction changed
-                
-                last_index = grid_info.get('last_index', 0)
-                
-                # Trigger: No pendings/positions OR only trigger_threshold pendings left AND haven't reached total_target
-                if (not sell_pendings and not sell_positions) or (len(sell_pendings) <= self.trigger_threshold and last_index < self.total_target):
-                    
-                    if not sell_pendings and not sell_positions:
-                        last_index = 0 # Fresh start
-                        base_price = current_price  # Always anchor to current price
-                        if self.mode == 'GRID_BOTH':
-                            data = await self._detect_market_condition(symbol)
-                            
-                            # VOLATILITY FILTER
-                            if data.get('volatility_dangerous'):
-                                now = time.time()
-                                if now - self._last_vol_warn.get(symbol, 0) > 30:
-                                    logger.warning(f"[VOL] SELL Grid paused. ADX: {data['adx']:.1f} too high.")
-                                    self._last_vol_warn[symbol] = now
-                                return
-                            # Log only once per 30 sec
-                            now_t = time.time()
-                            if now_t - self._last_grid_log.get(f"{symbol}_sell_start", 0) > 30:
-                                logger.info(f"[Grid] Starting SELL Grid for {symbol} at {base_price:.2f} (Pivot direction: {data['pivot']:.2f}) | ADX: {data['adx']:.1f}")
-                                self._last_grid_log[f"{symbol}_sell_start"] = now_t
-                        else:
-                            logger.info(f"[Grid] Starting NEW SELL Grid for {symbol} at {base_price:.2f}")
-                    else:
-                        base_price = grid_info.get('base_price', current_price)
-                        logger.info(f"🔄 Staggered Batch: Placing next set of SELL orders for {symbol} (Last Index: {last_index})")
-
-                    num_to_place = min(self.batch_size, self.total_target - last_index)
-                    if num_to_place > 0:
-                        success_count = 0
-                        for i in range(1, num_to_place + 1):
-                            k = last_index + i
-                            entry_price = base_price + self._calculate_grid_offset(k)
-                            # Safety: Skip orders behind current price (for Sell Limits)
-                            if entry_price < current_price + 0.10: continue 
-                            res = await self.broker.place_pending_order(symbol, mt5.ORDER_TYPE_SELL_LIMIT, self.lot_size, entry_price, self.magic_sell)
-                            if res['success']: 
-                                success_count += 1
-                            else:
-                                logger.warning(f"⚠️ Failed to place SELL order at {entry_price}: {res.get('error')}. Skipping to avoid loop.")
-                        
-                        if success_count > 0:
-                            self.active_grids[symbol] = {
-                                'type': 'SELL', 
-                                'base_price': base_price,
-                                'last_index': last_index + success_count
-                            }
-                            # Important: In Grid Both, we might need to preserve peak if it was already tracking
-                            if 'peak_usd' in grid_info: self.active_grids[symbol]['peak_usd'] = grid_info['peak_usd']
-                            
-                            self._save_state()
-                            logger.info(f"✅ {success_count} SELL orders added. Total placed in sequence: {last_index + success_count}/{self.total_target}")
-
-            # VOLATILITY FILTER: Applied here to block entry/expansion WITHOUT blocking trailing exits
-            data = await self._detect_market_condition(symbol)
-            if data.get('volatility_dangerous'):
-                now_t = time.time()
-                if now_t - self._last_vol_warn.get(symbol, 0) > 30:
-                    logger.warning(f"⚠️ DANGER: High Trend/Volatility — Grid Expansion/Entry Paused. ADX: {data['adx']:.1f} | ATR: {data['atr']:.2f}")
-                    self._last_vol_warn[symbol] = now_t
+            # Tier 1: Pause NEW separate grids if DD > 5%
+            if drawdown_pct > 0.05 and not has_active:
+                if now_t - self._last_vol_warn.get(f"{symbol}_new_pause", 0) > 60:
+                    logger.warning(f"🛡️ Drawdown Guard (Tier 1): {drawdown_pct*100:.1f}% > 5%. Blocking NEW grids.")
+                    self._last_vol_warn[f"{symbol}_new_pause"] = now_t
                 return
 
-                # Case A: Market pushes HIGHER (Trend Extension) - Sequential Batch Placement
-                bp = grid_info.get('base_price', current_price)
-                current_offset = current_price - bp
-                
-                # If price moves beyond our current grid coverage, add the NEXT sequential batch
-                # Anchoring BP exactly to current price to ensure next spacing is perfect
-                if current_offset > self._calculate_grid_offset(last_index) and last_index < self.total_target:
-                    # Anchor bp so the NEXT sequential index starts exactly at current price level
-                    new_bp = current_price - self._calculate_grid_offset(last_index)
-                    self.active_grids[symbol]['base_price'] = new_bp
-                    bp = new_bp
-                    
-                    num_to_add = min(self.batch_size, self.total_target - last_index)
-                    if num_to_add > 0:
-                        logger.info(f"📈 Market pushed higher ({current_price}). Expanding SELL grid by {num_to_add} orders.")
-                        success_count = 0
-                        for i in range(1, num_to_add + 1):
-                            k = last_index + i
-                            entry_price = bp + self._calculate_grid_offset(k)
-                            res = await self.broker.place_pending_order(symbol, mt5.ORDER_TYPE_SELL_LIMIT, self.lot_size, entry_price, self.magic_sell)
-                            if res['success']: 
-                                success_count += 1
-                            else:
-                                logger.warning(f"⚠️ Failed to expand SELL grid at {entry_price}: {res.get('error')}")
-                        
-                        if success_count > 0:
-                            self.active_grids[symbol]['last_index'] += success_count
-                            self._save_state()
+            # Tier 2: Hard Safety Stop at 15%
+            if drawdown_pct > 0.15:
+                logger.error(f"🚨 HARD SAFETY STOP: {drawdown_pct*100:.1f}% > 15%. Liquidating all positions.")
+                self.broker.close_all_side(symbol, 'BUY')
+                self.broker.close_all_side(symbol, 'SELL')
+                if symbol in self.active_grids: del self.active_grids[symbol]
+                self._save_state()
+                return
 
-                # Case B: Market pushes LOWER (Gap Filling) - No positions open, shift grid to follow market down
-                elif not sell_positions and current_price < bp - 1.0: # Using 1.0 threshold
-                    # Calculate new base to be near current price
-                    new_base = current_price
-                    logger.info(f"📉 Market moved down ({current_price}). Shifting SELL grid base. Fresh orders will follow.")
-                    
-                    # Cancel existing to restart at new price
-                    self.broker.cancel_all_pendings(symbol)
-                    self.active_grids[symbol] = {
-                        'type': 'SELL',
-                        'base_price': new_base,
-                        'peak_pct': grid_info.get('peak_pct', 0), # Preserve trailing peak
-                        'last_index': 0
-                    }
-                    self._save_state()
-
-            # BUY Grid Placement
-            # Mode BUY_ONLY OR (BOTH with Bearish bias) OR (GRID_BOTH with Bearish bias)
-            can_place_buy = (self.mode == 'BUY_ONLY') or \
-                            (self.mode == 'BOTH' and bias == 'BEARISH') or \
-                            (self.mode == 'GRID_BOTH' and bias == 'BEARISH')
+            # 6. Grid Execution (Martingale DCA Logic with Shock Absorber)
+            atr = data.get('atr', 1.0)
             
-            if can_place_buy:
-                # In GRID_BOTH, don't place BUY if a SELL grid already exists for this symbol
-                if self.mode == 'GRID_BOTH' and symbol in self.active_grids and self.active_grids[symbol].get('type') == 'SELL':
-                    can_place_buy = False # Block placement
+            for direction in ['BUY', 'SELL']:
+                if (direction == 'BUY' and not can_place_buy) or (direction == 'SELL' and not can_place_sell):
+                    continue
+                
+                magic = self.magic_buy if direction == 'BUY' else self.magic_sell
+                order_type = mt5.ORDER_TYPE_BUY_LIMIT if direction == 'BUY' else mt5.ORDER_TYPE_SELL_LIMIT
+                
+                active_pendings = [o for o in (mt5.orders_get(symbol=symbol) or []) if o.magic == magic]
+                active_positions = buy_positions if direction == 'BUY' else sell_positions
+                total_open = len(active_positions)
+                
+                # SPREAD FILTER: XAU has naturally wide spreads. Allow up to 50% of ATR.
+                symbol_info = mt5.symbol_info(symbol)
+                if symbol_info:
+                    current_spread = symbol_info.spread * symbol_info.point
+                    spread_limit = atr * 0.5 # 50% of ATR - wide enough for XAU
+                    if current_spread > spread_limit:
+                        if now_t - self._last_vol_warn.get(f"{symbol}_spread", 0) > 30:
+                            logger.warning(f"⚠️ Wide Spread Detected ({current_spread:.2f} > {spread_limit:.2f}). Pausing placement.")
+                            self._last_vol_warn[f"{symbol}_spread"] = now_t
+                        continue
 
-            if can_place_buy:
-                active_pendings = mt5.orders_get(symbol=symbol)
-                buy_pendings = [o for o in active_pendings if o.magic == self.magic_buy] if active_pendings else []
-                buy_positions = [p for p in symbol_positions if p['type'] == 'BUY' and p.get('magic') == self.magic_buy]
+                # DRIFT RESET: If no positions open, keep grid near the market (Save near the price)
+                if total_open == 0 and len(active_pendings) > 0:
+                    grid_data = self.active_grids.get(symbol, {})
+                    old_base = grid_data.get('base_price', current_price)
+                    drift = abs(current_price - old_base)
+                    # If price drifts more than 1.5x spacing, reset the grid anchor
+                    if drift > (atr * self.spacing_multiplier * 1.5):
+                        logger.info(f"🔄 Grid Drift Detected ({drift:.2f}). Re-anchoring grid near current market.")
+                        self.broker.cancel_all_pendings(symbol)
+                        active_pendings = [] # Triggers fresh placement below
 
-                # Check if we need to start or add a batch
-                grid_info = self.active_grids.get(symbol, {})
-                if grid_info.get('type') != 'BUY': grid_info = {} # Reset if direction changed
-
-                last_index = grid_info.get('last_index', 0)
-
-                # Trigger: No pendings/positions OR only trigger_threshold pendings left AND haven't reached total_target
-                if (not buy_pendings and not buy_positions) or (len(buy_pendings) <= self.trigger_threshold and last_index < self.total_target):
-                    
-                    if not buy_pendings and not buy_positions:
-                        last_index = 0 # Fresh start
+                # TRIGGER: No pendings AND space for more layers
+                if len(active_pendings) <= self.trigger_threshold and (total_open + len(active_pendings)) < self.max_dca_levels:
+                    if not active_pendings and not active_positions:
+                        msg = f"🚀 Starting FRESH Martingale DCA {direction} Grid"
                         base_price = current_price
-                        # Grid Both: Anchor to Pivot
-                        if self.mode == 'GRID_BOTH':
-                            data = await self._detect_market_condition(symbol)
-                            
-                            # VOLATILITY FILTER: Don't start new grid in high trend
-                            if data.get('volatility_dangerous'):
-                                now = time.time()
-                                if now - self._last_vol_warn.get(symbol, 0) > 30:
-                                    logger.warning(f"[VOL] BUY Grid paused. ADX: {data['adx']:.1f} too high.")
-                                    self._last_vol_warn[symbol] = now
-                                return
-                            # Log only once per 30 sec
-                            now_t = time.time()
-                            if now_t - self._last_grid_log.get(f"{symbol}_buy_start", 0) > 30:
-                                logger.info(f"[Grid] Starting BUY Grid for {symbol} at {base_price:.2f} (Pivot direction: {data['pivot']:.2f}) | ADX: {data['adx']:.1f}")
-                                self._last_grid_log[f"{symbol}_buy_start"] = now_t
-                        else:
-                            logger.info(f"[Grid] Starting NEW BUY Grid for {symbol} at {base_price:.2f}")
+                        start_idx = 1
                     else:
-                        base_price = grid_info.get('base_price', current_price)
-                        logger.info(f"🔄 Staggered Batch: Placing next set of BUY orders for {symbol} (Last Index: {last_index})")
-
-                    num_to_place = min(self.batch_size, self.total_target - last_index)
-                    if num_to_place > 0:
-                        success_count = 0
-                        for i in range(1, num_to_place + 1):
-                            k = last_index + i
-                            entry_price = base_price - self._calculate_grid_offset(k)
-                            # Safety: Skip orders behind current price (for Buy Limits)
-                            if entry_price > current_price - 0.10: continue
-                            res = await self.broker.place_pending_order(symbol, mt5.ORDER_TYPE_BUY_LIMIT, self.lot_size, entry_price, self.magic_buy)
-                            if res['success']: 
-                                success_count += 1
-                            else:
-                                logger.warning(f"⚠️ Failed to place BUY order at {entry_price}: {res.get('error')}. Skipping to avoid loop.")
-                        
-                        if success_count > 0:
-                            self.active_grids[symbol] = {
-                                'type': 'BUY', 
-                                'base_price': base_price,
-                                'last_index': last_index + success_count
-                            }
-                            # Important: Preserve peak if it was already tracking
-                            if 'peak_usd' in grid_info: self.active_grids[symbol]['peak_usd'] = grid_info['peak_usd']
-                            
-                            self._save_state()
-                            logger.info(f"✅ {success_count} BUY orders added. Total placed in sequence: {last_index + success_count}/{self.total_target}")
-
-            # VOLATILITY FILTER: Applied here to block expansion WITHOUT blocking trailing exits
-            data = await self._detect_market_condition(symbol)
-            if data.get('volatility_dangerous'):
-                now_t = time.time()
-                if now_t - self._last_vol_warn.get(symbol, 0) > 30:
-                    logger.warning(f"⚠️ DANGER: High Trend/Volatility — Grid Expansion/Entry Paused. ADX: {data['adx']:.1f} | ATR: {data['atr']:.2f}")
-                    self._last_vol_warn[symbol] = now_t
-                return
-
-                # Case A: Market pushes LOWER (Trend Extension) - Sequential Batch Placement
-                bp = grid_info.get('base_price', current_price)
-                current_offset = bp - current_price
-                
-                # If price moves beyond current coverage, add the NEXT batch sequentially
-                # Anchoring BP exactly to current price to ensure next spacing is perfect
-                if current_offset > self._calculate_grid_offset(last_index) and last_index < self.total_target:
-                    # Anchor bp so the NEXT sequential index starts exactly at current price level
-                    new_bp = current_price + self._calculate_grid_offset(last_index)
-                    self.active_grids[symbol]['base_price'] = new_bp
-                    bp = new_bp
+                        msg = f"🔄 Expanding DCA {direction} Grid (Waiting for next level)"
+                        base_price = self.active_grids.get(symbol, {}).get('base_price', current_price)
+                        start_idx = total_open + len(active_pendings) + 1
                     
-                    num_to_add = min(self.batch_size, self.total_target - last_index)
-                    if num_to_add > 0:
-                        logger.info(f"📉 Market pushed lower ({current_price}). Expanding BUY grid by {num_to_add} orders.")
-                        success_count = 0
-                        for i in range(1, num_to_add + 1):
-                            k = last_index + i
-                            entry_price = bp - self._calculate_grid_offset(k)
-                            res = await self.broker.place_pending_order(symbol, mt5.ORDER_TYPE_BUY_LIMIT, self.lot_size, entry_price, self.magic_buy)
-                            if res['success']: 
-                                success_count += 1
-                            else:
-                                logger.warning(f"⚠️ Failed to expand BUY grid at {entry_price}: {res.get('error')}")
-                        
-                        if success_count > 0:
-                            self.active_grids[symbol]['last_index'] += success_count
-                            self._save_state()
+                    if start_idx > self.max_dca_levels:
+                        continue # Hard level cap hit
 
-                # Case B: Market pushes HIGHER (Gap Filling) - No positions open, shift grid to follow market up
-                elif not buy_positions and current_price > bp + 1.0: # Using 1.0 threshold
-                    new_base = current_price
-                    logger.info(f"📈 Market moved up ({current_price}). Shifting BUY grid base. Fresh orders will follow.")
+                    logger.info(f"{msg} | Level {start_idx} lot size escalation active.")
                     
-                    # Cancel existing to restart at new price
-                    self.broker.cancel_all_pendings(symbol)
-                    self.active_grids[symbol] = {
-                        'type': 'BUY',
-                        'base_price': new_base,
-                        'peak_pct': grid_info.get('peak_pct', 0), # Preserve trailing peak
-                        'last_index': 0
-                    }
-                    self._save_state()
+                    success_count = 0
+                    for i in range(start_idx, min(start_idx + self.batch_size, self.max_dca_levels + 1)):
+                        entry_price = self._calculate_grid_price(base_price, i, atr, direction)
+                        lot_size = self._calculate_martingale_lot(i, atr)
+                        
+                        # Minimum distance safety
+                        if direction == 'BUY' and entry_price > current_price - 0.10: continue
+                        if direction == 'SELL' and entry_price < current_price + 0.10: continue
+                        
+                        res = await self.broker.place_pending_order(symbol, order_type, lot_size, entry_price, magic)
+                        if res['success']: 
+                            success_count += 1
+                        else:
+                            logger.error(f"❌ Failed Martingale Level {i} ({lot_size} lots) for {direction}: {res.get('error')}")
+                    
+                    if success_count > 0:
+                        if symbol not in self.active_grids:
+                            self.active_grids[symbol] = {'ict_status': {}}
+
+                        self.active_grids[symbol].update({
+                            'type': direction,
+                            'base_price': base_price,
+                            'last_index': start_idx + success_count - 1,
+                            'atr': atr
+                        })
+                        self._save_state()
+                        logger.info(f"✅ {success_count} Martingale levels added. Current Max Index: {self.active_grids[symbol]['last_index']}")
 
         except Exception as e:
             logger.error(f"Error in grid update: {e}")
@@ -1488,6 +1454,15 @@ class LiveTradingSystem:
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         self.session_max_drawdown = 0.0 # NEW: Track floating minus in trading loop
         self._current_biases = {} # Track last detected bias for each symbol
+        self.basket_trailing = {} # {symbol: {direction: {peak: float, active: bool}}}
+        
+        # Discord Notifier
+        self.discord = DiscordNotifier()
+        self.last_discord_pulse = 0 # Forces initial update on start
+        
+        # Symbol Switching State
+        self.original_symbols = self.symbols.copy()
+        self.market_mode = "DEFAULT" # DEFAULT, WEEKEND_CRYPTO
         
     def _save_reset_time(self, timestamp):
         try:
@@ -1507,6 +1482,40 @@ class LiveTradingSystem:
         except Exception as e:
             logger.warning(f"Failed to load reset config, starting fresh: {e}")
         return 0
+
+    def _manage_symbol_switching(self):
+        """Automatic Switcher: XAUUSDm on weekdays, XAUUSDm on weekends"""
+        try:
+            # Check current day (0=Mon, ..., 5=Sat, 6=Sun)
+            now_utc = datetime.utcnow()
+            day = now_utc.weekday()
+            
+            # Weekend Check: Sat and Sun
+            is_weekend = day in [5, 6]
+            
+            # Target Symbol Handling (Check for Gold status if possible)
+            gold_sym = "XAUUSDm"
+            gold_info = mt5.symbol_info(gold_sym)
+            
+            # If Gold info is not available or market is closed/weekend
+            trade_allowed = False
+            if gold_info and gold_info.visible:
+                # SYMBOL_TRADE_MODE_FULL = 4
+                trade_allowed = (gold_info.trade_mode == 4)
+            
+            should_be_crypto = is_weekend or not trade_allowed
+            
+            if should_be_crypto and self.market_mode != "WEEKEND_CRYPTO":
+                logger.info(f"🕒 GOLD HOLIDAY/WEEKEND DETECTED. Switching to Bitcoin (XAUUSDm).")
+                self.symbols = ["XAUUSDm"]
+                self.market_mode = "WEEKEND_CRYPTO"
+            elif not should_be_crypto and self.market_mode != "DEFAULT":
+                logger.info(f"🕒 GOLD MARKET OPEN. Switching to Gold ({gold_sym}).")
+                self.symbols = [gold_sym]
+                self.market_mode = "DEFAULT"
+                
+        except Exception as e:
+            logger.error(f"Symbol switching error: {e}")
 
     def _load_config(self, config_path: str) -> Dict:
         """Load configuration"""
@@ -1575,7 +1584,7 @@ class LiveTradingSystem:
                 return
             
             # AI Analysis (Keep for bias detection)
-            ai_analysis = self.ai_brain.analyze_market(symbol, data)
+            ai_analysis = await self.ai_brain.analyze_market(symbol, data)
             
             # CRITICAL FIX: Use Real-time Tick Price for Gold instead of candle close to avoid slippage/invalid price
             tick = mt5.symbol_info_tick(symbol)
@@ -1585,10 +1594,9 @@ class LiveTradingSystem:
             bias = ai_analysis.get('bias', 'NEUTRAL')
             self._current_biases[symbol] = bias
             
-            # 1. Grid Strategy Logic
-            if "Grid" in self.strategy:
-                # Set mode based on strategy name
-                if "Grid Both" in self.strategy:
+            # 1. Strategy Mode Routing
+            if "Grid" in self.strategy or self.strategy == "Hybrid Mode":
+                if "Grid Both" in self.strategy or self.strategy == "Hybrid Mode":
                     self.grid_manager.mode = "GRID_BOTH"
                 elif "BUY ONLY" in self.strategy:
                     self.grid_manager.mode = "BUY_ONLY"
@@ -1596,16 +1604,51 @@ class LiveTradingSystem:
                     self.grid_manager.mode = "SELL_ONLY"
                 else:
                     self.grid_manager.mode = "BOTH"
-                
-                # Sync timeframe selection to GridManager
                 self.grid_manager.time_frame_str = self.timeframe
-                
-                await self.grid_manager.update(symbol, current_price, bias, balance)
+
+            # 2. Metadata & Dashboard Sync (Ensure symbol exists for Rail Board visibility)
+            strategy_to_display = self.strategy
+            if self.strategy == "Hybrid Mode":
+                strategy_to_display = "HYBRID (Grid+ICT)"
             
-            # 2. ICT SMC Strategy Logic
-            elif self.strategy == "ICT SMC":
-                if ai_analysis['action'] in ['BUY', 'SELL'] and ai_analysis['confidence'] >= 0.70:
+            if symbol not in self.grid_manager.active_grids:
+                self.grid_manager.active_grids[symbol] = {
+                    'strategy': strategy_to_display,
+                    'bias': bias,
+                    'last_index': 0,
+                    'type': 'NEUTRAL'
+                }
+            
+            # Always update Metadata (Dashboard & Sync)
+            self.grid_manager.active_grids[symbol]['ict_status'] = ai_analysis.get('ict_status', {})
+            self.grid_manager.active_grids[symbol]['strategy'] = strategy_to_display
+            self.grid_manager.active_grids[symbol]['bias'] = bias
+            self.grid_manager._save_state()
+
+            # A. Grid Update (Only if Grid or Hybrid)
+            if "Grid" in self.strategy or self.strategy == "Hybrid Mode":
+                await self.grid_manager.update(symbol, current_price, bias, balance)
+
+            # B. ICT Signal Execution (Enabled for Hybrid AND Grid Both to satisfy "Grid is Hybrid" request)
+            # Lowered threshold to 0.60 (Score 1.5+) for better entry frequency
+            if self.strategy in ["ICT SMC", "Hybrid Mode", "Grid Both"]:
+                if ai_analysis['action'] in ['BUY', 'SELL'] and ai_analysis['confidence'] >= 0.60:
                     logger.info(f"🎯 ICT Signal Detected: {ai_analysis['action']} {symbol} (Confidence: {ai_analysis['confidence']:.2f})")
+                    
+                    # 🔔 DISCORD SIGNAL NOTIFICATION
+                    try:
+                        await self.discord.send_signal(
+                            symbol, 
+                            ai_analysis['action'], 
+                            ai_analysis['confidence'], 
+                            ai_analysis['reasoning'], 
+                            ai_analysis.get('entry_price', 0), 
+                            ai_analysis.get('take_profit', 0), 
+                            ai_analysis.get('stop_loss', 0)
+                        )
+                    except Exception as de:
+                        logger.error(f"Discord signal failed: {de}")
+
                     await self._execute_trade(symbol, ai_analysis, {})
                 
         except Exception as e:
@@ -1636,14 +1679,15 @@ class LiveTradingSystem:
                 balance, entry_price, stop_loss, symbol
             )
             
-            # Place order
+            # Place order (passing the use_limit flag if present)
             result = self.broker.place_order(
                 symbol=symbol,
                 action=ai_analysis['action'],
                 volume=position_size,
                 price=entry_price,
                 stop_loss=stop_loss,
-                take_profit=take_profit
+                take_profit=take_profit,
+                use_limit=ai_analysis.get('use_limit', False)
             )
             
             if result['success']:
@@ -1665,21 +1709,128 @@ class LiveTradingSystem:
             logger.error(f"Trade execution error: {e}")
     
     async def monitor_positions(self):
-        """Monitor and manage open positions"""
+        """Monitor and manage open positions with Weighted Average Basket Exit"""
         try:
             positions = self.broker.get_positions()
+            if not positions:
+                return
+
+            # Group positions by MAGIC (Grid Directions)
+            buy_grid = [p for p in positions if p['magic'] == self.grid_manager.magic_buy]
+            sell_grid = [p for p in positions if p['magic'] == self.grid_manager.magic_sell]
             
-            # NEW: Track session max floating minus
-            current_pnl = sum(p['profit'] for p in positions)
-            if current_pnl < self.session_max_drawdown:
-                self.session_max_drawdown = current_pnl
+            # Process Basket Exits
+            for grid_positions in [buy_grid, sell_grid]:
+                if not grid_positions: continue
                 
-            for pos in positions:
-                # Simple trailing stop logic
-                if pos['profit'] > 50:  # If profit > $50
-                    logger.info(f"💰 Position {pos['symbol']} in profit: ${pos['profit']:.2f}")
-                elif pos['profit'] < -100:  # If loss > $100
-                    logger.warning(f"⚠️ Position {pos['symbol']} in loss: ${pos['profit']:.2f}")
+                symbol = grid_positions[0]['symbol']
+                direction = 'BUY' if grid_positions[0]['type'] == 'BUY' else 'SELL'
+                
+                # Calculate Weighted Average Entry Price (WAEP)
+                total_volume = sum(p['volume'] for p in grid_positions)
+                total_weighted_price = sum(p['price_open'] * p['volume'] for p in grid_positions)
+                waep = total_weighted_price / total_volume
+                
+                # Get current price
+                tick = mt5.symbol_info_tick(symbol)
+                if not tick: continue
+                current_price = tick.bid if direction == 'BUY' else tick.ask
+                
+                # ADAPTIVE BASKET TP (The 'Elastic Target')
+                grid_params = self.grid_manager.active_grids.get(symbol, {})
+                atr = grid_params.get('atr', 1.0)
+                open_count = len(grid_positions)
+                
+                if open_count <= 3:
+                    # Small Basket: Aim for Profit (Increased for better yield)
+                    target_profit_dist = atr * 0.8 # Was 0.5
+                    min_profit_target = (total_volume / 0.01) * 3.0 # Was $1.50 -> Now $3.00 per 0.01 lot
+                elif open_count <= 5:
+                    # Medium Basket: Standard Move
+                    target_profit_dist = atr * 0.5 # Was 0.25
+                    min_profit_target = (total_volume / 0.01) * 2.0 # Was $1.00 -> Now $2.00 per 0.01 lot
+                else:
+                    # Heavy Basket: ESCAPE MODE
+                    target_profit_dist = atr * 0.1 # Was 0.05
+                    min_profit_target = (total_volume / 0.01) * 1.0 # Was $0.50 -> Now $1.00 per 0.01 lot
+                
+                target_price = waep + target_profit_dist if direction == 'BUY' else waep - target_profit_dist
+                
+                # Current Basket PnL
+                basket_pnl = sum(p['profit'] + p.get('swap', 0) for p in grid_positions)
+                
+                # BUG FIX: Define is_hit BEFORE trailing block uses it
+                is_hit = (direction == 'BUY' and current_price >= target_price) or \
+                         (direction == 'SELL' and current_price <= target_price)
+                
+                # 3.5 TRAILING BASKET PROFIT (Stealth Exit Strategy)
+                if symbol not in self.basket_trailing: self.basket_trailing[symbol] = {}
+                trailing = self.basket_trailing[symbol].get(direction, {'active': False, 'peak': 0.0})
+
+                should_exit = False
+                
+                # Trigger point: Price action hit OR USD Profit target hit
+                at_target = is_hit or (basket_pnl >= min_profit_target)
+                
+                if at_target:
+                    if not trailing['active']:
+                        logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | Initial Target: ${basket_pnl:.2f}")
+                        trailing = {'active': True, 'peak': basket_pnl}
+                        self.basket_trailing[symbol][direction] = trailing
+                        # Update persistent state for dashboard visibility
+                        if symbol in self.grid_manager.active_grids:
+                            self.grid_manager.active_grids[symbol]['is_trailing'] = True
+                            self.grid_manager._save_state()
+                    
+                    # Update Peak
+                    if basket_pnl > trailing['peak']:
+                        trailing['peak'] = basket_pnl
+                        self.basket_trailing[symbol][direction] = trailing
+                    
+                    # Exit condition: 15% pullback from peak, but never below 50% of original target
+                    trail_level = trailing['peak'] * 0.85
+                    floor_level = min_profit_target * 0.5
+                    
+                    if basket_pnl < trail_level or basket_pnl < floor_level:
+                        logger.info(f"💰 TRAILING EXIT: {symbol} {direction} | PnL: ${basket_pnl:.2f} | Peak: ${trailing['peak']:.2f}")
+                        should_exit = True
+                    else:
+                        # Log significant jumps (Marketing/Visual feedback)
+                        if basket_pnl > trailing['peak'] * 0.98 and basket_pnl > min_profit_target * 1.1:
+                            if time.time() % 30 < 1: # Log occasionally
+                                logger.info(f"🚀 Trailing Profit for {symbol} {direction}: ${basket_pnl:.2f} (Target was ${min_profit_target:.1f})")
+                        continue # STILL TRAILING - DO NOT EXIT
+                else:
+                    # If we were trailing but it dropped back to target floor
+                    if trailing['active'] and basket_pnl < min_profit_target * 0.5:
+                        logger.warning(f"⚠️ Trailing Safety Floor Hit: Closing {symbol} {direction} at ${basket_pnl:.2f}")
+                        should_exit = True
+
+                if should_exit:
+                    logger.info(f"🎯 BASKET EXIT ({'ESCAPE' if open_count > 5 else 'PROFIT'}) triggered for {symbol} {direction} | PnL: ${basket_pnl:.2f} | Open: {open_count}")
+                    
+                    # 1. Close all positions in the basket
+                    for p in grid_positions:
+                        self.broker.close_position(symbol, p['ticket'])
+                    
+                    # 2. Cancel ALL pending orders for this grid
+                    orders = mt5.orders_get(symbol=symbol)
+                    if orders:
+                        magic = self.grid_manager.magic_buy if direction == 'BUY' else self.grid_manager.magic_sell
+                        for o in orders:
+                            if o.magic == magic:
+                                mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
+                    
+                    # 3. Clear Grid State
+                    if symbol in self.grid_manager.active_grids:
+                        del self.grid_manager.active_grids[symbol]
+                        self.grid_manager._save_state()
+                    
+                    # 4. Clear Trailing State
+                    if symbol in self.basket_trailing and direction in self.basket_trailing[symbol]:
+                        del self.basket_trailing[symbol][direction]
+                    
+                    logger.info(f"✅ {direction} Grid Reset Complete.")
                     
         except Exception as e:
             logger.error(f"Position monitoring error: {e}")
@@ -1728,6 +1879,22 @@ class LiveTradingSystem:
             
             cycle_count = 0
             while self.running:
+                # 🕒 DISCORD HOURLY HEARTBEAT
+                now = time.time()
+                
+                # 🔄 AUTOMATIC SYMBOL SWITCHER (Check every cycle)
+                self._manage_symbol_switching()
+
+                if now - self.last_discord_pulse >= 3600:
+                    acc = mt5.account_info()
+                    if acc:
+                        pos = self.broker.get_positions()
+                        daily_pnl = acc.balance - self.start_balance
+                        await self.discord.send_heartbeat(acc, daily_pnl, self.trades_today, len(pos))
+                        self.last_discord_pulse = now
+                        logger.info("📩 Hourly Discord Performance report sent.")
+
+                # Core Monitoring
                 try:
                     # Connection Watchdog
                     if not await self.broker.is_connected():
@@ -1789,8 +1956,9 @@ class LiveTradingSystem:
                         balance = acc.balance if acc else 0
                         # We trigger GridManager update frequently for the trailing lock
                         # USE persistent bias to allow expansion during heartbeat
-                        last_bias = self._current_biases.get(symbol, "NEUTRAL")
-                        await self.grid_manager.update(symbol, tick.bid, last_bias, balance)
+                        last_bias = self._current_biases.get(symbol)
+                        if last_bias: # Only update if we have an initial bias from main analyzer
+                            await self.grid_manager.update(symbol, tick.bid, last_bias, balance)
 
                 # 2. General position monitoring
                 await self.monitor_positions()
@@ -2281,50 +2449,26 @@ def select_trade_setup():
     print("\n  [STEP 1/2]  SELECT STRATEGY")
     print("  " + "-" * 45)
     print("  [1]  GRID BOTH        - Auto Trend + Center Pivot  (SMART)")
-    print("  [2]  GRID BUY ONLY   - 300 Buy Limit Orders")
-    print("  [3]  GRID SELL ONLY  - 300 Sell Limit Orders")
-    print("  [4]  ICT SMC          - AI Trend Following")
-    print("  [5]  OPEN DASHBOARD   - Visual Tracker (Browser)")
-    print("  [6]  DELETE ALL       - Cancel All Pending Orders")
+    print("  [2]  ICT SMC          - AI Trend Following")
+    print("  [3]  HYBRID MODE      - Run Grid + ICT Simultaneously")
     print("  " + "-" * 45)
     
     strategy = "Grid Both"
     while True:
-        choice = input("  >> Choice (1-6): ").strip()
+        choice = input("  >> Choice (1-3): ").strip()
         if choice == "1":
             strategy = "Grid Both"
             print(f"\n  [OK] Strategy Selected: GRID BOTH (Center Pivot + ATR/ADX Filter)\n")
             break
         if choice == "2":
-            strategy = "Grid BUY ONLY"
-            print(f"\n  [OK] Strategy Selected: GRID BUY ONLY (300 Orders)\n")
-            break
-        if choice == "3":
-            strategy = "Grid SELL ONLY"
-            print(f"\n  [OK] Strategy Selected: GRID SELL ONLY (300 Orders)\n")
-            break
-        if choice == "4":
             strategy = "ICT SMC"
             print(f"\n  [OK] Strategy Selected: ICT SMC (AI Trend Following)\n")
             break
-        if choice == "5":
-            launch_dashboard()
-            continue
-        if choice == "6":
-            print("\n  [!] Cleaning up all XAUUSDm pending orders...")
-            if mt5.initialize():
-                total = 0
-                for s in ["XAUUSDm", "XAUUSD"]:
-                    orders = mt5.orders_get(symbol=s)
-                    if orders:
-                        for o in orders:
-                            mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
-                        total += len(orders)
-                print(f"  [OK] {total} pending orders deleted successfully.\n")
-            else:
-                print("  [ERR] Failed to connect to MT5 for cleanup.\n")
-            continue
-        print("  [!] Invalid choice. Please enter 1-6.")
+        if choice == "3":
+            strategy = "Hybrid Mode"
+            print(f"\n  [OK] Strategy Selected: HYBRID MODE (Dynamic Grid + AI Signal Scaling)\n")
+            break
+        print("  [!] Invalid choice. Please enter 1-3.")
 
     # 2. Timeframe Selection
     print("  [STEP 2/2]  SELECT ANALYSIS TIMEFRAME")
@@ -2351,18 +2495,25 @@ def select_trade_setup():
 
 
 def launch_dashboard():
-    """Helper to launch the dashboard safely"""
+    """Helper to launch the dashboard safely and return the process handle"""
     try:
+        # Create a trigger file to signal trading is active
+        trigger_file = Path("logs/trading_active.lock")
+        trigger_file.parent.mkdir(exist_ok=True)
+        trigger_file.touch()
+
         print("\n  [>>] Launching Live Dashboard in background...")
         import subprocess
         script_dir = os.path.dirname(os.path.abspath(__file__))
         dashboard_path = os.path.join(script_dir, "live_dashboard.py")
-        subprocess.Popen([sys.executable, dashboard_path],
-                         creationflags=0x08000000 if os.name == 'nt' else 0,
+        proc = subprocess.Popen([sys.executable, dashboard_path],
+                         creationflags=0x08100000 if os.name == 'nt' else 0, # Added CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
                          close_fds=True)
-        print("  [OK] Dashboard launched successfully.\n")
+        print(f"  [OK] Dashboard launched successfully (PID: {proc.pid}).\n")
+        return proc
     except Exception as e:
         print(f"  [ERR] Failed to launch dashboard: {e}\n")
+        return None
 
 def main():
     """Main function - CLI mode"""
@@ -2393,7 +2544,7 @@ def main():
         trading_system.timeframe = timeframe
         
         # AUTO-LAUNCH Dashboard when trading starts
-        launch_dashboard()
+        dashboard_proc = launch_dashboard()
         
         # Run trading loop
         asyncio.run(trading_system.run())
@@ -2402,6 +2553,30 @@ def main():
         logger.info("Application interrupted by user")
     except Exception as e:
         logger.error(f"Application error: {e}")
+    finally:
+        # CLEANUP: Kill dashboard and remove lock file
+        trigger_file = Path("logs/trading_active.lock")
+        if trigger_file.exists():
+            try: trigger_file.unlink()
+            except: pass
+            
+        if dashboard_proc:
+            try:
+                print("\n  [>>] Closing Dashboard...")
+                dashboard_proc.terminate()
+                # Optional: Force kill if terminate fails after short wait
+                # dashboard_proc.wait(timeout=3)
+            except:
+                pass
+        
+        # Close Discord session
+        try:
+            if hasattr(trading_system, 'discord'):
+                asyncio.run(trading_system.discord.close())
+        except:
+            pass
+
+        logger.info("👋 System shutdown complete.")
 
 if __name__ == "__main__":
     main()

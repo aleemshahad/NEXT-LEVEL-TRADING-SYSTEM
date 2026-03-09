@@ -56,7 +56,7 @@ class LivePortfolioDashboard:
         self.style.configure("Card.TFrame", background="#151515", relief="flat", borderwidth=0)
         self.style.configure("TLabel", background="#151515", foreground="#ffffff", font=('Segoe UI', 10))
         self.style.configure("Header.TLabel", background="#0a0a0a", foreground="#00e676", font=('Segoe UI', 16, 'bold'))
-        self.style.configure("Stat.TLabel", background="#151515", foreground="#00e676", font=('Consolas', 22, 'bold')) # Bigger, Neon Green
+        self.style.configure("Stat.TLabel", background="#151515", foreground="#00e676", font=('Consolas', 16, 'bold')) # Increased for better fill
         self.style.configure("Metric.TLabel", background="#151515", foreground="#8b949e", font=('Segoe UI', 10))
         self.style.configure("Ticker.TLabel", background="#050505", foreground="#00e676", font=('Consolas', 11, 'italic'))
         
@@ -108,11 +108,34 @@ class LivePortfolioDashboard:
         self.metric_labels = {}
         for i, (label, key) in enumerate(metrics_list):
             m_frame = ttk.Frame(perf_container, style="Card.TFrame")
-            m_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            m_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5) # Allow expansion to fill gap
             
-            ttk.Label(m_frame, text=f"{label}:", font=('Segoe UI', 10, 'bold')).pack(side=tk.LEFT, padx=5)
+            ttk.Label(m_frame, text=f"{label}:", font=('Segoe UI', 9, 'bold'), foreground="#888888").pack(anchor=tk.CENTER)
             self.metric_labels[key] = ttk.Label(m_frame, text="--", style="Stat.TLabel")
-            self.metric_labels[key].pack(side=tk.LEFT, padx=5)
+            self.metric_labels[key].pack(anchor=tk.CENTER)
+
+        # --- ICT CONCEPTS (The "Rail Board") Scaled to fill ---
+        self.ict_frame = tk.LabelFrame(perf_container, text=" 🧠 ICT CONCEPTS ", 
+                                      font=("Arial", 10, "bold"), bg="#151515", fg="#58a6ff", bd=1)
+        self.ict_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10)
+        
+        self.ict_labels = {}
+        concepts = [
+            ("MSS", "mss"), 
+            ("Liq", "sweep"), 
+            ("FVG", "fvg"), 
+            ("OB", "ob"), 
+            ("RR", "rr"),
+            ("Zne", "range"),
+            ("OTE", "ote")
+        ]
+        for label_text, key in concepts:
+            f = tk.Frame(self.ict_frame, bg="#151515")
+            f.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=2)
+            tk.Label(f, text=f"{label_text}:", font=("Arial", 8, "bold"), bg="#151515", fg="#8b949e").pack()
+            l = tk.Label(f, text="OFF", font=("Arial", 11, "bold"), bg="#151515", fg="#888888")
+            l.pack()
+            self.ict_labels[key] = l
 
         # 3. Portfolio Summary Cards (Real-time)
         summary_container = ttk.Frame(main_frame, style="TFrame")
@@ -141,17 +164,20 @@ class LivePortfolioDashboard:
         grid_container = ttk.Frame(main_frame, style="Card.TFrame", padding="15")
         grid_container.pack(fill=tk.X, pady=10)
         
-        ttk.Label(grid_container, text="🕸️ GRID & TRAILING MONITOR", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,10))
+        ttk.Label(grid_container, text="🕸️ GRID & STRATEGY MONITOR", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,10))
         
         status_sub_frame = ttk.Frame(grid_container, style="Card.TFrame")
         status_sub_frame.pack(fill=tk.X)
         
         self.grid_cards = {}
         grid_items = [
-            ("GRID MODE", "grid_mode", "#ffffff"),
-            ("PROGRESS", "grid_progress", "#ffffff"),
-            ("PEAK PROFIT", "peak_val", "#00e676"),
-            ("TRAILING LOCK", "lock_val", "#ff5252")
+            ("STRATEGY", "grid_mode", "#ffffff"),
+            ("BIAS / TREND", "current_bias", "#58a6ff"),
+            ("VOLATILITY (ATR)", "current_atr", "#ffffff"),
+            ("DCA PROGRESS", "grid_progress", "#ffffff"),
+            ("BASKET PNL", "peak_val", "#00e676"),
+            ("SAFETY LVL", "lock_val", "#ff5252"),
+            ("SEASON TIMER", "season_timer", "#00e676")
         ]
         
         for label, key, color in grid_items:
@@ -209,8 +235,8 @@ class LivePortfolioDashboard:
 
         self.floating_pnl_label = tk.Label(stats_frame, text="CURRENT PNL: --", bg="#151515", fg="#00e676", font=('Consolas', 11, 'bold'))
         self.floating_pnl_label.pack(anchor=tk.W)
-        
-        ttk.Label(calc_inner, text="--- TOTAL PNL IF MARKET MOVES AGAINST YOU ---", font=('Segoe UI', 8, 'bold'), foreground="#888888").pack(pady=(15,10))
+
+        ttk.Label(calc_inner, text="--- TOTAL PNL IF MARKET MOVES AGAINST YOU ---", font=('Segoe UI', 8, 'bold'), foreground="#888888").pack(pady=(5,10))
         
         self.proj_cards = {}
         # Scenarios: Price move in Dollars (e.g. Gold -1, -2 etc)
@@ -229,6 +255,15 @@ class LivePortfolioDashboard:
             ttk.Label(f, text=label, font=('Segoe UI', 9), foreground="#cccccc").pack(side=tk.LEFT)
             self.proj_cards[pips] = tk.Label(f, text="$0.00", bg="#151515", fg="#ff5252", font=('Consolas', 12, 'bold'))
             self.proj_cards[pips].pack(side=tk.RIGHT)
+
+        # 4.5 Live Terminal Logs (Integrated to avoid seeing both)
+        ttk.Label(self.right_col, text="📝 LIVE TERMINAL LOGS", font=('Segoe UI', 11, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(20,10))
+        self.log_text = tk.Text(self.right_col, bg="#0d1117", fg="#c9d1d9", font=('Consolas', 9), height=10, relief="flat")
+        self.log_text.pack(fill=tk.BOTH, expand=True)
+        self.log_text.tag_configure("INFO", foreground="#00e676")
+        self.log_text.tag_configure("WARNING", foreground="#ffa726")
+        self.log_text.tag_configure("ERROR", foreground="#ff5252")
+        self._last_log_pos = 0
 
         # Remove the previous horizontal risk_calc_frame if it exists to clean up
         # Note: Previous risk_calc_frame was at footer, we'll hide it to focus on this one
@@ -805,6 +840,14 @@ class LivePortfolioDashboard:
 
         while self.running:
             try:
+                # 0. Check if live trading is still active via lock file
+                # Link: trading_active.lock is created/deleted by live_trading.py
+                lock_file = Path("logs/trading_active.lock")
+                if not lock_file.exists():
+                    self.root.after(0, self._on_closing)
+                    break
+
+                # 1. Update Account and Trading Stats
                 acc = mt5.account_info()
                 if acc:
                     balance = acc.balance
@@ -857,6 +900,7 @@ class LivePortfolioDashboard:
                 self._update_positions_tree(positions)
                 self._update_full_history()
                 self._update_grid_status()
+                self._update_log_console()
                 
                 time.sleep(1) # Increased frequency to 1 second
             except Exception as e:
@@ -1012,37 +1056,104 @@ class LivePortfolioDashboard:
                 with open(state_file, 'r') as f:
                     state = json.load(f)
                 
-                # Assume first symbol found for now (usually XAUUSDm)
+                # Intelligent Symbol Selection: 
+                # 1. Prefer symbol from state that has active MT5 positions
+                # 2. Otherwise prefer XAUUSDm if it exists in state
+                # 3. Fallback to first available key
                 if state:
-                    symbol = list(state.keys())[0]
-                    data = state[symbol]
+                    symbol = None
+                    all_positions = mt5.positions_get()
+                    if all_positions:
+                        active_syms = set(p.symbol for p in all_positions)
+                        for s in state.keys():
+                            if s in active_syms:
+                                symbol = s
+                                break
                     
-                    mode = data.get('type', 'N/A')
-                    progress = f"{data.get('last_index', 0)} / 300"
-                    peak = data.get('peak_usd', 0.0)
+                    if not symbol:
+                        symbol = "XAUUSDm" if "XAUUSDm" in state else list(state.keys())[0]
                     
-                    # Calculate lock same as trading script
-                    lock = 0.0
-                    if peak > 0:
-                        lock = peak * 0.99
-                        if peak - lock < 5.0:
-                            lock = peak - 5.0
+                    data = state.get(symbol, {})
                     
-                    self.grid_cards['grid_mode'].config(text=mode)
+                    strategy = data.get('strategy', 'WAITING...')
+                    bias = data.get('bias', 'NEUTRAL')
+                    atr = data.get('atr', 1.0)
+                    is_trailing = data.get('is_trailing', False)
+                    last_idx = data.get('last_index', 0)
+                    progress = f"LVL {last_idx} / 10"
+                    
+                    # Calculate Basket PnL from trades with current magic
+                    positions = mt5.positions_get(symbol=symbol)
+                    basket_pnl = sum(p.profit for p in positions) if positions else 0.0
+                    
+                    self.grid_cards['grid_mode'].config(text=strategy)
+                    self.grid_cards['current_bias'].config(text=bias)
+                    self.grid_cards['current_atr'].config(text=f"{atr:.2f}")
                     self.grid_cards['grid_progress'].config(text=progress)
-                    self.grid_cards['peak_val'].config(text=f"${peak:,.2f}")
-                    self.grid_cards['lock_val'].config(text=f"${lock:,.2f}")
                     
-                    # Highlight if trailing is active
-                    if peak > 1.0:
-                        self.grid_cards['lock_val'].config(fg="#ff5252")
+                    pnl_col = "#00e676" if basket_pnl >= 0 else "#ff5252"
+                    if is_trailing: pnl_col = "#58a6ff" # Blue for trailing
+                    self.grid_cards['peak_val'].config(text=f"${basket_pnl:,.2f}", fg=pnl_col)
+                    
+                    # Safety Level: Spread Guard status OR Trailing Status
+                    if is_trailing:
+                        self.grid_cards['lock_val'].config(text="TRAILING", fg="#58a6ff")
                     else:
-                        self.grid_cards['lock_val'].config(fg="#888888", text="WAITING")
+                        tick = mt5.symbol_info_tick(symbol)
+                        if tick:
+                            spread = abs(tick.ask - tick.bid)
+                            limit = atr * 0.1
+                            if spread > limit:
+                                self.grid_cards['lock_val'].config(text="PAUSED", fg="#ffa726")
+                            else:
+                                self.grid_cards['lock_val'].config(text="SAFE", fg="#00e676")
+                    
+                    # --- Update ICT Labels (Rail Board) ---
+                    # These values are often put in logs/grid_state.json as metadata by the bot
+                    ict_status = data.get('ict_status', {})
+                    for key, label in self.ict_labels.items():
+                        val = str(ict_status.get(key, "OFF")).upper()
+                        color = "#888888"
+                        
+                        # Dynamic Coloring based on ICT logic
+                        if any(x in val for x in ["BULLISH", "BUY", "DISCOUNT", "VALID", "BOS", "SHIFT", "SWEEP"]):
+                            if "BEARISH" not in val: color = "#00e676"
+                        
+                        if any(x in val for x in ["BEARISH", "SELL", "PREMIUM", "FAILED"]):
+                            color = "#ff5252"
+                            
+                        if val == "NEUTRAL" or val == "OFF": color = "#888888"
+                        
+                        label.config(text=val, fg=color)
             else:
                 for key in self.grid_cards:
                     self.grid_cards[key].config(text="OFF", fg="#888888")
         except Exception as e:
             print(f"Grid Status Update error: {e}")
+
+    def _update_log_console(self):
+        """Read and append latest logs from the shared log file"""
+        try:
+            log_file = Path("logs/latest_intelligence_report.txt")
+            if not log_file.exists(): return
+            
+            with open(log_file, 'r', encoding='latin-1') as f:
+                content = f.read().splitlines()
+                
+            new_lines = content[self._last_log_pos:]
+            if new_lines:
+                self.log_text.config(state=tk.NORMAL)
+                for line in new_lines:
+                    tag = "INFO"
+                    if "WARNING" in line: tag = "WARNING"
+                    elif "ERROR" in line: tag = "ERROR"
+                    self.log_text.insert(tk.END, line + "\n", tag)
+                
+                self.log_text.see(tk.END)
+                self.log_text.config(state=tk.DISABLED)
+                self._last_log_pos = len(content)
+        except Exception as e:
+            print(f"Log console update error: {e}")
 
     def _update_positions_tree(self, positions):
         # Selected items tracking if needed
@@ -1064,6 +1175,16 @@ class LivePortfolioDashboard:
         from_date = datetime.now() - timedelta(days=self.history_days)
         to_date = datetime.now() + timedelta(days=1)
         
+        # --- Update Season Timer (Live every second) ---
+        elapsed = int(time.time()) - self.reset_timestamp
+        days = elapsed // 86400
+        hours = (elapsed % 86400) // 3600
+        minutes = (elapsed % 3600) // 60
+        seconds = elapsed % 60
+        time_str = f"{days}D {hours}H {minutes}M {seconds}S"
+        if 'season_timer' in self.grid_cards:
+            self.grid_cards['season_timer'].config(text=time_str, fg="#00e676")
+
         deals = mt5.history_deals_get(from_date, to_date)
         if deals:
             closed_deals = [d for d in deals if d.entry == 1 and d.time > self.reset_timestamp]

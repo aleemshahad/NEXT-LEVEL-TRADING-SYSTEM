@@ -8,7 +8,7 @@ timeframe: M5
 
 grid:
   size: 300
-  spacing: 2.0
+  spacing: 0.4
   lot_size: 0.01
   profit_target_pct: 0.25
   profit_target_usd: 20 # Close session when total profit of one side hits $20
