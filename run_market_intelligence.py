@@ -34,52 +34,52 @@ def format_report(report: IntelligenceReport) -> str:
     # SECTION 1: Market Sentiment Summary (Numeric)
     output.append("SECTION 1: Market Sentiment Summary (Numeric)")
     output.append("-" * 40)
-    output.append(f"• Overall Bias:       {sentiment.bias.value.upper()}")
-    output.append(f"• Sentiment Score:    {sentiment.sentiment_score:.2f} (-1.0 to +1.0)")
-    output.append(f"• Emotional Tone:     {sentiment.emotional_tone.value.upper()}")
-    output.append(f"• Conviction Level:   {sentiment.conviction_score:.2f} (0.0 to 1.0)")
-    output.append(f"• Time Horizon:       {sentiment.time_horizon.value}")
+    output.append(f"  * Overall Bias:       {sentiment.bias.value.upper()}")
+    output.append(f"  * Sentiment Score:    {sentiment.sentiment_score:.2f} (-1.0 to +1.0)")
+    output.append(f"  * Emotional Tone:     {sentiment.emotional_tone.value.upper()}")
+    output.append(f"  * Conviction Level:   {sentiment.conviction_score:.2f} (0.0 to 1.0)")
+    output.append(f"  * Time Horizon:       {sentiment.time_horizon.value}")
     output.append("")
-
+ 
     # SECTION 2: Retail vs Institutional Sentiment Comparison
     output.append("SECTION 2: Retail vs Institutional Sentiment Comparison")
     output.append("-" * 40)
-    output.append(f"• Retail Score:       {divergence.retail_score:.2f}")
-    output.append(f"• Institutional Score:{divergence.institutional_score:.2f}")
-    output.append(f"• Divergence Mag:     {divergence.divergence_magnitude:.2f}")
-    output.append(f"• Direction:          {divergence.divergence_direction}")
+    output.append(f"  * Retail Score:       {divergence.retail_score:.2f}")
+    output.append(f"  * Institutional Score:{divergence.institutional_score:.2f}")
+    output.append(f"  * Divergence Mag:     {divergence.divergence_magnitude:.2f}")
+    output.append(f"  * Direction:          {divergence.divergence_direction}")
     output.append("")
-
+ 
     # SECTION 3: Crowd Density & Narrative Risk
     output.append("SECTION 3: Crowd Density & Narrative Risk")
     output.append("-" * 40)
-    output.append(f"• Crowd Density:      {sentiment.crowd_density:.2f} (0-1)")
-    output.append(f"• Narrative Risk:     {report.narrative_risk_score:.2f} (0-1)")
-    output.append(f"• Crowdedness Status: {'OVERCROWDED' if sentiment.crowd_density > 0.7 else 'NORMAL'}")
+    output.append(f"  * Crowd Density:      {sentiment.crowd_density:.2f} (0-1)")
+    output.append(f"  * Narrative Risk:     {report.narrative_risk_score:.2f} (0-1)")
+    output.append(f"  * Crowdedness Status: {'OVERCROWDED' if sentiment.crowd_density > 0.7 else 'NORMAL'}")
     output.append("")
-
+ 
     # SECTION 4: Smart Money Inference (Probabilistic)
     output.append("SECTION 4: Smart Money Inference (Probabilistic)")
     output.append("-" * 40)
-    output.append(f"• Smart Money Prob:   {smart_money.probability_smart_money_active:.2f} (0-1)")
-    output.append(f"• Liquidity Focus:    {smart_money.liquidity_focus_score:.2f}")
-    output.append(f"• Risk Alignment:     {smart_money.risk_alignment}")
-    output.append(f"• Top Narratives:     {', '.join(smart_money.detected_narratives)}")
+    output.append(f"  * Smart Money Prob:   {smart_money.probability_smart_money_active:.2f} (0-1)")
+    output.append(f"  * Liquidity Focus:    {smart_money.liquidity_focus_score:.2f}")
+    output.append(f"  * Risk Alignment:     {smart_money.risk_alignment}")
+    output.append(f"  * Top Narratives:     {', '.join(smart_money.detected_narratives)}")
     output.append("")
-
+ 
     # SECTION 5: Sentiment-Based Risk Adjustments
     output.append("SECTION 5: Sentiment-Based Risk Adjustments")
     output.append("-" * 40)
-    output.append(f"• Risk Modifier:      x{decision.risk_modifier:.2f}")
+    output.append(f"  * Risk Modifier:      x{decision.risk_modifier:.2f}")
     if divergence.contrarian_opportunity:
-        output.append("• ALERT:              POTENTIAL CONTRARIAN ZONE DETECTED")
+        output.append("  * ALERT:              POTENTIAL CONTRARIAN ZONE DETECTED")
     output.append("")
-
+ 
     # SECTION 6: AI Decision Impact (Allow / Filter / Reduce / Block)
     output.append("SECTION 6: AI Decision Impact")
     output.append("-" * 40)
-    output.append(f"• DECISION:           {decision.action}")
-    output.append(f"• REASON:             {decision.reason}")
+    output.append(f"  * DECISION:           {decision.action}")
+    output.append(f"  * REASON:             {decision.reason}")
     output.append("==================================================")
     
     return "\n".join(output)

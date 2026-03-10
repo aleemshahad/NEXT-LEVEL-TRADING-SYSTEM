@@ -38,6 +38,8 @@ class LiquidityLevel:
     strength: float
     touched_count: int
     swept: bool
+    penetration_pct: float = 0.0
+    rejection_pct: float = 0.0
 
 @dataclass
 class FairValueGap:
@@ -145,7 +147,8 @@ class ICTFeatureEngineer:
             'equal_highs_lows': equal_levels,
             'buy_side_liquidity': [l for l in liquidity_levels if l.level_type == 'buy_side'],
             'sell_side_liquidity': [l for l in liquidity_levels if l.level_type == 'sell_side'],
-            'sweep_success_rate': self._calculate_sweep_success_rate(sweeps)
+            'sweep_success_rate': self._calculate_sweep_success_rate(sweeps),
+            'avg_volatility_pct': self._get_avg_volatility_pct(df)
         }
     
     def _analyze_fair_value_gaps(self, df: pd.DataFrame) -> Dict:
@@ -532,44 +535,66 @@ class ICTFeatureEngineer:
         return sweeps
     
     def _check_level_sweep(self, df: pd.DataFrame, level: LiquidityLevel) -> Dict:
-        """Check if a liquidity level was swept"""
+        """Check if a liquidity level was swept with refined confirmation"""
         
-        tolerance = level.price * 0.001
+        avg_vol_pct = self._get_avg_volatility_pct(df)
+        min_pen = max(0.001, avg_vol_pct * 0.001)  # 0.1% volatility = 0.0001 penetration
+        min_rej = max(0.0005, avg_vol_pct * 0.0005)
         
         for i, row in df.iterrows():
-            if row['low'] <= level.price + tolerance and row['high'] >= level.price - tolerance:
-                # Check if this was a sweep (broke through and reversed)
-                if self._is_sweep_pattern(df, i, level):
+            if row['low'] <= level.price + (level.price * 0.001) and row['high'] >= level.price - (level.price * 0.001):
+                # Only check if this happened AFTER the level was formed
+                if i <= level.timestamp:
+                    continue
+                    
+                # Refined sweep pattern from Notebook v2.2
+                sweep_result = self._is_sweep_pattern(df, i, level, min_pen, min_rej)
+                if sweep_result['detected']:
                     return {
                         'swept': True,
                         'time': i,
-                        'reaction_strength': self._calculate_reaction_strength(df, i)
+                        'reaction_strength': sweep_result['strength'],
+                        'penetration': sweep_result['pen'],
+                        'rejection': sweep_result['rej']
                     }
         
         return {'swept': False}
-    
-    def _is_sweep_pattern(self, df: pd.DataFrame, index: int, level: LiquidityLevel) -> bool:
-        """Determine if price action represents a sweep pattern"""
+
+    def _get_avg_volatility_pct(self, df: pd.DataFrame) -> float:
+        """Calculate average bar range as % of price (Volatility)"""
+        recent = df.tail(50)
+        avg_range = (recent['high'] - recent['low']).mean()
+        avg_close = recent['close'].mean()
+        return (avg_range / avg_close) * 100 if avg_close > 0 else 0.1
+
+    def _is_sweep_pattern(self, df: pd.DataFrame, index: pd.Timestamp, level: LiquidityLevel, min_pen: float, min_rej: float) -> Dict:
+        """Determines if a bar represents a liquidity sweep with strict confirmation"""
         
-        if index < 5 or index >= len(df) - 5:
-            return False
+        bar = df.loc[index]
+        detected = False
+        pen = 0.0
+        rej = 0.0
+        strength = 0.0
         
-        # Get context around the potential sweep
-        before = df.iloc[index-5:index]
-        sweep_bar = df.iloc[index]
-        after = df.iloc[index+1:index+6]
-        
-        # Sweep pattern: Break level then reverse
-        if level.level_type == 'sell_side':
-            # Sweep above high then reverse down
-            broke_above = sweep_bar['high'] > level.price
-            reversed_down = after['close'].min() < sweep_bar['close']
-            return broke_above and reversed_down
-        else:
-            # Sweep below low then reverse up
-            broke_below = sweep_bar['low'] < level.price
-            reversed_up = after['close'].max() > sweep_bar['close']
-            return broke_below and reversed_up
+        # Bullish Sweep (Sell-Side Liquidity swept below swing low)
+        if level.level_type == 'buy_side': # Naming in FeatureEngineer: 'buy_side' level = below swings
+            if bar['low'] < level.price and bar['close'] > level.price:
+                pen = (level.price - bar['low']) / level.price * 100
+                rej = (bar['close'] - level.price) / level.price * 100
+                if pen >= min_pen and rej >= min_rej:
+                    detected = True
+                    strength = min((pen + rej) / (min_pen + min_rej + 0.0001), 1.0)
+                    
+        # Bearish Sweep (Buy-Side Liquidity swept above swing high)
+        elif level.level_type == 'sell_side':
+            if bar['high'] > level.price and bar['close'] < level.price:
+                pen = (bar['high'] - level.price) / level.price * 100
+                rej = (level.price - bar['close']) / level.price * 100
+                if pen >= min_pen and rej >= min_rej:
+                    detected = True
+                    strength = min((pen + rej) / (min_pen + min_rej + 0.0001), 1.0)
+                    
+        return {'detected': detected, 'pen': pen, 'rej': rej, 'strength': strength}
     
     def _calculate_reaction_strength(self, df: pd.DataFrame, sweep_index: int) -> float:
         """Calculate strength of reaction after sweep"""
@@ -664,10 +689,12 @@ class ICTFeatureEngineer:
         for i in range(2, len(df)):
             bar1, bar2, bar3 = df.iloc[i-2], df.iloc[i-1], df.iloc[i]
             
-            # Bullish FVG
+            # Detect Bullish Gap (BISI)
             if bar1['high'] < bar3['low']:
                 gap_size = bar3['low'] - bar1['high']
-                if gap_size > bar2['close'] * 0.0005:
+                # ATR-based significance (Notebook v2.0)
+                volatility = (df['high'].iloc[max(0, i-14):i] - df['low'].iloc[max(0, i-14):i]).mean()
+                if gap_size > volatility * 0.2: # Minimum 20% of ATR
                     fvgs.append(FairValueGap(
                         high=bar3['low'],
                         low=bar1['high'],
@@ -679,10 +706,11 @@ class ICTFeatureEngineer:
                         reaction_strength=0.0
                     ))
             
-            # Bearish FVG
+            # Detect Bearish Gap (SIBI)
             elif bar1['low'] > bar3['high']:
                 gap_size = bar1['low'] - bar3['high']
-                if gap_size > bar2['close'] * 0.0005:
+                volatility = (df['high'].iloc[max(0, i-14):i] - df['low'].iloc[max(0, i-14):i]).mean()
+                if gap_size > volatility * 0.2:
                     fvgs.append(FairValueGap(
                         high=bar1['low'],
                         low=bar3['high'],

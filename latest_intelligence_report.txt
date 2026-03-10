@@ -1,41 +1,41 @@
 ==================================================
-MARKET INTELLIGENCE REPORT | 2026-02-09 23:33:08
+MARKET INTELLIGENCE REPORT | 2026-03-10 05:59:18
 ==================================================
 
 SECTION 1: Market Sentiment Summary (Numeric)
 ----------------------------------------
-• Overall Bias:       BULLISH
-• Sentiment Score:    0.25 (-1.0 to +1.0)
-• Emotional Tone:     CAUTION
-• Conviction Level:   0.25 (0.0 to 1.0)
-• Time Horizon:       Intraday
+  * Overall Bias:       NEUTRAL
+  * Sentiment Score:    0.00 (-1.0 to +1.0)
+  * Emotional Tone:     CAUTION
+  * Conviction Level:   0.00 (0.0 to 1.0)
+  * Time Horizon:       Intraday
 
 SECTION 2: Retail vs Institutional Sentiment Comparison
 ----------------------------------------
-• Retail Score:       0.00
-• Institutional Score:0.30
-• Divergence Mag:     0.30
-• Direction:          Inst > Retail (Bullish Bias)
+  * Retail Score:       0.00
+  * Institutional Score:0.00
+  * Divergence Mag:     0.00
+  * Direction:          Neutral
 
 SECTION 3: Crowd Density & Narrative Risk
 ----------------------------------------
-• Crowd Density:      0.50 (0-1)
-• Narrative Risk:     0.40 (0-1)
-• Crowdedness Status: NORMAL
+  * Crowd Density:      0.50 (0-1)
+  * Narrative Risk:     0.40 (0-1)
+  * Crowdedness Status: NORMAL
 
 SECTION 4: Smart Money Inference (Probabilistic)
 ----------------------------------------
-• Smart Money Prob:   0.75 (0-1)
-• Liquidity Focus:    0.80
-• Risk Alignment:     Defensive
-• Top Narratives:     Risk-off due to CPI data, Sector rotation into defensive
+  * Smart Money Prob:   0.95 (0-1)
+  * Liquidity Focus:    0.70
+  * Risk Alignment:     Neutral
+  * Top Narratives:     Institutional NEUTRAL Accumulation
 
 SECTION 5: Sentiment-Based Risk Adjustments
 ----------------------------------------
-• Risk Modifier:      x1.00
+  * Risk Modifier:      x1.00
 
 SECTION 6: AI Decision Impact
 ----------------------------------------
-• DECISION:           ALLOW
-• REASON:             Sentiment aligns with market structure
+  * DECISION:           ALLOW
+  * REASON:             Sentiment aligns with structural bias
 ==================================================

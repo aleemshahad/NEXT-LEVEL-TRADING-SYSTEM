@@ -146,41 +146,36 @@ class ICTConceptEvaluator:
         }
     
     def _extract_ict_features(self, trades: List[Dict], market_data: pd.DataFrame) -> ICTFeatures:
-        """Extract and quantify ICT concept features from trades"""
+        """Extract and quantify ICT concept features from trades and market data"""
+        from ict_feature_engineer import ICTFeatureEngineer
+        fe = ICTFeatureEngineer()
         
-        # Market Structure Analysis
-        market_structure_score = self._analyze_market_structure_effectiveness(trades, market_data)
+        # Get raw features from the engineer
+        raw_features = fe.extract_all_features(market_data)
         
-        # Liquidity Analysis
-        liquidity_density = self._calculate_liquidity_density_score(trades)
+        # Quantify effectiveness based on trades
+        ms_score = self._analyze_market_structure_effectiveness(trades, market_data)
+        liq_density = raw_features.get('liquidity', {}).get('liquidity_density', 0.5)
+        fvg_rate = raw_features.get('fvg', {}).get('fill_rate', 0.5)
+        ob_rate = raw_features.get('order_blocks', {}).get('mitigation_rate', 0.5)
         
-        # FVG Analysis
-        fvg_fill_rate = self._calculate_fvg_effectiveness(trades)
-        
-        # Order Block Analysis
-        ob_success_rate = self._calculate_ob_effectiveness(trades)
-        
-        # Session-based Performance
+        # Session and Regime analysis
         session_expectancy = self._calculate_session_expectancy(trades)
-        
-        # Regime-based Performance
         regime_performance = self._calculate_regime_performance(trades, market_data)
         
-        # Liquidity Sweep Success
-        liquidity_sweep_success = self._calculate_liquidity_sweep_success(trades)
-        
-        # Premium/Discount Effectiveness
-        premium_discount_effectiveness = self._calculate_premium_discount_effectiveness(trades)
+        # Pattern specific success rates
+        sweep_success = raw_features.get('liquidity', {}).get('sweep_success_rate', 0.5)
+        pd_eff = raw_features.get('premium_discount', {}).get('zone_effectiveness', 0.5)
         
         return ICTFeatures(
-            market_structure_score=market_structure_score,
-            liquidity_density=liquidity_density,
-            fvg_fill_rate=fvg_fill_rate,
-            ob_success_rate=ob_success_rate,
+            market_structure_score=ms_score,
+            liquidity_density=liq_density,
+            fvg_fill_rate=fvg_rate,
+            ob_success_rate=ob_rate,
             session_expectancy=session_expectancy,
             regime_performance=regime_performance,
-            liquidity_sweep_success=liquidity_sweep_success,
-            premium_discount_effectiveness=premium_discount_effectiveness
+            liquidity_sweep_success=sweep_success,
+            premium_discount_effectiveness=pd_eff
         )
     
     def _calculate_comprehensive_metrics(self, trades: List[Dict]) -> ICTMetrics:
@@ -387,24 +382,47 @@ class ICTConceptEvaluator:
     
     # Helper methods for feature extraction
     def _analyze_market_structure_effectiveness(self, trades: List[Dict], market_data: pd.DataFrame) -> float:
-        """Quantify market structure concept effectiveness"""
-        # Implementation would analyze MSS/BOS success rates
-        return 0.65  # Placeholder
-    
+        """Quantify market structure concept effectiveness by trade alignment"""
+        if not trades: return 0.5
+        
+        aligned_count = 0
+        for trade in trades:
+            # Check if trade direction matches market structure bias at entry
+            entry_time = trade.get('entry_time')
+            if entry_time and entry_time in market_data.index:
+                idx = market_data.index.get_loc(entry_time)
+                # Simple trend check: Is price above/below 50 SMA?
+                sma50 = market_data['close'].rolling(50).mean()
+                bias = 'BULLISH' if market_data['close'].iloc[idx] > sma50.iloc[idx] else 'BEARISH'
+                trade_type = trade.get('type', '').upper()
+                if (trade_type == 'BUY' and bias == 'BULLISH') or (trade_type == 'SELL' and bias == 'BEARISH'):
+                    aligned_count += 1
+        
+        return aligned_count / len(trades)
+
     def _calculate_liquidity_density_score(self, trades: List[Dict]) -> float:
-        """Calculate liquidity density effectiveness"""
-        # Implementation would analyze liquidity sweep success
-        return 0.58  # Placeholder
-    
+        """Analyze liquidity sweep success for trades"""
+        if not trades: return 0.5
+        sweep_trades = [t for t in trades if 'SWEEP' in str(t.get('setup_type', '')).upper()]
+        if not sweep_trades: return 0.5
+        win_rate = len([t for t in sweep_trades if t.get('pnl', 0) > 0]) / len(sweep_trades)
+        return win_rate
+
     def _calculate_fvg_effectiveness(self, trades: List[Dict]) -> float:
-        """Calculate FVG fill rate and reaction strength"""
-        # Implementation would track FVG detection and outcomes
-        return 0.72  # Placeholder
-    
+        """Calculate FVG-based trade success rate"""
+        if not trades: return 0.5
+        fvg_trades = [t for t in trades if 'FVG' in str(t.get('setup_type', '')).upper()]
+        if not fvg_trades: return 0.5
+        win_rate = len([t for t in fvg_trades if t.get('pnl', 0) > 0]) / len(fvg_trades)
+        return win_rate
+
     def _calculate_ob_effectiveness(self, trades: List[Dict]) -> float:
-        """Calculate order block success rate"""
-        # Implementation would track OB mitigation vs invalidation
-        return 0.61  # Placeholder
+        """Calculate order block based trade success rate"""
+        if not trades: return 0.5
+        ob_trades = [t for t in trades if 'OB' in str(t.get('setup_type', '')).upper() or 'ORDER_BLOCK' in str(t.get('setup_type', '')).upper()]
+        if not ob_trades: return 0.5
+        win_rate = len([t for t in ob_trades if t.get('pnl', 0) > 0]) / len(ob_trades)
+        return win_rate
     
     def _calculate_session_expectancy(self, trades: List[Dict]) -> Dict[str, float]:
         """Calculate expectancy by trading session"""

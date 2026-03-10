@@ -516,9 +516,20 @@ class ICTConceptAuditor:
         return self.evaluate_ict_strategy(trades, market_data, components, enable_cv=enable_cv)
     
     def _load_trades(self, trades_file: str) -> List[Dict]:
-        """Load trades from CSV or JSON file"""
+        """Load trades from CSV or JSON file (or directory)"""
         
         file_path = Path(trades_file)
+        
+        # If it's a directory, find the newest trades/log file
+        if file_path.is_dir():
+            logger.info(f"📁 Scanning directory for trades: {trades_file}")
+            possible_files = list(file_path.glob("*.csv")) + list(file_path.glob("*.json"))
+            if not possible_files:
+                raise FileNotFoundError(f"No .csv or .json files found in {trades_file}")
+            # Filter for files that likely contain 'trade' or 'log' in name
+            trade_files = [f for f in possible_files if 'trade' in f.name.lower() or 'log' in f.name.lower()]
+            file_path = max(trade_files or possible_files, key=lambda p: p.stat().st_mtime)
+            logger.info(f"📄 Auto-selected newest trades file: {file_path.name}")
         
         if not file_path.exists():
             raise FileNotFoundError(f"Trades file not found: {trades_file}")
@@ -528,14 +539,26 @@ class ICTConceptAuditor:
             return df.to_dict('records')
         elif file_path.suffix.lower() == '.json':
             with open(file_path, 'r') as f:
-                return json.load(f)
+                data = json.load(f)
+                return data if isinstance(data, list) else [data]
         else:
             raise ValueError(f"Unsupported file format: {file_path.suffix}")
     
     def _load_market_data(self, market_data_file: str) -> pd.DataFrame:
-        """Load market data from CSV file"""
+        """Load market data from CSV file (or directory)"""
         
         file_path = Path(market_data_file)
+        
+        # If it's a directory, find the newest data file
+        if file_path.is_dir():
+            logger.info(f"📁 Scanning directory for market data: {market_data_file}")
+            possible_files = list(file_path.glob("*.csv"))
+            if not possible_files:
+                raise FileNotFoundError(f"No .csv files found in {market_data_file}")
+            # Filter for files that likely contain 'data' or 'price' or symbol name
+            data_files = [f for f in possible_files if any(x in f.name.lower() for x in ['data', 'price', 'ohlc'])]
+            file_path = max(data_files or possible_files, key=lambda p: p.stat().st_mtime)
+            logger.info(f"📄 Auto-selected newest data file: {file_path.name}")
         
         if not file_path.exists():
             raise FileNotFoundError(f"Market data file not found: {market_data_file}")
@@ -544,7 +567,7 @@ class ICTConceptAuditor:
         
         # Ensure datetime index
         if 'time' in df.columns:
-            df['time'] = pd.to_datetime(df['time'])
+            df['time'] = pd.to_datetime(df['time'], unit='s' if df['time'].dtype == 'int64' else None)
             df.set_index('time', inplace=True)
         elif 'date' in df.columns:
             df['date'] = pd.to_datetime(df['date'])

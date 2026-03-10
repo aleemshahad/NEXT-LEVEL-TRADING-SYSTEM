@@ -609,12 +609,35 @@ class PerformanceEvaluator:
     
     def _check_fragility(self, trades: List[Dict]) -> Dict:
         """Check for session and regime fragility"""
+        if not trades:
+            return {'session_fragility': 0.0, 'regime_fragility': 0.0, 'overall_fragility': 0.0}
+            
+        # Session fragility: Focus on NY, London, or Asian sessions
+        # NY: 13:00-21:00 UTC, London: 08:00-16:00 UTC, Asia: 00:00-09:00 UTC
+        sessions = {'NY': 0, 'London': 0, 'Asia': 0, 'Other': 0}
+        total_pnl = sum(abs(t.get('pnl', 0)) for t in trades)
         
-        # Session fragility (placeholder - would need session data)
-        session_fragility = 0.5  # Placeholder
+        if total_pnl == 0:
+            return {'session_fragility': 0.0, 'regime_fragility': 0.0, 'overall_fragility': 0.0}
+            
+        for trade in trades:
+            time = trade.get('entry_time')
+            if isinstance(time, str):
+                try: time = datetime.fromisoformat(time)
+                except: continue
+                
+            hour = time.hour if hasattr(time, 'hour') else 0
+            if 13 <= hour < 21: sessions['NY'] += abs(trade.get('pnl', 0))
+            elif 8 <= hour < 16: sessions['London'] += abs(trade.get('pnl', 0))
+            elif 0 <= hour < 9: sessions['Asia'] += abs(trade.get('pnl', 0))
+            else: sessions['Other'] += abs(trade.get('pnl', 0))
+            
+        max_session_pnl = max(sessions.values())
+        session_fragility = max_session_pnl / total_pnl
         
-        # Regime fragility (placeholder - would need regime data)
-        regime_fragility = 0.5  # Placeholder
+        # Regime fragility (placeholder - usually derived from CV analysis or market volatility)
+        # For now, let's use volatility as a proxy for regime
+        regime_fragility = 0.5  # Keep as placeholder or refine if regime data is available
         
         return {
             'session_fragility': session_fragility,

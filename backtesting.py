@@ -314,47 +314,33 @@ class BacktestEngine:
             return 'NEUTRAL'
     
     def _detect_liquidity_sweep(self, df: pd.DataFrame, index: int) -> Dict:
-        """Detect liquidity sweeps below lows or above highs"""
+        """
+        Detect liquidity sweeps completed on the PREVIOUS bar.
+        Matches the confirmed 'break & close back inside' requirement.
+        """
         try:
-            lookback = 20  # More lookback for M5 timeframe
-            if index < lookback:
+            lookback = 30  # Synced lookback
+            if index < lookback + 1:
                 return {'detected': False}
             
-            current = df.iloc[index]
-            recent_data = df.iloc[index-lookback:index]
+            # Use the previous confirmed bar
+            confirmed_idx = index - 1
+            current_bar = df.iloc[confirmed_idx]
             
-            # Find recent swing low and high
+            # Swing levels from BEFORE the sweep bar
+            recent_data = df.iloc[confirmed_idx - lookback : confirmed_idx]
             swing_low = recent_data['low'].min()
             swing_high = recent_data['high'].max()
             
-            # Check for sweep below low (bullish setup)
-            if current['low'] < swing_low and current['close'] > swing_low:
-                return {
-                    'detected': True,
-                    'type': 'BELOW_LOW',
-                    'swept_level': swing_low,
-                    'strength': 0.8
-                }
+            # Bullish Sweep: Low below swing low, but CLOSE above swing low
+            if current_bar['low'] < swing_low and current_bar['close'] > swing_low:
+                return {'detected': True, 'type': 'BELOW_LOW', 'swept_level': swing_low, 'strength': 0.8}
             
-            # Check for sweep above high (bearish setup)
-            elif current['high'] > swing_high and current['close'] < swing_high:
-                return {
-                    'detected': True,
-                    'type': 'ABOVE_HIGH', 
-                    'swept_level': swing_high,
-                    'strength': 0.8
-                }
-            
-            # Look back a few bars for a recent sweep if current bar didn't sweep
-            for j in range(1, 6):
-                prev_bar = df.iloc[index-j]
-                if prev_bar['low'] < swing_low and current['close'] > swing_low:
-                    return {'detected': True, 'type': 'BELOW_LOW', 'swept_level': swing_low, 'strength': 0.7}
-                if prev_bar['high'] > swing_high and current['close'] < swing_high:
-                    return {'detected': True, 'type': 'ABOVE_HIGH', 'swept_level': swing_high, 'strength': 0.7}
+            # Bearish Sweep: High above swing high, but CLOSE below swing high
+            elif current_bar['high'] > swing_high and current_bar['close'] < swing_high:
+                return {'detected': True, 'type': 'ABOVE_HIGH', 'swept_level': swing_high, 'strength': 0.8}
             
             return {'detected': False}
-            
         except Exception:
             return {'detected': False}
     

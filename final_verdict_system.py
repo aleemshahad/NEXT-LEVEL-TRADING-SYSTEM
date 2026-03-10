@@ -147,7 +147,8 @@ class FinalVerdictSystem:
         risk_score = self._calculate_risk_score(performance_evaluation)
         
         # ICT effectiveness score (20% weight)
-        ict_score = self._calculate_ict_effectiveness_score(feature_analysis)
+        # BUG FIX: Use the evaluation object instead of raw feature analysis
+        ict_score = self._calculate_ict_effectiveness_score(ict_evaluation)
         
         # Statistical validity score (10% weight)
         statistical_score = self._calculate_statistical_score(performance_evaluation)
@@ -297,10 +298,14 @@ class FinalVerdictSystem:
         
         return max(0, score)
     
-    def _calculate_ict_effectiveness_score(self, feature_analysis: Dict) -> float:
-        """Calculate ICT component effectiveness score"""
+    def _calculate_ict_effectiveness_score(self, ict_evaluation: Dict) -> float:
+        """Calculate ICT component effectiveness score using EVALUATED features"""
         
-        ict_features = feature_analysis.get('ict_features', {})
+        # Extract features from evaluation or analysis
+        ict_features = ict_evaluation.get('ict_features')
+        if not ict_features:
+             # Fallback to feature_analysis if eval is missing
+             ict_features = ict_evaluation.get('ict_features', {})
         
         if not ict_features:
             return 0.0
@@ -309,38 +314,23 @@ class FinalVerdictSystem:
         
         # Market structure
         ms_score = getattr(ict_features, 'market_structure_score', 0.0)
-        if ms_score >= self.ict_thresholds['market_structure']:
-            scores.append(100 * ms_score)
-        else:
-            scores.append(50 * ms_score)
+        scores.append(100 * ms_score if ms_score >= self.ict_thresholds.get('market_structure', 0.6) else 40 * ms_score)
         
-        # Liquidity concepts
-        liq_score = getattr(ict_features, 'liquidity_density', 0.0)
-        if liq_score >= self.ict_thresholds['liquidity_concepts']:
-            scores.append(100 * liq_score)
-        else:
-            scores.append(50 * liq_score)
-        
-        # FVG effectiveness
+        # FVG effectiveness (High weighting in v2.0)
         fvg_score = getattr(ict_features, 'fvg_fill_rate', 0.0)
-        if fvg_score >= self.ict_thresholds['fair_value_gaps']:
-            scores.append(100 * fvg_score)
-        else:
-            scores.append(50 * fvg_score)
+        scores.append(120 * fvg_score if fvg_score >= self.ict_thresholds.get('fair_value_gaps', 0.6) else 30 * fvg_score)
+        
+        # Liquidity Sweeps (High weighting in v2.2)
+        sweep_score = getattr(ict_features, 'liquidity_sweep_success', 0.0)
+        scores.append(120 * sweep_score if sweep_score >= self.ict_thresholds.get('liquidity_concepts', 0.6) else 30 * sweep_score)
         
         # Order block effectiveness
         ob_score = getattr(ict_features, 'ob_success_rate', 0.0)
-        if ob_score >= self.ict_thresholds['order_blocks']:
-            scores.append(100 * ob_score)
-        else:
-            scores.append(50 * ob_score)
+        scores.append(90 * ob_score if ob_score >= self.ict_thresholds.get('order_blocks', 0.6) else 40 * ob_score)
         
         # Premium/Discount effectiveness
         pd_score = getattr(ict_features, 'premium_discount_effectiveness', 0.0)
-        if pd_score >= self.ict_thresholds['premium_discount']:
-            scores.append(100 * pd_score)
-        else:
-            scores.append(50 * pd_score)
+        scores.append(80 * pd_score if pd_score >= self.ict_thresholds.get('premium_discount', 0.5) else 40 * pd_score)
         
         return np.mean(scores) if scores else 0.0
     
@@ -466,8 +456,8 @@ class FinalVerdictSystem:
         if metrics.win_rate < 0.4:
             weaknesses.append(f"Low win rate: {metrics.win_rate:.1%}")
         
-        # ICT effectiveness
-        ict_effectiveness = self._analyze_ict_effectiveness(feature_analysis)
+        # ICT effectiveness (use evaluated metrics)
+        ict_effectiveness = self._analyze_ict_effectiveness(ict_evaluation)
         
         # CV value added
         cv_value_added = self._calculate_cv_value_added(cv_analysis) if cv_analysis else 0.0
@@ -671,17 +661,16 @@ class FinalVerdictSystem:
         
         return checks
     
-    def _analyze_ict_effectiveness(self, feature_analysis: Dict) -> Dict[str, float]:
-        """Analyze effectiveness of each ICT component"""
+    def _analyze_ict_effectiveness(self, ict_evaluation: Dict) -> Dict[str, float]:
+        """Analyze effectiveness of each ICT component from evaluation data"""
         
-        ict_features = feature_analysis.get('ict_features', {})
-        
+        ict_features = ict_evaluation.get('ict_features')
         if not ict_features:
             return {}
         
         effectiveness = {}
         
-        # Extract component scores
+        # Extract component scores from the ICTFeatures object
         effectiveness['market_structure'] = getattr(ict_features, 'market_structure_score', 0.0)
         effectiveness['liquidity_concepts'] = getattr(ict_features, 'liquidity_density', 0.0)
         effectiveness['fair_value_gaps'] = getattr(ict_features, 'fvg_fill_rate', 0.0)

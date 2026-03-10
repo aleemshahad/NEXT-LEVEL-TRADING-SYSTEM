@@ -1,7 +1,10 @@
+import requests
+import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from typing import List
 from datetime import datetime
-import random
+import re
+
 try:
     from .models import RawSourceData
 except (ImportError, ValueError):
@@ -12,65 +15,77 @@ class DataSource(ABC):
     def fetch_data(self) -> List[RawSourceData]:
         pass
 
-class SocialPlatformCrawler(DataSource):
-    def fetch_data(self) -> List[RawSourceData]:
-        # Placeholder for API calls to Twitter/Reddit/Telegram
-        # In production, this would use Tweepy, PRAW, etc.
-        print("Fetching from Social Platforms (Simulated)...")
-        return [
-            RawSourceData(
-                content="Bitcoin looking super bullish today! #BTC",
-                source_url="twitter.com/user123",
-                platform="Twitter",
-                timestamp=datetime.now(),
-                author_id="@user123",
-                metadata={"followers": 1500}
-            ),
-             RawSourceData(
-                content="Market structure broken on 4H, looking for shorts.",
-                source_url="reddit.com/r/trading",
-                platform="Reddit",
-                timestamp=datetime.now(),
-                author_id="u/trader_pro",
-                metadata={"karma": 5000}
-            )
+class MarketNewsCrawler(DataSource):
+    """Real Market News Scraper from Public RSS Feeds"""
+    def __init__(self):
+        self.feeds = [
+            "https://search.cnbc.com/rs/search/view.xml?partnerId=2000&keywords=gold%20market",
+            "https://www.marketwatch.com/posts/bull-market-news.rss",
+            "https://search.cnbc.com/rs/search/view.xml?partnerId=2000&keywords=fed%20interest%20rates"
         ]
 
-class AnalystSourceCrawler(DataSource):
     def fetch_data(self) -> List[RawSourceData]:
-        # Placeholder for specialized analyst blogs/feeds
-        print("Fetching from Analyst Sources (Simulated)...")
-        return [
-            RawSourceData(
-                content="Liquidity sweep on ES, expecting reversal to fill the imbalance.",
-                source_url="analystblog.com",
-                platform="Blog",
-                timestamp=datetime.now(),
-                author_id="MacroAnalyst",
-                metadata={"reputation": "High"}
-            )
-        ]
+        print("[INFO] Fetching LIVE Market News from Global Sources...")
+        results = []
+        for feed_url in self.feeds:
+            try:
+                response = requests.get(feed_url, timeout=10)
+                if response.status_code != 200: continue
+                
+                root = ET.fromstring(response.content)
+                platform = "CNBC/Reuters Feed"
+                
+                for item in root.findall('.//item'):
+                    title = item.find('title').text if item.find('title') is not None else ""
+                    description = item.find('description').text if item.find('description') is not None else ""
+                    link = item.find('link').text if item.find('link') is not None else ""
+                    
+                    full_content = f"{title}: {description}"
+                    # Clean HTML tags
+                    full_content = re.sub('<[^<]+?>', '', full_content)
+                    
+                    results.append(RawSourceData(
+                        content=full_content[:500], # Keep it concise
+                        source_url=link,
+                        platform=platform,
+                        timestamp=datetime.now(),
+                        author_id="Market Crawler",
+                        metadata={"feed": feed_url}
+                    ))
+                    if len(results) >= 10: break # Don't overload
+            except Exception as e:
+                print(f"   [WARN] Error fetching feed: {e}")
+        return results
 
-class NewsMacroCrawler(DataSource):
+class InstitutionalInsightCrawler(DataSource):
+    """Scrapes Central Bank Sentiment & Macro Sentiment"""
     def fetch_data(self) -> List[RawSourceData]:
-        print("Fetching from News/Macro Sources (Simulated)...")
-        return [
-            RawSourceData(
-                content="Fed Chair signals higher for longer, inflation concerns persist.",
-                source_url="financialnews.com",
-                platform="News",
-                timestamp=datetime.now(),
-                author_id="Bloomberg",
-                metadata={"impact": "High"}
-            )
-        ]
+        print("[INFO] Fetching Institutional Macro Insights...")
+        # Placeholder for more complex scraping (e.g. FOMC Statements)
+        results = []
+        try:
+            url = "https://www.marketwatch.com/rss/topstories"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                root = ET.fromstring(resp.content)
+                for i, item in enumerate(root.findall('.//item')):
+                    if i >= 5: break
+                    results.append(RawSourceData(
+                        content=f"Macro Alert: {item.find('title').text}",
+                        source_url=item.find('link').text,
+                        platform="Institutional Feed",
+                        timestamp=datetime.now(),
+                        author_id="Quant Bot",
+                        metadata={"type": "Institutional"}
+                    ))
+        except: pass
+        return results
 
 class DataAcquisitionService:
     def __init__(self):
         self.sources: List[DataSource] = [
-            SocialPlatformCrawler(),
-            AnalystSourceCrawler(),
-            NewsMacroCrawler()
+            MarketNewsCrawler(),
+            InstitutionalInsightCrawler()
         ]
 
     def aggregate_data(self) -> List[RawSourceData]:
@@ -80,5 +95,10 @@ class DataAcquisitionService:
                 data = source.fetch_data()
                 all_data.extend(data)
             except Exception as e:
-                print(f"Error fetching from source {source}: {e}")
+                print(f"   [ERROR] fetching from source {source}: {e}")
+        
+        if not all_data:
+            print("! Warning: No live data collected. Market intelligence might be stale.")
+            
+        print(f"[SUCCESS] Aggregated {len(all_data)} REAL-TIME intelligence points.")
         return all_data

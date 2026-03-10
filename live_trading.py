@@ -22,7 +22,16 @@ import os
 import json
 import aiohttp
 import requests
+import hmac
+import hashlib
+import uuid
+import platform
 from dotenv import load_dotenv
+
+# Advanced Intelligence Integrations
+from computer_vision_analyzer import ComputerVisionAnalyzer
+from market_intelligence.sentiment_intelligence import SentimentIntelligenceEngine
+from market_intelligence.data_acquisition import DataAcquisitionService
 
 # Load environment variables
 load_dotenv()
@@ -99,6 +108,85 @@ class DiscordNotifier:
         )
         await self.send_message(content, title="🕒 Scheduled Hourly Update", color=0x58a6ff)
 
+# --- SECURITY & LICENSE MANAGER ---
+class SecurityManager:
+    """Institutional-grade License Management & HWID Validation"""
+    def __init__(self):
+        # Obfuscated SALT: Split into small chunks to prevent direct string searching
+        # S1: "N3XT-L3V3L-TR4D1NG-"
+        # S2: "5Y5T3M-2026-AL33M-"
+        # S3: "SH4HZAD-S3CR3T"
+        # Total SALT: "N3XT-L3V3L-TR4D1NG-5Y5T3M-2026-AL33M-SH4HZAD-S3CR3T"
+        self._s_parts = ["N3XT-L3V3L-TR4D1NG-", "5Y5T3M-2026-AL33M-", "SH4HZAD-S3CR3T"]
+        self.license_file = Path("logs/.license_key")
+        self.hwid = self._generate_hwid()
+
+    def _generate_hwid(self) -> str:
+        """Derive a unique Hardware ID for the machine"""
+        node_name = platform.node()
+        node_id = uuid.getnode()
+        return f"{node_name}-{node_id}"
+
+    def get_full_salt(self) -> str:
+        return "".join(self._s_parts)
+
+    def validate_key(self, input_key: str) -> bool:
+        """Verify the input key against the local HMAC-SHA256 signature"""
+        clean_key = input_key.strip().upper().replace("-", "")
+        if len(clean_key) != 16:
+            return False
+
+        # Calculate expected HMAC-SHA256 locally
+        salt_bytes = self.get_full_salt().encode('utf-8')
+        hwid_bytes = self.hwid.encode('utf-8')
+        
+        signature = hmac.new(salt_bytes, hwid_bytes, hashlib.sha256).hexdigest()
+        expected_key = signature[:16].upper()
+        
+        # Constant-time comparison to prevent timing attacks
+        return hmac.compare_digest(clean_key, expected_key)
+
+    def is_authorized(self) -> bool:
+        """Check if machine is already authorized with a valid key"""
+        if self.license_file.exists():
+            with open(self.license_file, "r") as f:
+                saved_key = f.read().strip()
+                return self.validate_key(saved_key)
+        return False
+
+    def save_key(self, key: str):
+        """Persist key upon successful activation upon next launch"""
+        with open(self.license_file, "w") as f:
+            f.write(key.strip().upper())
+
+    def prompt_activation(self):
+        """User interaction flow for Activation"""
+        print("\n" + "="*65)
+        print("   🔒 NEXT LEVEL - SYSTEM ACTIVATION REQUIRED")
+        print("="*65)
+        print(f"   HWID: {self.hwid}")
+        print("   " + "-"*65)
+        print("   Please send the HWID above to the developer to get your key.")
+        print("   " + "-"*65)
+        
+        while True:
+            key = input("\n   >> Enter License Key: ").strip()
+            if not key:
+                print("   [!] Key cannot be empty.")
+                continue
+                
+            if self.validate_key(key):
+                self.save_key(key)
+                print("\n   [SUCCESS] SYSTEM ACTIVATED FOR THIS MACHINE!")
+                time.sleep(2)
+                return True
+            else:
+                print("   [ERR] Invalid Key. Please try again or contact support.")
+                retry = input("   Retry? (y/n): ").lower()
+                if retry != 'y':
+                    return False
+
+
 class TradingBrain:
     """AI Trading Brain with Neural Network"""
     
@@ -107,6 +195,16 @@ class TradingBrain:
         self.model_trained = False
         self.confidence_threshold = 0.6
         self.sentiment_decision = "ALLOW"
+        self.last_ff_status = "STALE"
+        
+        # Advanced Decision Engines (No longer simulated!)
+        self.cv_analyzer = ComputerVisionAnalyzer()
+        self.sentiment_engine = SentimentIntelligenceEngine()
+        self.data_service = DataAcquisitionService()
+        self.last_cv_report = "NO DATA"
+        self.last_sentiment_report = "NO DATA"
+        
+        # Risk Parameters
         self.risk_modifier = 1.0
         self._load_memories()
         self._check_sentiment_bias()
@@ -322,13 +420,48 @@ class TradingBrain:
             # Confluence check
             confidence = min(1.0, score / 2.5)
             
+            # --- ADVANCED AI INTEGRATION (CV & SENTIMENT) ---
+            # 1. Computer Vision Regime Validation
+            try:
+                cv_res = self.cv_analyzer.analyze_market_regime(data)
+                curr_regime = cv_res.get('current_regime')
+                if curr_regime:
+                    self.last_cv_report = f"{curr_regime.regime.value} ({curr_regime.confidence:.0%})"
+                    # If CV disagrees with MSS bias, reduce confidence
+                    if (bias == 'BULLISH' and curr_regime.regime.name == 'TREND_DOWN') or \
+                       (bias == 'BEARISH' and curr_regime.regime.name == 'TREND_UP'):
+                        score *= 0.5
+            except Exception as cv_e:
+                logger.debug(f"CV analysis error: {cv_e}")
+
+            # 2. Market Intelligence (Sentiment) Process
+            try:
+                # Aggregate latest 'news' and 'macro' data
+                raw_intel = self.data_service.aggregate_data()
+                intel_report = self.sentiment_engine.run_analysis_cycle(raw_intel)
+                
+                self.last_sentiment_report = f"{intel_report.sentiment_summary.bias.value.upper()} | Score: {intel_report.sentiment_summary.sentiment_score:.2f}"
+                self.risk_modifier = intel_report.decision_impact.risk_modifier
+                
+                # Check for blocking sentiment
+                if intel_report.decision_impact.action == "BLOCK":
+                     self.sentiment_decision = "BLOCK"
+            except Exception as sent_e:
+                logger.debug(f"Sentiment engine error: {sent_e}")
+
             # Filter by Silver Bullet and Sentiment
             market_now = self._get_market_timestamp()
             is_sb_time = self._is_silver_bullet_time(market_now)
-            self._check_sentiment_bias()
+            self._check_sentiment_bias() # Legacy FF news check
             
             if self.sentiment_decision == "BLOCK":
-                return {'action': 'HOLD', 'bias': bias, 'confidence': 0.0, 'reasoning': 'Sentiment: BLOCK', 'ict_status': {'mss': structure}}
+                return {
+                    'action': 'HOLD', 
+                    'bias': bias, 
+                    'confidence': 0.0, 
+                    'reasoning': 'Intelligence: BLOCK', 
+                    'ict_status': {'mss': structure, 'cv': self.last_cv_report}
+                }
             
             action = 'HOLD'
             if score >= 1.5 and bias != 'NEUTRAL':
@@ -355,12 +488,13 @@ class TradingBrain:
                 'action': action,
                 'bias': bias,
                 'confidence': confidence,
-                'reasoning': f"ICT {action}: {', '.join(signals_present)} (Score: {score:.1f})",
+                'reasoning': f"AI {action}: {', '.join(signals_present)} | CV: {self.last_cv_report}",
                 'entry_price': current['close'],
                 'use_limit': False,
                 'stop_loss': stop_loss,
                 'take_profit': self._find_next_liquidity_pool(data, index, 'UP' if action == 'BUY' else 'DOWN'),
-                'ict_status': ict_status
+                'ict_status': ict_status,
+                'risk_modifier': self.risk_modifier
             }
                 
         except Exception as e:
@@ -479,51 +613,78 @@ class TradingBrain:
         except: return {'detected': False}
     
     def _detect_liquidity_sweep(self, df: pd.DataFrame, index: int) -> Dict:
-        """Detect liquidity sweeps below lows or above highs"""
+        """Refined Liquidity Sweep Detection (Notebook v2.2)"""
         try:
-            lookback = 40  # Increased lookback for higher probability sweeps
-            if index < lookback:
+            lookback = 30
+            if index < lookback + 1:
                 return {'detected': False}
             
-            current = df.iloc[index]
-            recent_data = df.iloc[index-lookback:index]
+            # Auto-tune thresholds based on recent volatility
+            recent = df.iloc[max(0, index-50):index]
+            avg_range = (recent['high'] - recent['low']).mean()
+            avg_close = recent['close'].mean()
+            vol_pct = (avg_range / avg_close) * 100 if avg_close > 0 else 0.1
+            
+            min_pen = max(0.001, vol_pct * 0.001)
+            min_rej = max(0.0005, vol_pct * 0.0005)
+            
+            confirmed_idx = index - 1
+            current_bar = df.iloc[confirmed_idx]
+            recent_data = df.iloc[confirmed_idx - lookback : confirmed_idx]
             swing_low = recent_data['low'].min()
             swing_high = recent_data['high'].max()
             
-            if current['low'] < swing_low and current['close'] > swing_low:
-                return {'detected': True, 'type': 'BELOW_LOW', 'swept_level': swing_low, 'strength': 0.8}
-            elif current['high'] > swing_high and current['close'] < swing_high:
-                return {'detected': True, 'type': 'ABOVE_HIGH', 'swept_level': swing_high, 'strength': 0.8}
+            # Bullish Sweep (Sell-Side Liquidity)
+            if current_bar['low'] < swing_low and current_bar['close'] > swing_low:
+                pen = (swing_low - current_bar['low']) / swing_low * 100
+                rej = (current_bar['close'] - swing_low) / swing_low * 100
+                if pen >= min_pen and rej >= min_rej:
+                    strength = min((pen + rej) / (min_pen + min_rej + 1e-9), 1.0)
+                    return {'detected': True, 'type': 'BELOW_LOW', 'swept_level': swing_low, 'strength': strength}
+            
+            # Bearish Sweep (Buy-Side Liquidity)
+            elif current_bar['high'] > swing_high and current_bar['close'] < swing_high:
+                pen = (current_bar['high'] - swing_high) / swing_high * 100
+                rej = (swing_high - current_bar['close']) / swing_high * 100
+                if pen >= min_pen and rej >= min_rej:
+                    strength = min((pen + rej) / (min_pen + min_rej + 1e-9), 1.0)
+                    return {'detected': True, 'type': 'ABOVE_HIGH', 'swept_level': swing_high, 'strength': strength}
             
             return {'detected': False}
-        except Exception:
+        except Exception as e:
+            logger.error(f"Sweep detection error: {e}")
             return {'detected': False}
     
     def _detect_fair_value_gap(self, df: pd.DataFrame, index: int) -> Dict:
-        """Detect Fair Value Gaps (FVG) and Active Gaps (Notebook Scan Match)"""
+        """Refined FVG Detection with ATR-based significance (Notebook v2.0)"""
         try:
             if index < 3: return {'detected': False}
             
-            # 1. Immediate Gap on Current/Recent Bars
             bar1 = df.iloc[index-2]
             bar2 = df.iloc[index-1]
             bar3 = df.iloc[index]
             
+            # ATR-based significance
+            volatility = (df['high'] - df['low']).rolling(14).mean().iloc[index-1]
+            min_gap = volatility * 0.15 # 15% of ATR threshold
+            
             # Detect Bullish Gap (BISI)
             if bar1['high'] < bar3['low']:
                 gap_size = bar3['low'] - bar1['high']
-                if gap_size > (bar2['close'] * 0.0003):
-                    return {'detected': True, 'type': 'BULLISH', 'high': bar3['low'], 'low': bar1['high'], 'strength': 0.8}
+                if gap_size > min_gap:
+                    strength = min(gap_size / (volatility * 0.5 + 1e-9), 1.0)
+                    return {'detected': True, 'type': 'BULLISH', 'high': bar3['low'], 'low': bar1['high'], 'strength': strength}
+            
             # Detect Bearish Gap (SIBI)
             elif bar1['low'] > bar3['high']:
                 gap_size = bar1['low'] - bar3['high']
-                if gap_size > (bar2['close'] * 0.0003):
-                    return {'detected': True, 'type': 'BEARISH', 'high': bar1['low'], 'low': bar3['high'], 'strength': 0.8}
+                if gap_size > min_gap:
+                    strength = min(gap_size / (volatility * 0.5 + 1e-9), 1.0)
+                    return {'detected': True, 'type': 'BEARISH', 'high': bar1['low'], 'low': bar3['high'], 'strength': strength}
             
-            # 2. Scanning for Active (Unfilled) Gaps - Higher time preference
+            # 2. Scanning for Active (Unfilled) Gaps
             active_gaps = self._scan_active_fvgs(df)
             if active_gaps:
-                # Return the nearest active gap if no immediate gap found
                 nearest = active_gaps[0]
                 return {'detected': True, 'active_only': True, **nearest}
 
@@ -2518,11 +2679,13 @@ def launch_dashboard():
 def main():
     """Main function - CLI mode"""
     try:
-        # Create necessary directories
-        Path("logs").mkdir(exist_ok=True)
-        Path("charts").mkdir(exist_ok=True)
-        Path("models").mkdir(exist_ok=True)
-        
+        # --- SECURITY CHECK ---
+        security = SecurityManager()
+        if not security.is_authorized():
+            if not security.prompt_activation():
+                print("  [!] Activation failed. Exiting.")
+                return
+
         symbols, strategy, timeframe = select_trade_setup()
         if symbols is None or strategy is None or timeframe is None:
             print("  Exiting.")
