@@ -20,7 +20,6 @@ import time
 from typing import Dict, List, Optional, Tuple
 import os
 import json
-import aiohttp
 import requests
 import hmac
 import hashlib
@@ -46,42 +45,39 @@ logger.add("logs/latest_intelligence_report.txt", format="{time:HH:mm:ss} | {lev
            level="INFO", rotation="5 MB", mode="w")
 
 class DiscordNotifier:
-    """Discord Webhook Notifier for Real-time Trading Signals & Updates"""
+    """Discord Webhook Notifier for Real-time Trading Signals & Updates (Robust requests-based)"""
     def __init__(self, webhook_url: str = None):
         self.webhook_url = webhook_url or os.getenv("DISCORD_WEBHOOK_URL")
-        self._session = None
-
-    async def _get_session(self) -> aiohttp.ClientSession:
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession()
-        return self._session
 
     async def close(self):
         if self.webhook_url:
             await self.send_message("👋 Trading Session Terminated. Bot is going offline.", title="System Shutdown", color=0x888888)
-        if self._session and not self._session.closed:
-            await self._session.close()
 
-    async def send_message(self, content: str, title: str = "Trading Update", color: int = 0x58a6ff):
+    async def send_message(self, content: str, title: str = "Trading Update", color: int = 0x58a6ff) -> bool:
         if not self.webhook_url:
-            return
+            return False
         
-        try:
-            session = await self._get_session()
-            payload = {
-                "embeds": [{
-                    "title": title,
-                    "description": content,
-                    "color": color,
-                    "timestamp": datetime.utcnow().isoformat()
-                }]
-            }
-            async with session.post(self.webhook_url, json=payload) as resp:
-                if resp.status not in [200, 204]:
-                    txt = await resp.text()
-                    logger.error(f"Discord Webhook Error ({resp.status}): {txt}")
-        except Exception as e:
-            logger.error(f"Discord send failed: {e}")
+        def _send():
+            try:
+                payload = {
+                    "embeds": [{
+                        "title": title,
+                        "description": content,
+                        "color": color,
+                        "timestamp": datetime.utcnow().isoformat()
+                    }]
+                }
+                resp = requests.post(self.webhook_url, json=payload, timeout=10)
+                if resp.status_code not in [200, 204]:
+                    logger.error(f"Discord Webhook Error ({resp.status_code}): {resp.text}")
+                    return False
+                return True
+            except Exception as e:
+                logger.error(f"Discord send failed: {e}")
+                return False
+
+        # Run synchronous request in a thread to avoid blocking the event loop
+        return await asyncio.to_thread(_send)
 
     async def send_signal(self, symbol: str, action: str, confidence: float, reasoning: str, price: float, tp: float, sl: float):
         # 🟢 Bullish for BUY, 🔴 Bearish for SELL
@@ -95,9 +91,9 @@ class DiscordNotifier:
             f"🛡️ **Stop Loss**: `{sl:.5f}`\n\n"
             f"🧠 **Logic**: {reasoning}"
         )
-        await self.send_message(content, title=f"🚨 New ICT Signal: {action} on {symbol}", color=color)
+        return await self.send_message(content, title=f"🚨 New ICT Signal: {action} on {symbol}", color=color)
 
-    async def send_heartbeat(self, account_info, daily_pnl, trades_today, active_positions):
+    async def send_heartbeat(self, account_info, daily_pnl, trades_today, active_positions) -> bool:
         content = (
             f"📈 **Account Balance**: `${account_info.balance:.2f}`\n"
             f"💵 **Daily P&L**: `{'+' if daily_pnl >= 0 else ''}${daily_pnl:.2f}`\n"
@@ -106,7 +102,7 @@ class DiscordNotifier:
             f"⚖️ **Equity**: `${account_info.equity:.2f}`\n"
             f"⚓ **Margin Level**: `{account_info.margin_level:.1f}%`"
         )
-        await self.send_message(content, title="🕒 Scheduled Hourly Update", color=0x58a6ff)
+        return await self.send_message(content, title="🕒 Scheduled Hourly Update", color=0x58a6ff)
 
 # --- SECURITY & LICENSE MANAGER ---
 class SecurityManager:
@@ -348,7 +344,7 @@ class TradingBrain:
                 with open(memory_file, 'r') as f:
                     self.memories = json.load(f)
                 self.model_trained = True
-                logger.info(f"🧠 Loaded {len(self.memories)} training memories. AI is ready.")
+                logger.debug(f"🧠 Loaded {len(self.memories)} training memories. AI is ready.")
             else:
                 logger.warning("⚠️ No training data found. AI starting with blank slate.")
         except Exception as e:
@@ -1297,10 +1293,6 @@ class GridManager:
             "M15": mt5.TIMEFRAME_M15, "M30": mt5.TIMEFRAME_M30, "H1": mt5.TIMEFRAME_H1,
             "H4": mt5.TIMEFRAME_H4, "D1": mt5.TIMEFRAME_D1
         }
-        
-        # State Persistence
-        self.state_file = Path("logs/grid_state.json")
-        self._load_state()
 
     def _save_state(self):
         """Save grid progress to file"""
@@ -1387,7 +1379,7 @@ class GridManager:
             if self.state_file.exists() and self.state_file.stat().st_size > 0:
                 with open(self.state_file, 'r') as f:
                     self.active_grids = json.load(f)
-                logger.info(f"📁 Loaded Grid State from {self.state_file}")
+                logger.debug(f"📁 Loaded Grid State from {self.state_file}")
             else:
                 self.active_grids = {}
         except json.JSONDecodeError:
@@ -2051,9 +2043,9 @@ class LiveTradingSystem:
                     if acc:
                         pos = self.broker.get_positions()
                         daily_pnl = acc.balance - self.start_balance
-                        await self.discord.send_heartbeat(acc, daily_pnl, self.trades_today, len(pos))
+                        if await self.discord.send_heartbeat(acc, daily_pnl, self.trades_today, len(pos)):
+                            logger.info("📩 Hourly Discord Performance report sent.")
                         self.last_discord_pulse = now
-                        logger.info("📩 Hourly Discord Performance report sent.")
 
                 # Core Monitoring
                 try:

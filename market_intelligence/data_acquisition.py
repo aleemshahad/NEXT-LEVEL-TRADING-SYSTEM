@@ -4,6 +4,10 @@ from abc import ABC, abstractmethod
 from typing import List
 from datetime import datetime
 import re
+import json
+import os
+import time
+from pathlib import Path
 
 try:
     from .models import RawSourceData
@@ -25,7 +29,6 @@ class MarketNewsCrawler(DataSource):
         ]
 
     def fetch_data(self) -> List[RawSourceData]:
-        print("[INFO] Fetching LIVE Market News from Global Sources...")
         results = []
         for feed_url in self.feeds:
             try:
@@ -60,7 +63,6 @@ class MarketNewsCrawler(DataSource):
 class InstitutionalInsightCrawler(DataSource):
     """Scrapes Central Bank Sentiment & Macro Sentiment"""
     def fetch_data(self) -> List[RawSourceData]:
-        print("[INFO] Fetching Institutional Macro Insights...")
         # Placeholder for more complex scraping (e.g. FOMC Statements)
         results = []
         try:
@@ -82,13 +84,40 @@ class InstitutionalInsightCrawler(DataSource):
         return results
 
 class DataAcquisitionService:
-    def __init__(self):
+    def __init__(self, cache_ttl_minutes: int = 30):
         self.sources: List[DataSource] = [
             MarketNewsCrawler(),
             InstitutionalInsightCrawler()
         ]
+        self.cache_file = Path("logs/market_intel_cache.json")
+        self.cache_ttl = cache_ttl_minutes * 60 # Convert to seconds
 
     def aggregate_data(self) -> List[RawSourceData]:
+        # --- 🛡️ CACHING LAYER ---
+        if self.cache_file.exists():
+            try:
+                file_age = time.time() - self.cache_file.stat().st_mtime
+                if file_age < self.cache_ttl:
+                    with open(self.cache_file, 'r') as f:
+                        cached_json = json.load(f)
+                    
+                    results = []
+                    for entry in cached_json:
+                        results.append(RawSourceData(
+                            content=entry['content'],
+                            source_url=entry['source_url'],
+                            platform=entry['platform'],
+                            timestamp=datetime.fromisoformat(entry['timestamp']),
+                            author_id=entry['author_id'],
+                            metadata=entry['metadata']
+                        ))
+                    
+                    if results:
+                        return results
+            except Exception as ce:
+                print(f"   [WARN] Cache read error: {ce}")
+
+        # --- 🌐 REAL-TIME FETCHING ---
         all_data = []
         for source in self.sources:
             try:
@@ -99,6 +128,23 @@ class DataAcquisitionService:
         
         if not all_data:
             print("! Warning: No live data collected. Market intelligence might be stale.")
-            
-        print(f"[SUCCESS] Aggregated {len(all_data)} REAL-TIME intelligence points.")
+        else:
+            # Save to Cache
+            try:
+                self.cache_file.parent.mkdir(parents=True, exist_ok=True)
+                export_data = []
+                for d in all_data:
+                    export_data.append({
+                        'content': d.content,
+                        'source_url': d.source_url,
+                        'platform': d.platform,
+                        'timestamp': d.timestamp.isoformat(),
+                        'author_id': d.author_id,
+                        'metadata': d.metadata
+                    })
+                with open(self.cache_file, 'w') as f:
+                    json.dump(export_data, f, indent=4)
+            except Exception as se:
+                print(f"   [WARN] Cache save error: {se}")
+        
         return all_data
