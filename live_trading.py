@@ -1758,6 +1758,8 @@ class LiveTradingSystem:
                 else:
                     self.grid_manager.mode = "BOTH"
                 self.grid_manager.time_frame_str = self.timeframe
+                # CRITICAL: Keep GridManager's internal strategy name synced for correct dashboard display
+                self.grid_manager.strategy = self.strategy
 
             # 2. Metadata & Dashboard Sync (Ensure symbol exists for Rail Board visibility)
             strategy_to_display = self.strategy
