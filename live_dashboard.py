@@ -822,9 +822,26 @@ class LivePortfolioDashboard:
         messagebox.showinfo("Reset Complete", f"Emergency Reset Successful:\n- Closed: {closed_count} positions\n- Deleted: {deleted_count} pending orders\n- Performance Metrics Resetted.")
 
     def _update_loop(self):
-        terminal_path = r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe"
-        if not mt5.initialize(path=terminal_path):
-            messagebox.showerror("Error", f"MT5 initialize failed: {mt5.last_error()}")
+        # Auto-detect MT5 path or use default initialization
+        terminal_path = None
+        common_paths = [
+            r"C:\Program Files\MetaTrader 5\terminal64.exe",
+            r"C:\Program Files (x86)\MetaTrader 5\terminal.exe",
+            r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe",
+            r"C:\Program Files\MetaTrader 5 XM\terminal64.exe",
+        ]
+        for path in common_paths:
+            if Path(path).exists():
+                terminal_path = path
+                break
+        
+        if terminal_path and Path(terminal_path).exists():
+            init_success = mt5.initialize(path=terminal_path)
+        else:
+            init_success = mt5.initialize()  # Try default
+            
+        if not init_success:
+            messagebox.showerror("Error", f"MT5 initialize failed: {mt5.last_error()}\n\nPlease ensure MetaTrader 5 is installed and closed before starting.")
             self.running = False
             return
             
@@ -1006,7 +1023,7 @@ class LivePortfolioDashboard:
     def _update_risk_calculator(self, positions):
         try:
             # 1. Detect active symbol
-            symbol = "XAUUSDm"
+            symbol = "BTCUSDc"
             if positions:
                 symbol = positions[0].symbol
             
@@ -1058,7 +1075,7 @@ class LivePortfolioDashboard:
                 
                 # Intelligent Symbol Selection: 
                 # 1. Prefer symbol from state that has active MT5 positions
-                # 2. Otherwise prefer XAUUSDm if it exists in state
+                # 2. Otherwise prefer BTCUSDc if it exists in state
                 # 3. Fallback to first available key
                 if state:
                     symbol = None
@@ -1071,7 +1088,7 @@ class LivePortfolioDashboard:
                                 break
                     
                     if not symbol:
-                        symbol = "XAUUSDm" if "XAUUSDm" in state else list(state.keys())[0]
+                        symbol = "BTCUSDc" if "BTCUSDc" in state else list(state.keys())[0]
                     
                     data = state.get(symbol, {})
                     

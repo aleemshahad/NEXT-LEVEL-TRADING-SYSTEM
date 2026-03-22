@@ -1,15 +1,36 @@
 risk:
-  max_daily_loss: 0.05
-  max_drawdown: 0.15
-  max_risk_per_trade: 0.02
+  max_daily_loss: 0.05          # Stop trading after 5% daily loss
+  max_drawdown: 0.15            # Hard stop at 15% drawdown (can increase up to 0.25 if needed)
+  max_risk_per_trade: 0.02      # Risk per ICT signal trade
+
 symbols:
-- XAUUSDm
-timeframe: M5
+  - BTCUSDc                     # Trading pair - change to any symbol you trade
+
+timeframe: M5                  # Analysis timeframe: M1, M3, M5, M15, M30, H1, H4, D1
 
 grid:
-  size: 300
-  spacing: 0.4
-  lot_size: 0.01
-  profit_target_pct: 0.25
-  profit_target_usd: 20 # Close session when total profit of one side hits $20
-  mode: BOTH # Options: BOTH, BUY_ONLY, SELL_ONLY
+  size: 300                     # Grid size in points/pips
+  spacing: 2.0                  # ATR multiplier for grid spacing (was 0.4 - too small causing large lots)
+  lot_size: 0.01                # Base lot size for first grid level
+  max_lot_cap: 0.1              # Maximum lot size even after DC (DCA) logic - prevents oversized positions
+  max_dca_levels: 10            # Maximum DCA/grid levels
+  lot_multiplier: 1.5           # Martingale multiplier for each DCA level
+  profit_target_pct: 0.25       # Basket profit target as percentage of balance
+  profit_target_usd: 20         # Close session when total profit hits $20
+  mode: BOTH                    # Options: BOTH, BUY_ONLY, SELL_ONLY
+  
+trailing:
+  enabled: true                 # Enable trailing profit for baskets
+  pullback_pct: 15              # Exit on 15% pullback from peak profit
+  min_profit_floor: 50          # Minimum 50% of original target before trailing exit
+
+ict_signals:
+  enabled: true                 # Enable ICT/SMC AI signals
+  confidence_threshold: 0.60    # Minimum confidence to execute (0.0 to 1.0)
+
+mt5:
+  login: null                   # Set MT5 login or use .env
+  password: null                # Set password or use .env
+  server: null                  # Set server or use .env
+  terminal_path: null           # Optional: Set path to terminal64.exe (auto-detected if null)
+                               # Example: "C:\\Program Files\\MetaTrader 5\\terminal64.exe"

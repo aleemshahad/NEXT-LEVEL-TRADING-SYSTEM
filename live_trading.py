@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-NEXT LEVEL BRAIN - Live Trading System (CLI only)
-All-in-one live trading with AI enhancement
-Created by: Aleem Shahzad | AI Partner: Claude (Anthropic)
+NEXT LEVEL System - Live Trading System
+Created by: Aleem Shahzad
 """
 
 import asyncio
@@ -21,10 +20,6 @@ from typing import Dict, List, Optional, Tuple
 import os
 import json
 import requests
-import hmac
-import hashlib
-import uuid
-import platform
 from dotenv import load_dotenv
 
 # Advanced Intelligence Integrations
@@ -104,84 +99,6 @@ class DiscordNotifier:
         )
         return await self.send_message(content, title="🕒 Scheduled Hourly Update", color=0x58a6ff)
 
-# --- SECURITY & LICENSE MANAGER ---
-class SecurityManager:
-    """Institutional-grade License Management & HWID Validation"""
-    def __init__(self):
-        # Obfuscated SALT: Split into small chunks to prevent direct string searching
-        # S1: "N3XT-L3V3L-TR4D1NG-"
-        # S2: "5Y5T3M-2026-AL33M-"
-        # S3: "SH4HZAD-S3CR3T"
-        # Total SALT: "N3XT-L3V3L-TR4D1NG-5Y5T3M-2026-AL33M-SH4HZAD-S3CR3T"
-        self._s_parts = ["N3XT-L3V3L-TR4D1NG-", "5Y5T3M-2026-AL33M-", "SH4HZAD-S3CR3T"]
-        self.license_file = Path("logs/.license_key")
-        self.hwid = self._generate_hwid()
-
-    def _generate_hwid(self) -> str:
-        """Derive a unique Hardware ID for the machine"""
-        node_name = platform.node()
-        node_id = uuid.getnode()
-        return f"{node_name}-{node_id}"
-
-    def get_full_salt(self) -> str:
-        return "".join(self._s_parts)
-
-    def validate_key(self, input_key: str) -> bool:
-        """Verify the input key against the local HMAC-SHA256 signature"""
-        clean_key = input_key.strip().upper().replace("-", "")
-        if len(clean_key) != 16:
-            return False
-
-        # Calculate expected HMAC-SHA256 locally
-        salt_bytes = self.get_full_salt().encode('utf-8')
-        hwid_bytes = self.hwid.encode('utf-8')
-        
-        signature = hmac.new(salt_bytes, hwid_bytes, hashlib.sha256).hexdigest()
-        expected_key = signature[:16].upper()
-        
-        # Constant-time comparison to prevent timing attacks
-        return hmac.compare_digest(clean_key, expected_key)
-
-    def is_authorized(self) -> bool:
-        """Check if machine is already authorized with a valid key"""
-        if self.license_file.exists():
-            with open(self.license_file, "r") as f:
-                saved_key = f.read().strip()
-                return self.validate_key(saved_key)
-        return False
-
-    def save_key(self, key: str):
-        """Persist key upon successful activation upon next launch"""
-        with open(self.license_file, "w") as f:
-            f.write(key.strip().upper())
-
-    def prompt_activation(self):
-        """User interaction flow for Activation"""
-        print("\n" + "="*65)
-        print("   🔒 NEXT LEVEL - SYSTEM ACTIVATION REQUIRED")
-        print("="*65)
-        print(f"   HWID: {self.hwid}")
-        print("   " + "-"*65)
-        print("   Please send the HWID above to the developer to get your key.")
-        print("   " + "-"*65)
-        
-        while True:
-            key = input("\n   >> Enter License Key: ").strip()
-            if not key:
-                print("   [!] Key cannot be empty.")
-                continue
-                
-            if self.validate_key(key):
-                self.save_key(key)
-                print("\n   [SUCCESS] SYSTEM ACTIVATED FOR THIS MACHINE!")
-                time.sleep(2)
-                return True
-            else:
-                print("   [ERR] Invalid Key. Please try again or contact support.")
-                retry = input("   Retry? (y/n): ").lower()
-                if retry != 'y':
-                    return False
-
 
 class TradingBrain:
     """AI Trading Brain with Neural Network"""
@@ -211,7 +128,7 @@ class TradingBrain:
             if not mt5.terminal_info():
                 return datetime.utcnow()
             # Try Gold or other active symbols to get the latest server tick time
-            for sym in ["XAUUSDm", "EURUSDm", "XAUUSDm", "XAUUSD"]:
+            for sym in ["BTCUSDc", "EURUSDm", "BTCUSDc", "XAUUSD"]:
                 tick = mt5.symbol_info_tick(sym)
                 if tick:
                     # Broker server time (stored as seconds since epoch, treated as naive UTC-like)
@@ -314,7 +231,7 @@ class TradingBrain:
                     f"Window: +/-{block_window_min} min | Cancelling pending orders..."
                 )
                 if mt5.terminal_info():
-                    for sym in ["XAUUSDm", "XAUUSD"]:
+                    for sym in ["BTCUSDc", "XAUUSD"]:
                         pending = mt5.orders_get(symbol=sym)
                         if pending:
                             cancelled = sum(
@@ -492,10 +409,6 @@ class TradingBrain:
                 'ict_status': ict_status,
                 'risk_modifier': self.risk_modifier
             }
-                
-        except Exception as e:
-            logger.error(f"ICT AI analysis error: {e}")
-            return {'action': 'HOLD', 'bias': 'NEUTRAL', 'confidence': 0.0, 'reasoning': 'Analysis failed'}
                 
         except Exception as e:
             logger.error(f"ICT AI analysis error: {e}")
@@ -896,12 +809,36 @@ class MT5Broker:
             mt5.shutdown()
             await asyncio.sleep(1)
             
-            terminal_path = r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe"
+            # Get terminal path from config or auto-detect common paths
+            terminal_path = self.config.get('terminal_path')
+            if not terminal_path:
+                # Common MT5 installation paths
+                common_paths = [
+                    r"C:\Program Files\MetaTrader 5\terminal64.exe",
+                    r"C:\Program Files (x86)\MetaTrader 5\terminal.exe",
+                    r"C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe",
+                    r"C:\Program Files\MetaTrader 5 XM\terminal64.exe",
+                    r"C:\Program Files\MetaTrader 5 ICMarkets\terminal64.exe",
+                    r"C:\Program Files\MetaTrader 5 Pepperstone\terminal64.exe",
+                ]
+                for path in common_paths:
+                    if Path(path).exists():
+                        terminal_path = path
+                        logger.info(f"Auto-detected MT5 at: {path}")
+                        break
+            
+            if not terminal_path:
+                logger.warning("MT5 terminal path not found. Trying without path...")
+                terminal_path = None
             
             success = False
             for i in range(3):
                 logger.info(f"Connecting to MT5 (Attempt {i+1}/3)...")
-                if mt5.initialize(path=terminal_path):
+                if terminal_path and Path(terminal_path).exists():
+                    init_success = mt5.initialize(path=terminal_path)
+                else:
+                    init_success = mt5.initialize()  # Try default
+                if init_success:
                     success = True
                     break
                 logger.warning(f"Connection attempt {i+1} failed: {mt5.last_error()}")
@@ -909,6 +846,7 @@ class MT5Broker:
                 
             if not success:
                 logger.error(f"MT5 could not be initialized after 3 attempts: {mt5.last_error()}")
+                logger.error("Please check: 1) MT5 is installed, 2) Terminal is closed (not running), 3) Update terminal_path in config.yaml")
                 return False
                 
             # Login with credentials
@@ -1273,10 +1211,10 @@ class GridManager:
         self.magic_buy = 777001
         self.magic_sell = 777002
         self.base_lot = grid_config.get('lot_size', 0.01)
-        self.lot_multiplier = 1.5 # Martingale multiplier (DCA Upgrade)
-        self.spacing_multiplier = grid_config.get('spacing', 0.4) # Optimized for proximity
-        self.max_dca_levels = 10
-        self.max_lot_cap = 5.0
+        self.lot_multiplier = grid_config.get('lot_multiplier', 1.5)  # Read from config
+        self.spacing_multiplier = grid_config.get('spacing', 2.0)  # Was 0.4 - now defaults to 2.0
+        self.max_dca_levels = grid_config.get('max_dca_levels', 10)  # Read from config
+        self.max_lot_cap = grid_config.get('max_lot_cap', 0.1)  # Read from config (was 5.0)
         self.batch_size = 5
         self.time_frame_str = "M1" # High-Frequency DCA
         self.state_file = Path("logs/grid_state.json")
@@ -1594,7 +1532,7 @@ class LiveTradingSystem:
         self.grid_manager = GridManager(self.broker, self.config)
         
         self.running = False
-        self.symbols = self.config.get('symbols', ['XAUUSDm'])
+        self.symbols = self.config.get('symbols', ['BTCUSDc'])
         self.timeframe = self.config.get('timeframe', 'M5')
         self.strategy = "ICT SMC" # Default strategy
         
@@ -1637,7 +1575,7 @@ class LiveTradingSystem:
         return 0
 
     def _manage_symbol_switching(self):
-        """Automatic Switcher: XAUUSDm on weekdays, XAUUSDm on weekends"""
+        """Automatic Switcher: BTCUSDc on weekdays, BTCUSDc on weekends"""
         try:
             # Check current day (0=Mon, ..., 5=Sat, 6=Sun)
             now_utc = datetime.utcnow()
@@ -1647,7 +1585,7 @@ class LiveTradingSystem:
             is_weekend = day in [5, 6]
             
             # Target Symbol Handling (Check for Gold status if possible)
-            gold_sym = "XAUUSDm"
+            gold_sym = "BTCUSDc"
             gold_info = mt5.symbol_info(gold_sym)
             
             # If Gold info is not available or market is closed/weekend
@@ -1659,8 +1597,8 @@ class LiveTradingSystem:
             should_be_crypto = is_weekend or not trade_allowed
             
             if should_be_crypto and self.market_mode != "WEEKEND_CRYPTO":
-                logger.info(f"🕒 GOLD HOLIDAY/WEEKEND DETECTED. Switching to Bitcoin (XAUUSDm).")
-                self.symbols = ["XAUUSDm"]
+                logger.info(f"🕒 GOLD HOLIDAY/WEEKEND DETECTED. Switching to Bitcoin (BTCUSDc).")
+                self.symbols = ["BTCUSDc"]
                 self.market_mode = "WEEKEND_CRYPTO"
             elif not should_be_crypto and self.market_mode != "DEFAULT":
                 logger.info(f"🕒 GOLD MARKET OPEN. Switching to Gold ({gold_sym}).")
@@ -1684,7 +1622,7 @@ class LiveTradingSystem:
                         'password': None,
                         'server': None
                     },
-                    'symbols': ['EURUSDm', 'GBPUSDm', 'XAUUSDm'],
+                    'symbols': ['EURUSDm', 'GBPUSDm', 'BTCUSDc'],
                     'timeframe': 'M5',
                     'risk': {
                         'max_risk_per_trade': 0.02,
@@ -2597,7 +2535,7 @@ def select_trade_setup():
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     
     print("\n" + "=" * 65)
-    print("   NEXT LEVEL BRAIN  |  LIVE TRADING SYSTEM  |  GOLD (XAUUSDm)")
+    print("   NEXT LEVEL BRAIN  |  LIVE TRADING SYSTEM  |  GOLD (BTCUSDc)")
     print("=" * 65)
     
     # 1. Strategy Selection
@@ -2646,7 +2584,7 @@ def select_trade_setup():
             pass
         print("  [!] Invalid choice. Please enter a number.")
 
-    return ["XAUUSDm"], strategy, timeframe
+    return ["BTCUSDc"], strategy, timeframe
 
 
 def launch_dashboard():
@@ -2672,13 +2610,13 @@ def launch_dashboard():
 
 def main():
     """Main function - CLI mode"""
+    dashboard_proc = None  # Initialize to prevent UnboundLocalError
+    trading_system = None  # Initialize to prevent errors in finally
+    
     try:
-        # --- SECURITY CHECK ---
-        security = SecurityManager()
-        if not security.is_authorized():
-            if not security.prompt_activation():
-                print("  [!] Activation failed. Exiting.")
-                return
+        # --- SECURITY CHECK REMOVED ---
+        # License key requirement has been removed
+        # All features are now accessible without activation
 
         symbols, strategy, timeframe = select_trade_setup()
         if symbols is None or strategy is None or timeframe is None:
