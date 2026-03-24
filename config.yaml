@@ -1,6 +1,6 @@
 risk:
   max_daily_loss: 0.05          # Stop trading after 5% daily loss
-  max_drawdown: 0.15            # Hard stop at 15% drawdown (can increase up to 0.25 if needed)
+  max_drawdown: 0.25            # Hard stop at 15% drawdown (can increase up to 0.25 if needed)
   max_risk_per_trade: 0.02      # Risk per ICT signal trade
 
 symbols:
