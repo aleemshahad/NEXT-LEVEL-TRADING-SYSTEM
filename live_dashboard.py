@@ -1023,7 +1023,7 @@ class LivePortfolioDashboard:
     def _update_risk_calculator(self, positions):
         try:
             # 1. Detect active symbol
-            symbol = "BTCUSDc"
+            symbol = "XAUUSDc"
             if positions:
                 symbol = positions[0].symbol
             
@@ -1075,7 +1075,7 @@ class LivePortfolioDashboard:
                 
                 # Intelligent Symbol Selection: 
                 # 1. Prefer symbol from state that has active MT5 positions
-                # 2. Otherwise prefer BTCUSDc if it exists in state
+                # 2. Otherwise prefer XAUUSDc if it exists in state
                 # 3. Fallback to first available key
                 if state:
                     symbol = None
@@ -1088,7 +1088,7 @@ class LivePortfolioDashboard:
                                 break
                     
                     if not symbol:
-                        symbol = "BTCUSDc" if "BTCUSDc" in state else list(state.keys())[0]
+                        symbol = "XAUUSDc" if "XAUUSDc" in state else list(state.keys())[0]
                     
                     data = state.get(symbol, {})
                     

@@ -128,7 +128,7 @@ class TradingBrain:
             if not mt5.terminal_info():
                 return datetime.utcnow()
             # Try Gold or other active symbols to get the latest server tick time
-            for sym in ["BTCUSDc", "EURUSDm", "BTCUSDc", "XAUUSD"]:
+            for sym in ["XAUUSDc", "EURUSDm", "XAUUSDc", "XAUUSD"]:
                 tick = mt5.symbol_info_tick(sym)
                 if tick:
                     # Broker server time (stored as seconds since epoch, treated as naive UTC-like)
@@ -231,7 +231,7 @@ class TradingBrain:
                     f"Window: +/-{block_window_min} min | Cancelling pending orders..."
                 )
                 if mt5.terminal_info():
-                    for sym in ["BTCUSDc", "XAUUSD"]:
+                    for sym in ["XAUUSDc", "XAUUSD"]:
                         pending = mt5.orders_get(symbol=sym)
                         if pending:
                             cancelled = sum(
@@ -1532,7 +1532,7 @@ class LiveTradingSystem:
         self.grid_manager = GridManager(self.broker, self.config)
         
         self.running = False
-        self.symbols = self.config.get('symbols', ['BTCUSDc'])
+        self.symbols = self.config.get('symbols', ['XAUUSDc'])
         self.timeframe = self.config.get('timeframe', 'M5')
         self.strategy = "ICT SMC" # Default strategy
         
@@ -1575,7 +1575,7 @@ class LiveTradingSystem:
         return 0
 
     def _manage_symbol_switching(self):
-        """Automatic Switcher: BTCUSDc on weekdays, BTCUSDc on weekends"""
+        """Automatic Switcher: XAUUSDc on weekdays, XAUUSDc on weekends"""
         try:
             # Check current day (0=Mon, ..., 5=Sat, 6=Sun)
             now_utc = datetime.utcnow()
@@ -1585,7 +1585,7 @@ class LiveTradingSystem:
             is_weekend = day in [5, 6]
             
             # Target Symbol Handling (Check for Gold status if possible)
-            gold_sym = "BTCUSDc"
+            gold_sym = "XAUUSDc"
             gold_info = mt5.symbol_info(gold_sym)
             
             # If Gold info is not available or market is closed/weekend
@@ -1597,8 +1597,8 @@ class LiveTradingSystem:
             should_be_crypto = is_weekend or not trade_allowed
             
             if should_be_crypto and self.market_mode != "WEEKEND_CRYPTO":
-                logger.info(f"🕒 GOLD HOLIDAY/WEEKEND DETECTED. Switching to Bitcoin (BTCUSDc).")
-                self.symbols = ["BTCUSDc"]
+                logger.info(f"🕒 GOLD HOLIDAY/WEEKEND DETECTED. Switching to Bitcoin (XAUUSDc).")
+                self.symbols = ["XAUUSDc"]
                 self.market_mode = "WEEKEND_CRYPTO"
             elif not should_be_crypto and self.market_mode != "DEFAULT":
                 logger.info(f"🕒 GOLD MARKET OPEN. Switching to Gold ({gold_sym}).")
@@ -1622,7 +1622,7 @@ class LiveTradingSystem:
                         'password': None,
                         'server': None
                     },
-                    'symbols': ['EURUSDm', 'GBPUSDm', 'BTCUSDc'],
+                    'symbols': ['EURUSDm', 'GBPUSDm', 'XAUUSDc'],
                     'timeframe': 'M5',
                     'risk': {
                         'max_risk_per_trade': 0.02,
@@ -2535,7 +2535,7 @@ def select_trade_setup():
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     
     print("\n" + "=" * 65)
-    print("   NEXT LEVEL BRAIN  |  LIVE TRADING SYSTEM  |  GOLD (BTCUSDc)")
+    print("   NEXT LEVEL BRAIN  |  LIVE TRADING SYSTEM  |  GOLD (XAUUSDc)")
     print("=" * 65)
     
     # 1. Strategy Selection
@@ -2584,7 +2584,7 @@ def select_trade_setup():
             pass
         print("  [!] Invalid choice. Please enter a number.")
 
-    return ["BTCUSDc"], strategy, timeframe
+    return ["XAUUSDc"], strategy, timeframe
 
 
 def launch_dashboard():

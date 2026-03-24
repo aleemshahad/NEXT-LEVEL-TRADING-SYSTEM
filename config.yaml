@@ -4,7 +4,7 @@ risk:
   max_risk_per_trade: 0.02      # Risk per ICT signal trade
 
 symbols:
-  - BTCUSDc                     # Trading pair - change to any symbol you trade
+  - XAUUSDc                     # Trading pair - change to any symbol you trade
 
 timeframe: M5                  # Analysis timeframe: M1, M3, M5, M15, M30, H1, H4, D1
 
