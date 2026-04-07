@@ -12,6 +12,9 @@ from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
 import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import warnings
