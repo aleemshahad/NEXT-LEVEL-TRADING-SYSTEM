@@ -1,7 +1,0 @@
-{
-  "logging_level": "INFO",
-  "enable_cv": true,
-  "save_visualizations": false,
-  "min_trades": 30,
-  "confidence_threshold": 0.05
-}

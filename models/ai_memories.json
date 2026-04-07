@@ -1,6 +1,6 @@
 [
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-01-28 14:40:00",
     "exit_time": "2026-01-28 14:45:00",
     "type": "BUY",
@@ -13,7 +13,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-01-29 14:45:00",
     "exit_time": "2026-01-29 14:55:00",
     "type": "BUY",
@@ -26,7 +26,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-01-30 14:55:00",
     "exit_time": "2026-01-30 15:00:00",
     "type": "SELL",
@@ -39,7 +39,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-02 03:15:00",
     "exit_time": "2026-02-02 03:20:00",
     "type": "SELL",
@@ -52,7 +52,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-02 03:30:00",
     "exit_time": "2026-02-02 03:35:00",
     "type": "SELL",
@@ -65,7 +65,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-02 10:55:00",
     "exit_time": "2026-02-02 11:00:00",
     "type": "BUY",
@@ -78,7 +78,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-02 14:30:00",
     "exit_time": "2026-02-02 14:35:00",
     "type": "BUY",
@@ -91,7 +91,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-03 03:40:00",
     "exit_time": "2026-02-03 03:45:00",
     "type": "BUY",
@@ -104,7 +104,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-03 14:35:00",
     "exit_time": "2026-02-03 14:40:00",
     "type": "BUY",
@@ -117,7 +117,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-04 03:35:00",
     "exit_time": "2026-02-04 14:40:00",
     "type": "BUY",
@@ -130,7 +130,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-05 14:40:00",
     "exit_time": "2026-02-05 14:45:00",
     "type": "BUY",
@@ -143,7 +143,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-06 14:25:00",
     "exit_time": "2026-02-06 14:30:00",
     "type": "BUY",
@@ -156,7 +156,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-06 14:35:00",
     "exit_time": "2026-02-06 14:40:00",
     "type": "BUY",
@@ -169,7 +169,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-09 10:30:00",
     "exit_time": "2026-02-09 10:35:00",
     "type": "SELL",
@@ -182,7 +182,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-10 10:15:00",
     "exit_time": "2026-02-10 10:20:00",
     "type": "BUY",
@@ -195,7 +195,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-10 10:25:00",
     "exit_time": "2026-02-10 10:30:00",
     "type": "BUY",
@@ -208,7 +208,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-10 14:20:00",
     "exit_time": "2026-02-10 14:30:00",
     "type": "BUY",
@@ -221,7 +221,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-10 14:50:00",
     "exit_time": "2026-02-10 14:55:00",
     "type": "SELL",
@@ -234,7 +234,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-11 10:45:00",
     "exit_time": "2026-02-11 11:20:00",
     "type": "BUY",
@@ -247,7 +247,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-11 14:40:00",
     "exit_time": "2026-02-11 14:45:00",
     "type": "SELL",
@@ -260,7 +260,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-12 03:05:00",
     "exit_time": "2026-02-12 03:15:00",
     "type": "SELL",
@@ -273,7 +273,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-16 10:30:00",
     "exit_time": "2026-02-16 10:35:00",
     "type": "BUY",
@@ -286,7 +286,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-17 14:00:00",
     "exit_time": "2026-02-17 14:05:00",
     "type": "SELL",
@@ -299,7 +299,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-17 14:10:00",
     "exit_time": "2026-02-17 14:15:00",
     "type": "BUY",
@@ -312,7 +312,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-19 14:05:00",
     "exit_time": "2026-02-19 14:10:00",
     "type": "SELL",
@@ -325,7 +325,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-19 14:55:00",
     "exit_time": "2026-02-19 15:00:00",
     "type": "BUY",
@@ -338,7 +338,7 @@
     }
   },
   {
-    "symbol": "XAUUSDm",
+    "symbol": "XAUUSDc",
     "entry_time": "2026-02-23 03:10:00",
     "exit_time": "2026-02-23 03:15:00",
     "type": "BUY",
