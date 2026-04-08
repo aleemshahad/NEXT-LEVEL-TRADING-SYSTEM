@@ -1,15 +1,29 @@
-risk:
-  max_daily_loss: 0.05
-  max_drawdown: 0.15
-  max_risk_per_trade: 0.02
-symbols:
-- XAUUSDm
-timeframe: M5
+# ========================================
+# NEXT LEVEL TRADING - CONFIGURATION
+# ========================================
 
+# 🟢 GLOBAL SETTINGS
+symbols: ["XAUUSDc"]  # The symbol to trade (MT5 naming)
+strategy: "Hybrid Mode"  # Options: Hybrid Mode, Grid Both, ICT SMC
+timeframe: "M15"  # Options: M1, M5, M15, M30, H1
+
+# 🛡️ RISK MANAGEMENT
+risk:
+  max_risk_per_trade: 0.02 # 2% per ICT trade
+  max_daily_loss: 0.05     # 5% daily drawdown limit
+  max_drawdown: 0.25       # 25% hard account drawdown limit
+  global_profit_target_usd: 100 # EXIT ALL when total profit hits this
+
+# 📈 GRID / DCA SETTINGS
 grid:
-  size: 300
-  spacing: 0.4
-  lot_size: 0.01
-  profit_target_pct: 0.25
-  profit_target_usd: 20 # Close session when total profit of one side hits $20
   mode: BOTH # Options: BOTH, BUY_ONLY, SELL_ONLY
+  lot_size: 0.01
+  spacing: 0.4 # Distance between levels (ATR multiplier)
+  profit_target_usd: 3 # Target profit to close a grid basket
+  profit_target_pct: 0.15 # Relative profit target
+  trailing_enabled: true # true = enable trailing, false = disable trailing
+
+# 🕒 NEWS SETTINGS
+news:
+  block_window_min: 120 # Minutes before/after high-impact USD news to block trading
+  download_interval_h: 1 # Refresh news data every X hours
