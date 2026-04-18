@@ -39,11 +39,11 @@ class LiveTradingSystem:
         
         self.running = False
         self.symbols = self.config.get('symbols', ['XAUUSDc'])
-        self.timeframe = self.config.get('timeframe', 'M15')
+        self.timeframe = self.config.get('timeframe', 'M5')
         self.strategy = "ICT SMC"
         
         self.trades_today = 0
-        self.daily_pnl = 0.0
+        self.daily_pnl = 0.0        
         self.reset_timestamp = self._load_reset_time()
         self.trade_history = []
         self.reports_dir = Path("logs/live_reports")
@@ -419,8 +419,8 @@ def select_trade_setup():
     elif args.auto_start:
         print("\n [2] Choose Timeframe:")
         time.sleep(1)
-        tf = tfs[2]
-        print(f"  >> Auto-selected: {labels[2]} (after 2s total)")
+        tf = tfs[1]
+        print(f"  >> Auto-selected: {labels[1]} (after 2s total)")
 
     if not tf:
         print("\n [2] Choose Timeframe:"); [print(f"  {i+1}. {l}") for i, l in enumerate(labels)]
