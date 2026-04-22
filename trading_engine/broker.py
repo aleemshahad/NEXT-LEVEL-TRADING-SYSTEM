@@ -173,16 +173,17 @@ class MT5Broker:
                 order_type = mt5.ORDER_TYPE_BUY if action == "BUY" else mt5.ORDER_TYPE_SELL
                 filling_type = mt5.ORDER_FILLING_IOC
             price = self.round_price(symbol, price)
-            if stop_loss: stop_loss = self.round_price(symbol, stop_loss)
-            if take_profit: take_profit = self.round_price(symbol, take_profit)
             request = {
                 "action": trade_action, "symbol": symbol, "volume": volume,
                 "type": order_type, "price": price, "deviation": 20, "magic": magic,
-                "comment": "ICT_SMC_TRADE" if magic == 234000 else "GRID_DCA", 
+                "comment": "ICT_SMC_TRADE" if magic == 234000 else "GRID_DCA",
                 "type_time": mt5.ORDER_TIME_GTC, "type_filling": filling_type,
             }
-            if stop_loss: request["sl"] = stop_loss
-            if take_profit: request["tp"] = take_profit
+            # FIX #3: Explicit validation — `if stop_loss:` was falsy for 0.0
+            if stop_loss is not None and stop_loss > 0:
+                request["sl"] = self.round_price(symbol, stop_loss)
+            if take_profit is not None and take_profit > 0:
+                request["tp"] = self.round_price(symbol, take_profit)
             result = mt5.order_send(request)
             if result.retcode != mt5.TRADE_RETCODE_DONE: return {'success': False, 'error': f'Order failed: {result.retcode}'}
             logger.info(f"Order placed: {action} {volume} {symbol} at {price} (Magic: {magic})")

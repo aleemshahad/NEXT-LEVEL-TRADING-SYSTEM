@@ -16,7 +16,7 @@ from typing import Dict, List
 from trading_engine.notifications import DiscordNotifier
 from trading_engine.security import SecurityManager
 from trading_engine.trading_brain import TradingBrain
-from trading_engine.ict_analyzer import ICTAnalyzer
+# FIX #7: ICTAnalyzer removed — all ICT logic consolidated inside TradingBrain
 from trading_engine.broker import MT5Broker
 from trading_engine.risk import RiskManager
 from trading_engine.grid_manager import GridManager
@@ -33,7 +33,7 @@ class LiveTradingSystem:
         self.config = self._load_config(config_path)
         self.broker = MT5Broker(self.config.get('mt5', {}))
         self.ai_brain = TradingBrain(self.config) # Updated to pass config
-        self.ict_analyzer = ICTAnalyzer()
+        # FIX #7: self.ict_analyzer removed (was instantiated but never called)
         self.risk_manager = RiskManager(self.config.get('risk', {}))
         self.grid_manager = GridManager(self.broker, self.config)
         
@@ -199,8 +199,19 @@ class LiveTradingSystem:
             if not acc: return
             drawdown = max(0, (self.start_balance - acc.balance) / self.start_balance) if self.start_balance else 0
             if not self.risk_manager.check_risk_limits(acc.balance, drawdown): return
-            size = self.risk_manager.calculate_position_size(acc.balance, ai_analysis['entry_price'], ai_analysis['stop_loss'], symbol)
-            res = self.broker.place_order(symbol=symbol, action=ai_analysis['action'], volume=size, price=ai_analysis['entry_price'], stop_loss=ai_analysis['stop_loss'], take_profit=ai_analysis['take_profit'], use_limit=ai_analysis.get('use_limit', False))
+
+            # --- SL TOGGLE: config.yaml > risk > use_stop_loss ---
+            use_sl = self.config.get('risk', {}).get('use_stop_loss', True)
+            sl_price = ai_analysis['stop_loss'] if use_sl else 0.0
+
+            if not use_sl:
+                # FIX #7: SL is off = unlimited risk. Cap lot to base_lot for safety.
+                size = self.config.get('grid', {}).get('lot_size', 0.01)
+                logger.info(f"🚫 [SL OFF] {ai_analysis['action']} {symbol} | Lot capped to base {size} (no SL protection)")
+            else:
+                size = self.risk_manager.calculate_position_size(acc.balance, ai_analysis['entry_price'], ai_analysis['stop_loss'], symbol)
+
+            res = self.broker.place_order(symbol=symbol, action=ai_analysis['action'], volume=size, price=ai_analysis['entry_price'], stop_loss=sl_price, take_profit=ai_analysis['take_profit'], use_limit=ai_analysis.get('use_limit', False))
             if res['success']:
                 self.trades_today += 1
                 self.ai_brain.remember_trade({'symbol': symbol, 'action': ai_analysis['action'], 'entry_price': ai_analysis['entry_price'], 'confidence': ai_analysis['confidence']})
@@ -224,8 +235,9 @@ class LiveTradingSystem:
                 all_pos = self.broker.get_positions()
                 for p in all_pos: self.broker.close_position(p['symbol'], p['ticket'])
                 self.trades_today += len(all_pos)
-                self.broker.cancel_all_pendings("ALL") # Force cancel all
-                if "XAUUSDm" in self.grid_manager.active_grids: del self.grid_manager.active_grids["XAUUSDm"]
+                self.broker.cancel_all_pendings("ALL")
+                # FIX #5: Was hardcoded "XAUUSDm" — now clears all active grids dynamically
+                self.grid_manager.active_grids.clear()
                 self.grid_manager._save_state()
                 return
 
@@ -344,10 +356,12 @@ class LiveTradingSystem:
         cycle = 0
         while self.running:
             try:
-                self._reload_settings() # Check for config updates
-                if cycle % 3600 == 0:
-                    acc = mt5.account_info()
-                    if acc:
+                self._reload_settings()
+                acc = mt5.account_info()
+                if acc:
+                    # FIX #2: Update daily_pnl every cycle so daily loss limit is live
+                    self.risk_manager.update_daily_pnl(acc.balance)
+                    if cycle % 3600 == 0:
                         daily_pnl = acc.balance - self.start_balance
                         await self.discord.send_heartbeat(acc, daily_pnl, self.trades_today, len(self.broker.get_positions()))
                 self._manage_symbol_switching()

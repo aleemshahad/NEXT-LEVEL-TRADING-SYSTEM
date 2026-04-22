@@ -3,7 +3,7 @@
 # ========================================
 
 # 🟢 GLOBAL SETTINGS
-symbols: ["XAUUSDc"]  # The symbol to trade (MT5 naming)
+symbols: ["XAGUSDc"]  # The symbol to trade (MT5 naming)
 strategy: "Hybrid Mode"  # Options: Hybrid Mode, Grid Both, ICT SMC
 timeframe: "M15"  # Options: M1, M5, M15, M30, H1
 
@@ -11,27 +11,26 @@ timeframe: "M15"  # Options: M1, M5, M15, M30, H1
 risk:
   max_risk_per_trade: 0.02 # 2% per ICT trade
   max_daily_loss: 0.05     # 5% daily drawdown limit
-
-  max_drawdown: 0.25       # 25% hard account drawdown limit
-
   max_drawdown: 0.50       # 50% hard account drawdown limit
 
   global_profit_target_usd: 100 # EXIT ALL when total profit hits this
 
+  # 🔴 STOP LOSS TOGGLE
+  # true  = SL lagega har ICT/SMC trade pe (ATR-based)
+  # false = SL nahi lagega (Grid basket PnL manage karega)
+  use_stop_loss: false
+
 # 📈 GRID / DCA SETTINGS
 grid:
   mode: BOTH # Options: BOTH, BUY_ONLY, SELL_ONLY
-
+  
   lot_size: 0.01
-
-  lot_size: 0.02
-
-  spacing: 0.4 # Distance between levels (ATR multiplier)
-  profit_target_usd: 3 # Target profit to close a grid basket
+  spacing: 0.6 # Distance between levels (ATR multiplier)
+  profit_target_usd: 2 # Target profit to close a grid basket
   profit_target_pct: 0.15 # Relative profit target
-  trailing_enabled: true # true = enable trailing, false = disable trailing
+  trailing_enabled: false # true = enable trailing, false = disable trailing
 
 # 🕒 NEWS SETTINGS
 news:
-  block_window_min: 120 # Minutes before/after high-impact USD news to block trading
+  block_window_min: 30  # Minutes BEFORE high-impact USD news to block trading (post = half this value, min 15)
   download_interval_h: 1 # Refresh news data every X hours

@@ -102,7 +102,9 @@ class TradingBrain:
                 return
 
             # --- STEP 2: CHECK FOR BLOCKING EVENTS ---
-            block_window_min = 120
+            # FIX #8: Read from config.yaml (news.block_window_min) — was hardcoded
+            pre_block_min  = self.config.get('news', {}).get('block_window_min', 30)
+            post_block_min = max(15, pre_block_min // 2)  # Post-event = half of pre (min 15 min)
             blocking_event = None
             blocking_event_time = None
 
@@ -111,9 +113,9 @@ class TradingBrain:
                     try:
                         date_str = event.get('date', '')
                         event_time = datetime.strptime(date_str[:19], "%Y-%m-%dT%H:%M:%S")
-                        
                         diff_minutes = (event_time - now_utc).total_seconds() / 60
-                        if -block_window_min <= diff_minutes <= block_window_min:
+                        # Pre-event block = pre_block_min, post-event block = post_block_min
+                        if -post_block_min <= diff_minutes <= pre_block_min:
                             blocking_event = event.get('title')
                             blocking_event_time = event_time
                             break
@@ -200,7 +202,7 @@ class TradingBrain:
                 score += 0.5
                 signals_present.append("RR Tracks")
             
-            confidence = min(1.0, score / 2.5)
+            confidence = min(1.0, score / 3.0)  # FIX #3: Was /2.5; max score=3.0 so divisor=3.0
             
             # 4. CV Regime Validation
             try:
@@ -248,9 +250,13 @@ class TradingBrain:
             
             # Final Return
             current = data.iloc[-1]
-            stop_loss = current['close'] * (0.995 if action == 'BUY' else 1.005)
+            # FIX #1: ATR-based dynamic SL (was fixed 0.5% — too tight for Gold)
+            atr_sl = (data['high'] - data['low']).rolling(14).mean().iloc[-1]
+            sl_distance = atr_sl * 1.5 if not np.isnan(atr_sl) else current['close'] * 0.005
+            stop_loss = current['close'] - sl_distance if action == 'BUY' else current['close'] + sl_distance
+            # Override with swept level SL when we have a clean sweep signal (tighter, more precise)
             if sweep['detected'] and ((action == 'BUY' and sweep['type'] == 'BELOW_LOW') or (action == 'SELL' and sweep['type'] == 'ABOVE_HIGH')):
-                stop_loss = sweep['swept_level'] - (current['close'] * 0.0005) if action == 'BUY' else sweep['swept_level'] + (current['close'] * 0.0005)
+                stop_loss = sweep['swept_level'] - (atr_sl * 0.2) if action == 'BUY' else sweep['swept_level'] + (atr_sl * 0.2)
             
             ict_status = {
                 'mss': structure,
@@ -297,14 +303,17 @@ class TradingBrain:
             return df
     
     async def _detect_market_structure(self, df: pd.DataFrame, lookback: int = 20) -> Dict:
-        """Concept 1: Market Structure (MSS / BOS / ChoCH)"""
+        """Concept 1: Market Structure (MSS / BOS / ChoCH)
+        FIX #5: Rolling window increased 3→5 bars to reduce false structure breaks.
+        """
         try:
             if len(df) < lookback + 2: return {'structure': "NEUTRAL", 'bias': "NEUTRAL"}
             index = len(df) - 1
             recent = df.iloc[max(0, index-lookback): index+1]
-            swing_highs = recent['high'].rolling(3, center=True).max()
-            swing_lows  = recent['low'].rolling(3, center=True).min()
-            prev_high = swing_highs.iloc[-2]; prev_low = swing_lows.iloc[-2]
+            # FIX #5: Use 5-bar pivot instead of 3-bar to reduce noise
+            swing_highs = recent['high'].rolling(5, center=True).max()
+            swing_lows  = recent['low'].rolling(5, center=True).min()
+            prev_high = swing_highs.iloc[-3]; prev_low = swing_lows.iloc[-3]  # Compare against confirmed swing
             curr_high = df['high'].iloc[-1]; curr_low = df['low'].iloc[-1]
             if curr_high > prev_high and curr_low > prev_low: structure = "BULLISH_BOS"; bias = "BULLISH"
             elif curr_low < prev_low and curr_high < prev_high: structure = "BEARISH_BOS"; bias = "BEARISH"
@@ -390,9 +399,11 @@ class TradingBrain:
         except: return []
     
     def _analyze_dealing_range(self, df: pd.DataFrame, index: int) -> Dict:
-        """Analyze if price is in discount or premium zone"""
+        """Analyze if price is in discount or premium zone
+        FIX #6: Lookback increased 20→50 candles for a meaningful dealing range.
+        """
         try:
-            lookback = 20
+            lookback = 50  # FIX #6: Was 20 (only ~100 min on M5). 50 candles = ~4hrs on M5.
             if index < lookback: return {'zone': 'NEUTRAL'}
             recent = df.iloc[index-lookback:index+1]
             r_high = recent['high'].max(); r_low = recent['low'].min(); cp = df.iloc[index]['close']
@@ -401,15 +412,40 @@ class TradingBrain:
         except Exception: return {'zone': 'NEUTRAL'}
     
     def _detect_order_block(self, df: pd.DataFrame, index: int, bias: str) -> Dict:
-        """Detect institutional order blocks"""
+        """Detect institutional order blocks.
+        FIX #4: Now requires an impulsive move (>= 1x ATR) FOLLOWED by a clear
+        break-of-structure candle — matching ICT OB definition more closely.
+        """
         try:
             lookback = 15
-            if index < lookback: return {'detected': False}
-            for i in range(index-lookback, index-1):
-                b = df.iloc[i]; nb = df.iloc[i+1]
-                pc = abs(nb['close'] - b['close']) / b['close']
-                if bias == 'BULLISH' and pc > 0.001 and nb['close'] > b['close']: return {'detected': True, 'type': 'BULLISH', 'high': b['high'], 'low': b['low'], 'strength': min(pc * 15, 1.0)}
-                elif bias == 'BEARISH' and pc > 0.001 and nb['close'] < b['close']: return {'detected': True, 'type': 'BEARISH', 'high': b['high'], 'low': b['low'], 'strength': min(pc * 15, 1.0)}
+            if index < lookback + 1: return {'detected': False}
+            # ATR for impulse threshold
+            atr = (df['high'] - df['low']).rolling(14).mean().iloc[index]
+            if atr == 0 or np.isnan(atr): return {'detected': False}
+            impulse_min = atr * 1.0  # Candle body >= 1 ATR qualifies as impulsive
+
+            for i in range(index - lookback, index - 1):
+                ob_candle = df.iloc[i]
+                impulse   = df.iloc[i + 1]   # The candle that proves the OB
+                body_ob   = abs(ob_candle['close'] - ob_candle['open'])
+                body_imp  = abs(impulse['close'] - impulse['open'])
+
+                # Impulse candle must be large enough
+                if body_imp < impulse_min: continue
+
+                if bias == 'BULLISH':
+                    # Bullish OB: last bearish candle before a large bullish impulse
+                    if ob_candle['close'] < ob_candle['open'] and impulse['close'] > ob_candle['high']:
+                        # Confirm price has returned to OB zone (retest)
+                        cp = df.iloc[index]['close']
+                        if ob_candle['low'] <= cp <= ob_candle['high']:
+                            return {'detected': True, 'type': 'BULLISH', 'high': ob_candle['high'], 'low': ob_candle['low'], 'strength': min(body_imp / (atr + 1e-9), 1.0)}
+                elif bias == 'BEARISH':
+                    # Bearish OB: last bullish candle before a large bearish impulse
+                    if ob_candle['close'] > ob_candle['open'] and impulse['close'] < ob_candle['low']:
+                        cp = df.iloc[index]['close']
+                        if ob_candle['low'] <= cp <= ob_candle['high']:
+                            return {'detected': True, 'type': 'BEARISH', 'high': ob_candle['high'], 'low': ob_candle['low'], 'strength': min(body_imp / (atr + 1e-9), 1.0)}
             return {'detected': False}
         except Exception: return {'detected': False}
     

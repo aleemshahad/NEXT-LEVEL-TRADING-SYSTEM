@@ -9,6 +9,13 @@ class RiskManager:
         self.max_daily_loss = config.get('max_daily_loss', 0.05)
         self.max_drawdown = config.get('max_drawdown', 0.15)
         self.daily_pnl = 0.0
+        self._session_start_balance = 0.0  # Set on first update
+
+    def update_daily_pnl(self, current_balance: float):
+        """FIX #2: Called every cycle from live_trading run loop to keep daily_pnl live."""
+        if self._session_start_balance == 0.0:
+            self._session_start_balance = current_balance
+        self.daily_pnl = current_balance - self._session_start_balance
         
     def calculate_position_size(self, account_balance: float, entry_price: float, 
                               stop_loss: float, symbol: str) -> float:
@@ -22,15 +29,18 @@ class RiskManager:
             if price_diff == 0:
                 return 0.01  # Minimum position size
             
-            # Calculate position size based on asset type
-            if 'XAU' in symbol or 'ETH' in symbol:
-                # For crypto, use smaller position sizes
+            # FIX #1: Correct asset class detection order (XAG was falling to forex branch)
+            if 'XAG' in symbol:
+                # Silver: ~50 USD/point per lot
+                position_size = min(risk_amount / (price_diff * 50), 1.0)
+            elif 'XAU' in symbol:
+                # Gold: ~100 USD/point per lot
+                position_size = min(risk_amount / (price_diff * 100), 0.5)
+            elif 'BTC' in symbol or 'ETH' in symbol:
+                # Crypto: small lot sizes
                 position_size = min(risk_amount / (price_diff * 10), 0.1)
-            elif 'XAU' in symbol or 'XAG' in symbol:
-                # For metals
-                position_size = min(risk_amount / price_diff, 1.0)
             else:
-                # For forex
+                # Forex pairs
                 position_size = min(risk_amount / (price_diff * 100000), 1.0)
             
             # Round to valid lot size

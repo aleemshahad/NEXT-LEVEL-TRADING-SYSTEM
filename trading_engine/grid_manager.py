@@ -111,7 +111,9 @@ class GridManager:
                 self._last_grid_log[f"{symbol}_pnl"] = now_t
 
             pivot = data['pivot']; atr = data.get('atr', 1.0)
-            has_positions = len(buy_positions + sell_positions) > 0
+            # FIX #4: Check ALL positions for this symbol (includes ICT magic 234000)
+            # Previously `has_positions` only checked grid magics — caused conflicting baskets
+            has_positions = len(symbol_positions) > 0
             all_pendings = mt5.orders_get(symbol=symbol) or []
             grid_pendings = [o for o in all_pendings if o.magic in [self.magic_buy, self.magic_sell]]
             
