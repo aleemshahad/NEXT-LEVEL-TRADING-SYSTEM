@@ -1,97 +1,105 @@
-# 🧠 NEXT LEVEL: SC-RIG-D
-## The Ultimate AI-Powered Trading Ecosystem (v2.0 - Performance Edition)
+# 🧠 NEXT LEVEL TRADING SYSTEM — SC-RIG-D v2.1 (G-Channel)
 
----
-[![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)](https://python.org)
-[![MT5](https://img.shields.io/badge/Platform-MetaTrader%205-orange)](https://metatrader5.com)
-[![Broker](https://img.shields.io/badge/Broker-Exness-green)](https://exness.com)
-[![Strategy](https://img.shields.io/badge/Strategy-Hybrid%20SMC--Grid-blueviolet)](https://github.com/)
+MetaTrader 5 ke liye ek **High-Performance Multi-Timeframe Trend-Locked DCA Grid Trading Bot** (Windows-only).
 
-### 👤 **PREPARED BY**
-**Aleem Shahzad**  
-*Python & Next.js Full-Stack Architect*  
-*Visionary of Integrated Trading Intelligence*
+Bot Hybrid Mode (**G-Channel Cloud + D1 Pivots + Volume-Flow Gate**) par chalta hai aur dynamic pullback grid ke zariye recover karta hai, bina SL ke martingale-style DCA risk management ke sath.
+
+> ⚠️ **EDUCATIONAL / DEMO USE ONLY.** Trading me risk hota hai. Bot demo/education ke liye hai.
 
 ---
 
-## 📌 What's New in v2.0?
+## 🎯 Kya karta hai
 
-> **⚠️ DISCLOSURE: This system is built FOR EDUCATIONAL PURPOSES ONLY. Use on Demo Accounts to learn AI and Grid Trading Logic.**
-
-The latest update transforms **SC-RIG-D** from a standard grid bot into a high-yield **Hybrid SMC-Grid Engine**, specifically optimized for **Gold (XAUUSDm)** volatility.
-
-### 🚀 **Key Performance Upgrades:**
-1.  **Hybrid Execution**: ICT/SMC signals (Order Blocks, FVG) now act as filters and triggers for the Grid system. The bot only scales into positions when market structure aligns.
-2.  **Increased Profit Yield**: Re-engineered **Adaptive Basket Exit** logic. Small baskets now target **$3.00/0.01 lot** (2x previous version), allowing trades to run for maximum value while maintaining safety.
-3.  **Top-Tier Dashboard**: Relocated the **ICT Rail Board** to the performance bar for instant confluence monitoring.
-4.  **Season Analytics**: Introduced the **Season Timer** to track continuous execution duration since the last history reset.
-
----
-
-## 🛠️ **1. THE ENGINE: `live_trading.py`**
-
-The heart of the system is the **Hybrid Intelligence Script**. It blends institutional SMC concepts with the mathematical reliability of grid trading.
-
-### **Institutional Core:**
-*   **SMC Confluence**: Automatically detects **Market Structure Shifts (MSS)**, **Fair Value Gaps**, and **Railway Tracks** to find high-probability reversal zones.
-*   **Elastic Profit Targets**: Uses ATR-based trailing exits. If the market moves in your favor, the bot "stretches" its target to capture extra pips.
-*   **Gold-First Optimization**: specifically tuned for XAUUSDm spread and volatility handling, with automatic switching to Bitcoin (BTCUSDm) during Gold holidays/weekends.
-*   **1Hz Heartbeat**: Rapid position monitoring and safety checks every second.
+- **G-Channel Cloud breakout** (trailing bands `a/b` + cross detection) se basket direction lock hota hai — sirf recent cross trend shift hota hai (whipsaw-proof).
+- **Volume-Flow Gate** — naye basket se pehle OBV (5/20 MA) alignment + volume surge (`≥1.5×` 20-bar avg) confirm hoti hai. Direction mismatch ya low conviction par entry **flat wait** karti hai.
+- **D1 Classic Pivots** (P, S1/S2/S3, R1/R2/R3) grid levels me extra structural support/resistance.
+- **Dynamic Pullback Grid** — `hl_high/hl_low` (20-bar) channel retest levels + dollar-floor recovery levels (`level_distances_usd`), ATR boost + `floor_reference_price` scaling.
+- **Lot Growth (Martingale-style)** — `lot_growth` ratio, `max_order_lot` cap, `max_total_exposure` cap (0.20 default) ke andar DCA.
+- **Incremental Pending Reconcile** — sirf stale pendings remove / missing levels add hote hain; sehatmand levels kabhi remove+re-place nahi hote (**order churn khatam**).
+- **Circuit Breaker** — floating loss `circuit_breaker_loss_pct` (5%) par **sab kuch close + bot pause** (cooldown minutes).
+- **Risk Gate** — `check_risk_limits` (daily loss/drawdown) har grid deployment se pehle.
+- **Auto Trailing + Basket Exit** — HARD EXIT (trailing off) / profit target par basket close; bot turant naya entry candidate dhoondhta hai.
+- **Live Dashboard** — modern dark Tkinter UI: live clock, equity curve (gradient), DCA progress bar, volume-flow chip, D1 pivot, active positions, risk scenarios, terminal logs.
 
 ---
 
-## 📊 **2. THE CONTROL CENTER: `live_dashboard.py`**
+## 🏗️ Architecture
 
-The dashboard provides a premium, real-time tactical overview of your trading "Season."
+```
+live_trading.py            Main bot (Hybrid SMC-Grid engine, circuit breaker, risk gate)
+live_dashboard.py          Tkinter real-time dashboard
+backtesting.py             Backtesting engine (Plotly charts + HTML reports)
+computer_vision_analyzer.py Chart pattern recognition (OpenCV + sklearn)
 
-### **Elite Visuals:**
-*   **Integrated Rail Board**: High-visibility ICT status (MSS, OB, FVG, OTE) now sits at the very top of the performance bar.
-*   **Season Duration**: Live ticking timer showing how long your current trading streak has been active.
-*   **Dynamic Risk Monitor**: Real-time exposure projections for XAUUSDm moves, calculated 10x per second.
-*   **Stealth Trailing Toggle**: Visual feedback when the bot enters "Trailing Mode" to lock in basket profits.
+trading_engine/
+  ├─ broker.py             MT5 connection / order execution
+  ├─ grid_manager.py       G-Channel grid — levels, reconcile, D1 pivots, volume flow
+  ├─ risk.py               RiskManager — daily loss / drawdown / position sizing
+  ├─ trading_brain.py      AI decision engine (requests-based calendar/news intelligence)
+  ├─ notifications.py      Discord notifier
+  └─ security.py           HWID license check
 
----
-
-## 🔄 **3. THE HYBRID WORKFLOW**
-
-```mermaid
-graph TD
-    A[Market Structure Analysis] -->|Identify Bias| B{SMC Filter}
-    B -->|Bullish/Bearish| C[Grid Placement]
-    B -->|Neutral/High Spread| D[Pause Mode]
-    C -->|Price Action Reversal| E[DCA Scaling]
-    E -->|Basket Target Reached| F[Stealth Trailing]
-    F -->|15% Pullback| G[Basket Exit & Profit Realization]
-    G -->|Update History| H[Season Persistence]
+market_intelligence/       Sentiment + data acquisition subsystem
+g-channel.pine             G-Channel indicator (TradingView PineScript)
 ```
 
-1.  **SMC Validation**: The bot checks if the current zone is Discount (Buy) or Premium (Sell) before placing the first grid order.
-2.  **Adaptive Scaling**: If price moves against the initial entry, the bot uses ATR-calculated spacing to build a "Basket."
-3.  **Basket Exit**: Once the weighted average profit hits the new enhanced multi-dollar targets, the bot exits all trades instantly.
+---
+
+## 🚀 RUN
+
+```powershell
+# 1) Requirements
+pip install -r requirements.txt
+pip install -r ict_requirements.txt      # CV/vision extras (optional)
+
+# 2) Config
+#   config.yaml  → symbol (XAUUSDm), timeframe (M15), grid knobs, risk limits
+#   .env         → MT5_LOGIN / MT5_PASSWORD / MT5_SERVER / MT5_TERMINAL_PATH  (never commit!)
+
+# 3) Launch (MetaTrader 5 terminal chalu hona zaroori hai; AUTO trading ON)
+python live_trading.py --cron     # headless bot (auto-launches dashboard)
+python live_dashboard.py          # sirf dashboard
+python backtesting.py             # backtest + reports
+```
+
+- **Magic numbers:** `777001` (BUY grid) · `777002` (SELL grid) · `234000` (AI/ICT singles). Dashboard aur grid_manager dono me match hone zaroori hain.
+- Default symbol **`XAUUSDm`** (Gold 0.05 base lot). Gold holidays/weekend par bot `BTCUSDm` par switch hota hai.
+- Grid state → `logs/grid_state.json`, daily log → `logs/live_trading_YYYY-MM-DD.log`, reports → `logs/live_reports/`.
 
 ---
 
-## 👥 **4. BACKEND & SCALING**
+## ⚙️ Key Config Knobs (`config.yaml`)
 
-For professional operators, the system integrates with a **Django-based Backend**:
-*   **Performance Archiving**: Every "Season" report is automatically saved as a professional Markdown and HTML report in `logs/live_reports/`.
-*   **Discord Intelligence**: Real-time signal and performance updates sent directly to your channel every hour.
+| Key | Default | Meaning |
+|---|---|---|
+| `grid.level_distances_usd` | `[15,30,50,70,100]` | dollar-floor recovery levels (growing +30/level after L5) |
+| `grid.floor_reference_price` | `4400` | floor scaling reference (auto-scales for BTC/weekends) |
+| `grid.use_d1_pivot` | `true` | add daily pivots (S1/S2/S3 / R1/R2/R3) to grid levels |
+| `grid.volume_flow_filter` | `true` | gate basket direction with volume flow |
+| `grid.flow_min_score` | `0.6` | min flow score for entry (`0.6`=OBV must align; `0`=direction only) |
+| `grid.flow_surge_threshold` | `1.5` | x-factor vs 20-bar avg volume for "surge" conviction |
+| `grid.lot_growth` | `1.3` | DCA lot multiplier per level |
+| `grid.max_order_lot` | `0.10` | per-order lot cap |
+| `grid.max_total_exposure` | `0.20` | total committed volume (positions + pendings) cap |
+| `risk.circuit_breaker_loss_pct` | `5.0` | floating-loss % that closes all + pauses |
+| `risk.circuit_breaker_cooldown_min` | `120` | pause duration after circuit breaker |
+| `risk.use_stop_loss` | `false` | SL toggle (off = martingale recovery, lot capped) |
+
+> ⚠️ `grid_manager.py` ke changes bot restart ke baad load hote hain (hot-reload nahi). `config.yaml` hot-reload hota hai.
 
 ---
 
-## ⚠️ **5. THE DISCLAIMER & EDUCATIONAL PURPOSE**
+## 🧬 Changelog (v2.1 highlights)
 
-> [!IMPORTANT]
-> **This software is created EXCLUSIVELY FOR EDUCATIONAL PURPOSES.**  
-> It is a demonstration of automated trading concepts, AI-driven analysis, and complex grid management using Python and MetaTrader 5.
-
-**Gold trading is highly volatile. SC-RIG-D v2.0 focuses on higher yield, which requires disciplined risk management.**
-*   **Not Financial Advice**: Nothing in this repository represents a recommendation to trade live funds.
-*   **Simulation vs Reality**: Always use a **Demo Account** to learn the bot's behavior. 
-*   **Risk Rule #1**: Protecting capital is more important than chasing profit. Never trade with capital you cannot afford to lose.
+- Order **churn fix** — incremental pending reconcile (no remove+re-place spam)
+- **D1 pivots** in grid levels + live dashboard display
+- **Volume-flow gate** (OBV + surge) — entry sirf confirmed flow ke sath
+- **Circuit breaker** (floating-loss emergency exit + cooldown)
+- **Risk gate** on grid deployment; `daily_pnl` live loop me wired
+- Deeper **dollar-floor recovery** grid + auto price-scaling
+- **Lot-growth** DCA config (lot_growth/max_order_lot/max_total_exposure)
+- Broker `import time` fix, `aiohttp→requests` (calendar/news via `asyncio.to_thread`)
+- Modern dashboard UI (clock, equity gradient, DCA bar, flow chip)
 
 ---
-
-### 🌟 **NEXT LEVEL TRADING SYSTEM**
-*Where Intelligence Meets Trading Excellence.*  
-**© 2026 Aleem Shahzad | NEXT LEVEL TRADING**
+*NEXT LEVEL TRADING SYSTEM · SC-RIG-D v2.1 · G-Channel Hybrid Engine*

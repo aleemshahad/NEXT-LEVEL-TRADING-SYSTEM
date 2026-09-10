@@ -1,17 +1,9 @@
-# NEXT LEVEL BRAIN - Essential Dependencies
-# Created by: Aleem Shahzad | AI Partner: Claude (Anthropic)
-
-# Core Trading
-MetaTrader5>=5.0.45
-numpy>=1.21.0
-pandas>=1.3.0
-matplotlib>=3.5.0
-loguru>=0.6.0
-PyYAML>=6.0
-
-# Optional (install if needed)
-# plotly>=5.0.0          # For advanced charts
-# streamlit>=1.28.0      # For web dashboard
-# scikit-learn>=1.0.0    # For advanced ML
-# tensorflow>=2.8.0      # For neural networks
-python-dotenv>=1.0.0
+MetaTrader5
+numpy<2.4.0
+pandas
+loguru
+PyYAML
+python-dotenv
+requests
+matplotlib
+plotly

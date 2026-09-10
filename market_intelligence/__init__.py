@@ -1,1 +1,1 @@
-# Market Intelligence Package
+# Market Intelligence Modules

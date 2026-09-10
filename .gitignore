@@ -22,6 +22,14 @@ __pycache__/
 logs/
 *.log
 
+# Generated artifacts
+charts/
+backtest_results/
+latest_intelligence_report.txt
+
+# Runtime state
+models/*.json
+
 # Operating System
 .DS_Store
 Thumbs.db

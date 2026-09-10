@@ -7,7 +7,7 @@ import yaml
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from loguru import logger
 from typing import Dict, List
@@ -16,7 +16,7 @@ from typing import Dict, List
 from trading_engine.notifications import DiscordNotifier
 from trading_engine.security import SecurityManager
 from trading_engine.trading_brain import TradingBrain
-# FIX #7: ICTAnalyzer removed — all ICT logic consolidated inside TradingBrain
+# FIX #7: ICTAnalyzer removed â€” all ICT logic consolidated inside TradingBrain
 from trading_engine.broker import MT5Broker
 from trading_engine.risk import RiskManager
 from trading_engine.grid_manager import GridManager
@@ -56,6 +56,16 @@ class LiveTradingSystem:
         self.last_discord_pulse = 0
         self.market_mode = "DEFAULT"
         self.start_time = datetime.now() # Season Timer Initialization
+        self._circuit_paused_until = 0.0
+
+    def _is_circuit_paused(self) -> bool:
+        return time.time() < self._circuit_paused_until
+
+    def _circuit_loss_pct(self) -> float:
+        return float(self.config.get('risk', {}).get('circuit_breaker_loss_pct', 5.0))
+
+    def _circuit_cooldown_sec(self) -> float:
+        return float(self.config.get('risk', {}).get('circuit_breaker_cooldown_min', 120)) * 60.0
 
     def _save_reset_time(self, timestamp):
         try:
@@ -69,7 +79,7 @@ class LiveTradingSystem:
     def _load_reset_time(self):
         try:
             config_file = Path("logs/reset_config.json")
-            if config_file.exists():
+            if config_file.exists() and config_file.stat().st_size > 0:
                 with open(config_file, 'r') as f:
                     return json.load(f).get('reset_timestamp', 0)
         except Exception as e:
@@ -83,7 +93,7 @@ class LiveTradingSystem:
             if not config_file.exists(): return
             mtime = config_file.stat().st_mtime
             if not hasattr(self, '_last_config_mtime') or mtime > self._last_config_mtime:
-                logger.info("♻️ Hot Reloading Config...")
+                logger.info("â™»ï¸ Hot Reloading Config...")
                 new_config = self._load_config("config.yaml")
                 if new_config:
                     self.config = new_config
@@ -98,14 +108,14 @@ class LiveTradingSystem:
                     self.grid_manager.config = self.config
                     
                     self._last_config_mtime = mtime
-                    logger.info(f"✅ Settings Updated: Symbols: {self.symbols} | Strategy: {self.strategy}")
+                    logger.info(f"âœ… Settings Updated: Symbols: {self.symbols} | Strategy: {self.strategy}")
         except Exception as e:
             logger.debug(f"Reload error: {e}")
 
     def _manage_symbol_switching(self):
         """Automatic Switcher for weekends/holidays"""
         try:
-            now_utc = datetime.utcnow()
+            now_utc = datetime.now(timezone.utc)
             day = now_utc.weekday()
             is_weekend = day in [5, 6]
             
@@ -118,12 +128,20 @@ class LiveTradingSystem:
             should_be_crypto = is_weekend or not trade_allowed
             
             if should_be_crypto and self.market_mode != "WEEKEND_CRYPTO":
-                logger.info(f"🕒 GOLD HOLIDAY/WEEKEND DETECTED. Switching to BTC/Crypto mode.")
+                logger.info(f"ðŸ•’ GOLD HOLIDAY/WEEKEND DETECTED. Switching to BTC/Crypto mode.")
                 # Try to use BTCUSDm, fallback to initial config if not found
-                self.symbols = ["BTCUSDm"] if mt5.symbol_info("BTCUSDm") else primary_syms
+                suffix = gold_ref.replace('XAUUSD', '')
+                btc_symbol = f"BTCUSD{suffix}"
+                
+                if mt5.symbol_info(btc_symbol):
+                    self.symbols = [btc_symbol]
+                elif mt5.symbol_info("BTCUSD"):
+                    self.symbols = ["BTCUSD"]
+                else:
+                    self.symbols = primary_syms
                 self.market_mode = "WEEKEND_CRYPTO"
             elif not should_be_crypto and self.market_mode != "DEFAULT":
-                logger.info(f"🕒 GOLD MARKET OPEN. Switching back to {primary_syms}.")
+                logger.info(f"ðŸ•’ GOLD MARKET OPEN. Switching back to {primary_syms}.")
                 self.symbols = primary_syms
                 self.market_mode = "DEFAULT"
         except Exception as e:
@@ -140,27 +158,31 @@ class LiveTradingSystem:
     
     async def initialize(self) -> bool:
         try:
-            logger.info("🧠 Initializing NEXT LEVEL BRAIN Live Trading System...")
+            logger.info("ðŸ§  Initializing NEXT LEVEL BRAIN Live Trading System...")
             if not await self.broker.connect(): return False
             acc = mt5.account_info()
             if acc:
                 self.start_balance = acc.balance
                 logger.info(f"Account Balance: ${self.start_balance:.2f}")
-            for symbol in self.symbols: self.broker.cancel_all_pendings(symbol)
-            logger.info("✅ System initialized successfully")
+            for symbol in self.symbols:
+                mt5.symbol_select(symbol, True)
+                self.broker.cancel_all_pendings(symbol)
+            logger.info("âœ… System initialized successfully")
             return True
         except Exception as e:
             logger.error(f"Initialization error: {e}"); return False
     
     async def analyze_and_trade(self, symbol: str):
         try:
+            mt5.symbol_select(symbol, True)
             acc = mt5.account_info()
             if not acc: return
             data = self.broker.get_market_data(symbol, self.timeframe, 100)
-            if data.empty: return
+            if data is None or data.empty or len(data) < 50: return
             ai_analysis = await self.ai_brain.analyze_market(symbol, data)
             tick = mt5.symbol_info_tick(symbol)
             if not tick: return
+            if self._is_circuit_paused(): return
             current_price = tick.bid
             bias = ai_analysis.get('bias', 'NEUTRAL')
             self._current_biases[symbol] = bias
@@ -182,15 +204,24 @@ class LiveTradingSystem:
             self.grid_manager._save_state()
 
             if "Grid" in self.strategy or self.strategy == "Hybrid Mode":
+                floating_dd = max(0.0, (self.start_balance - acc.equity) / self.start_balance) if self.start_balance else 0.0
+                if not self.risk_manager.check_risk_limits(acc.balance, floating_dd):
+                    logger.warning("⛔ Risk gate blocked grid deployment (daily loss / drawdown limit).")
+                    return
                 await self.grid_manager.update(symbol, current_price, bias, acc.balance)
 
             if self.strategy in ["ICT SMC", "Hybrid Mode", "Grid Both"]:
                 if ai_analysis['action'] in ['BUY', 'SELL'] and ai_analysis['confidence'] >= 0.60:
-                    logger.info(f"🎯 ICT Signal: {ai_analysis['action']} {symbol} (Conf: {ai_analysis['confidence']:.2f})")
-                    try:
-                        await self.discord.send_signal(symbol, ai_analysis['action'], ai_analysis['confidence'], ai_analysis['reasoning'], ai_analysis.get('entry_price', 0), ai_analysis.get('take_profit', 0), ai_analysis.get('stop_loss', 0))
-                    except: pass
-                    await self._execute_trade(symbol, ai_analysis)
+                    # Check if ICT position already exists to prevent order spam
+                    open_pos = self.broker.get_positions()
+                    ict_pos = [p for p in open_pos if p['symbol'] == symbol and p.get('magic') == 234000]
+                    
+                    if not ict_pos:
+                        logger.info(f"ðŸŽ¯ ICT Signal: {ai_analysis['action']} {symbol} (Conf: {ai_analysis['confidence']:.2f})")
+                        try:
+                            await self.discord.send_signal(symbol, ai_analysis['action'], ai_analysis['confidence'], ai_analysis['reasoning'], ai_analysis.get('entry_price', 0), ai_analysis.get('take_profit', 0), ai_analysis.get('stop_loss', 0))
+                        except: pass
+                        await self._execute_trade(symbol, ai_analysis)
         except Exception as e: logger.error(f"Analysis error for {symbol}: {e}")
     
     async def _execute_trade(self, symbol: str, ai_analysis: Dict):
@@ -207,7 +238,7 @@ class LiveTradingSystem:
             if not use_sl:
                 # FIX #7: SL is off = unlimited risk. Cap lot to base_lot for safety.
                 size = self.config.get('grid', {}).get('lot_size', 0.01)
-                logger.info(f"🚫 [SL OFF] {ai_analysis['action']} {symbol} | Lot capped to base {size} (no SL protection)")
+                logger.info(f"ðŸš« [SL OFF] {ai_analysis['action']} {symbol} | Lot capped to base {size} (no SL protection)")
             else:
                 size = self.risk_manager.calculate_position_size(acc.balance, ai_analysis['entry_price'], ai_analysis['stop_loss'], symbol)
 
@@ -222,21 +253,41 @@ class LiveTradingSystem:
         try:
             acc = mt5.account_info()
             if not acc: return
-            
+
+            # 0. --- CIRCUIT BREAKER (floating-loss protection) ---
+            # Closes everything + pauses the bot when floating loss hits the threshold.
+            # Martingale keeps recovering in normal ranges; this is the emergency exit
+            # for the rare black-swan / sustained-trend case.
+            loss_pct = (acc.balance - acc.equity) / acc.balance * 100.0 if acc.balance > 0 else 0.0
+            if not self._is_circuit_paused() and loss_pct >= self._circuit_loss_pct():
+                logger.warning(
+                    f"🛑 CIRCUIT BREAKER: floating loss {loss_pct:.1f}% >= {self._circuit_loss_pct():.1f}%. "
+                    f"Closing ALL and pausing {int(self._circuit_cooldown_sec() / 60)}min."
+                )
+                all_pos = self.broker.get_positions()
+                for p in all_pos: self.broker.close_position(p['symbol'], p['ticket'])
+                self.broker.cancel_all_pendings("ALL")
+                self.grid_manager.active_grids.clear()
+                self.grid_manager._save_state()
+                self._circuit_paused_until = time.time() + self._circuit_cooldown_sec()
+                return
+            if self._is_circuit_paused():
+                return
+
             # 1. --- GLOBAL PROFIT EXIT (ALL Trades) ---
             global_pnl = acc.equity - acc.balance
             target = self.config.get('risk', {}).get('global_profit_target_usd', 100)
             if not hasattr(self, '_last_global_log'): self._last_global_log = 0
             if time.time() - self._last_global_log > 30:
-                logger.debug(f"🔍 [Global PnL Check] Current: ${global_pnl:.2f} / Target: ${target:.2f}")
+                logger.debug(f"ðŸ” [Global PnL Check] Current: ${global_pnl:.2f} / Target: ${target:.2f}")
                 self._last_global_log = time.time()
             if global_pnl >= target:
-                logger.info(f"💰 GLOBAL PROFIT REACHED: ${global_pnl:.2f} (Target: ${target}). CLOSING ALL...")
+                logger.info(f"ðŸ’° GLOBAL PROFIT REACHED: ${global_pnl:.2f} (Target: ${target}). CLOSING ALL...")
                 all_pos = self.broker.get_positions()
                 for p in all_pos: self.broker.close_position(p['symbol'], p['ticket'])
                 self.trades_today += len(all_pos)
                 self.broker.cancel_all_pendings("ALL")
-                # FIX #5: Was hardcoded "XAUUSDm" — now clears all active grids dynamically
+                # FIX #5: Was hardcoded "XAUUSDm" â€” now clears all active grids dynamically
                 self.grid_manager.active_grids.clear()
                 self.grid_manager._save_state()
                 return
@@ -284,11 +335,11 @@ class LiveTradingSystem:
                 
                 if at_target:
                     if not trailing_enabled:
-                        logger.info(f"🎯 HARD EXIT (Trailing Off) for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
+                        logger.info(f"ðŸŽ¯ HARD EXIT (Trailing Off) for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
                         should_exit = True
                     else:
                         if not trailing['active']:
-                            logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
+                            logger.info(f"âœ¨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
                             trailing = {'active': True, 'peak': basket_pnl}
                             self.basket_trailing[symbol][direction] = trailing
                             if symbol in self.grid_manager.active_grids: self.grid_manager.active_grids[symbol]['is_trailing'] = True; self.grid_manager._save_state()
@@ -301,7 +352,7 @@ class LiveTradingSystem:
                     self.grid_manager.active_grids[symbol]['min_profit'] = min_p
 
                 if should_exit:
-                    logger.info(f"🎯 BASKET EXIT for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
+                    logger.info(f"ðŸŽ¯ BASKET EXIT for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
                     for p in grid_positions: self.broker.close_position(symbol, p['ticket'])
                     self.trades_today += len(grid_positions) # Increment trades
                     orders = mt5.orders_get(symbol=symbol)
@@ -323,11 +374,11 @@ class LiveTradingSystem:
                 season_str = f"{hours}h {minutes}m {seconds}s"
                 
                 trailing_on = self.config.get('grid', {}).get('trailing_enabled', True)
-                trail_status = "✨ ON" if trailing_on else "❌ OFF"
+                trail_status = "âœ¨ ON" if trailing_on else "âŒ OFF"
                 
-                print(f"\n{'='*50}\n🧠 SC-RIG-D v2.0 - PERFORMANCE DASHBOARD (Trail: {trail_status})\n{'='*50}")
-                print(f"💰 Balance: ${acc.balance:.2f} | P&L: ${pnl:.2f} | Trades: {self.trades_today}")
-                print(f"⏰ Server: {datetime.now().strftime('%H:%M:%S')} | Season: {season_str}")
+                print(f"\n{'='*50}\nðŸ§  SC-RIG-D v2.0 - PERFORMANCE DASHBOARD (Trail: {trail_status})\n{'='*50}")
+                print(f"ðŸ’° Balance: ${acc.balance:.2f} | P&L: ${pnl:.2f} | Trades: {self.trades_today}")
+                print(f"â° Server: {datetime.now().strftime('%H:%M:%S')} | Season: {season_str}")
                 
                 active_symbols = set(self.config.get('symbols', []))
                 open_pos = self.broker.get_positions()
@@ -341,47 +392,62 @@ class LiveTradingSystem:
                         confluence = " | ".join(active_sigs) if active_sigs else "SCANNED"
                         bias_str = data.get('bias_at_start', 'NEUTRAL')
                         target_usd_display = self.config.get('grid', {}).get('profit_target_usd', 3.0)
-                        print(f"📉 Grid {symbol}: {data.get('type', 'SCAN')} ({bias_str}) | Target: ${data.get('min_profit', target_usd_display):.1f}")
+                        print(f"ðŸ“‰ Grid {symbol}: {data.get('type', 'SCAN')} ({bias_str}) | Target: ${data.get('min_profit', target_usd_display):.1f}")
                         print(f"   [ICT RAIL] {confluence}")
                 
-                print(f"📋 Open Positions: {len(open_pos)}")
+                print(f"ðŸ“‹ Open Positions: {len(open_pos)}")
                 for p in open_pos: print(f"  {p['symbol']}: {p['type']} ${p['profit']:.2f}")
                 print(f"{'='*50}")
         except: pass
     
     async def run(self):
         if not await self.initialize(): return
-        self.running = True; logger.info("🚀 Starting live trading...")
+        self.running = True; logger.info("ðŸš€ Starting live trading...")
         asyncio.create_task(self._monitor_heartbeat())
         cycle = 0
         while self.running:
             try:
-                self._reload_settings()
-                acc = mt5.account_info()
-                if acc:
-                    # FIX #2: Update daily_pnl every cycle so daily loss limit is live
-                    self.risk_manager.update_daily_pnl(acc.balance)
-                    if cycle % 3600 == 0:
+                self._reload_settings() # Check for config updates
+                acc_cycle = mt5.account_info()
+                if acc_cycle:
+                    self.risk_manager.update_daily_pnl(acc_cycle.balance) # Keep daily-loss limit live
+                if cycle % 3600 == 0:
+                    acc = mt5.account_info()
+                    if acc:
                         daily_pnl = acc.balance - self.start_balance
                         await self.discord.send_heartbeat(acc, daily_pnl, self.trades_today, len(self.broker.get_positions()))
                 self._manage_symbol_switching()
-                for symbol in self.symbols: await self.analyze_and_trade(symbol)
-                await self.monitor_positions()
-                if cycle % 60 == 0: self.display_status()
-                cycle += 1; await asyncio.sleep(1)
-            except Exception as e: logger.error(f"Loop error: {e}"); await asyncio.sleep(5)
+                for symbol in self.symbols:
+                    try:
+                        await self.analyze_and_trade(symbol)
+                    except Exception as e:
+                        logger.opt(exception=True).error(f"❌ Handled Symbol Error for {symbol} (Loop Preserved): {e}")
+                try:
+                    await self.monitor_positions()
+                except Exception as e:
+                    logger.opt(exception=True).error(f"❌ Handled Position Monitor Error (Loop Preserved): {e}")
+                if cycle % 60 == 0:
+                    self.display_status()
+                cycle += 1
+                await asyncio.sleep(1)
+            except Exception as e:
+                logger.opt(exception=True).error(f"❌ Handled Trading Loop Error (Loop Preserved): {e}")
+                await asyncio.sleep(2)
 
     async def _monitor_heartbeat(self):
         while self.running:
             try:
                 if not await self.broker.is_connected():
-                    logger.warning("📉 Broker disconnected! Reconnecting...")
+                    logger.warning("ðŸ“‰ Broker disconnected! Reconnecting...")
                     await self.broker.connect()
                 await asyncio.sleep(10)
-            except: pass
+            except asyncio.CancelledError:
+                break
+            except Exception as hb_err:
+                logger.warning(f"Heartbeat monitor error: {hb_err}")
+                await asyncio.sleep(10)
 
 def select_trade_setup():
-    # Check for command line arguments
     import argparse
     parser = argparse.ArgumentParser(description="NEXT LEVEL BRAIN Live Trading System")
     parser.add_argument("--strategy", type=str, help="Trading strategy to use")
@@ -396,10 +462,10 @@ def select_trade_setup():
     if config_path.exists():
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-        except: pass
+                config = yaml.safe_load(f) or {}
+        except Exception:
+            config = {}
 
-    # Resolve Strategy
     strats = ["Hybrid Mode", "Grid Both (Reversal/Pivot)", "ICT SMC (High Precision)", "BUY ONLY (Grid Support)", "SELL ONLY (Grid Resistance)"]
     strategy = None
 
@@ -408,22 +474,30 @@ def select_trade_setup():
     elif args.cron:
         strategy = config.get('strategy', 'Hybrid Mode')
     elif args.auto_start:
-        print("\n" + "=" * 50); print("      🚀 NEXT LEVEL TRADING CONFIGURATION"); print("=" * 50)
+        print("\n" + "=" * 50)
+        print("      🚀 NEXT LEVEL TRADING CONFIGURATION")
+        print("=" * 50)
         print("\n [1] Choose Strategy:")
         time.sleep(1)
         strategy = strats[0]
         print(f"  >> Auto-selected: {strategy} (after 1s)")
-    
-    if not strategy:
-        print("\n" + "=" * 50); print("      🚀 NEXT LEVEL TRADING CONFIGURATION"); print("=" * 50)
-        print("\n [1] Choose Strategy:"); [print(f"  {i+1}. {s}") for i, s in enumerate(strats)]
-        try:
-            s_choice = int(input("  >> Choice (1-5): ").strip())
-            strategy = strats[s_choice-1]
-        except: strategy = "Hybrid Mode"
 
-    # Resolve Timeframe
-    tfs = ["M1", "M5", "M15", "M30", "H1"]; labels = ["1 Minute (Scalp)", "5 Minutes (Intraday)", "15 Minutes (Swing)", "30 Minutes", "Hourly"]
+    if not strategy:
+        print("\n" + "=" * 50)
+        print("      🚀 NEXT LEVEL TRADING CONFIGURATION")
+        print("=" * 50)
+        print("\n [1] Choose Strategy:")
+        for i, s in enumerate(strats):
+            print(f"  {i+1}. {s}")
+        try:
+            choice_str = input("  >> Choice (1-5): ").strip()
+            s_choice = int(choice_str) if choice_str else 1
+            strategy = strats[s_choice - 1]
+        except Exception:
+            strategy = "Hybrid Mode"
+
+    tfs = ["M1", "M5", "M15", "M30", "H1"]
+    labels = ["1 Minute (Scalp)", "5 Minutes (Intraday)", "15 Minutes (Swing)", "30 Minutes", "Hourly"]
     tf = None
 
     if args.timeframe:
@@ -437,17 +511,22 @@ def select_trade_setup():
         print(f"  >> Auto-selected: {labels[1]} (after 2s total)")
 
     if not tf:
-        print("\n [2] Choose Timeframe:"); [print(f"  {i+1}. {l}") for i, l in enumerate(labels)]
+        print("\n [2] Choose Timeframe:")
+        for i, l in enumerate(labels):
+            print(f"  {i+1}. {l}")
         try:
-            t_choice = int(input("  >> Choice (1-5): ").strip())
-            tf = tfs[t_choice-1]
-        except: tf = "M5"
-    
-    symbols = config.get('symbols', ['XAUUSDm'])
+            choice_str = input("  >> Choice (1-5): ").strip()
+            t_choice = int(choice_str) if choice_str else 2
+            tf = tfs[t_choice - 1]
+        except Exception:
+            tf = "M5"
+
+    symbols = config.get('symbols', ['XAUUSDc'])
     return symbols, strategy, tf
 
 def launch_dashboard():
     try:
+        Path("logs").mkdir(parents=True, exist_ok=True)
         Path("logs/trading_active.lock").touch()
         print("\n  [>>] Launching Live Dashboard..."); import subprocess
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -469,7 +548,7 @@ def main():
     finally:
         if Path("logs/trading_active.lock").exists(): Path("logs/trading_active.lock").unlink()
         if 'db_proc' in locals() and db_proc: db_proc.terminate()
-        logger.info("👋 System shutdown complete.")
+        logger.info("ðŸ‘‹ System shutdown complete.")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,7 @@
+from dotenv import load_dotenv
 import asyncio
 import os
+import time
 import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
@@ -16,46 +18,62 @@ class MT5Broker:
     async def connect(self) -> bool:
         """Connect to MT5 with robust retries and session clearing"""
         try:
-            mt5.shutdown()
-            await asyncio.sleep(1)
-            
-            terminal_path = r"C:\Users\Next\AppData\Roaming\MetaTrader 5 EXNESS\terminal64.exe"
-            
-            success = False
-            for i in range(3):
-                logger.info(f"Connecting to MT5 (Attempt {i+1}/3)...")
-                if mt5.initialize(path=terminal_path):
-                    success = True
-                    break
-                logger.warning(f"Connection attempt {i+1} failed: {mt5.last_error()}")
-                await asyncio.sleep(2)
-                
-            if not success:
-                logger.error(f"MT5 could not be initialized after 3 attempts: {mt5.last_error()}")
-                return False
-                
+            try:
+                from dotenv import load_dotenv
+                load_dotenv()
+            except Exception:
+                pass
             login = self.config.get('login') or int(os.getenv('MT5_LOGIN', 0))
             password = self.config.get('password') or os.getenv('MT5_PASSWORD')
             server = self.config.get('server') or os.getenv('MT5_SERVER')
-            
-            logger.info(f"Logging into {server} (Account: {login})...")
+            terminal_path = os.getenv('MT5_TERMINAL_PATH', r"C:\Program Files\MetaTrader 5\terminal64.exe")
+
+            # Check if MT5 is already running and connected
+            if mt5.terminal_info() is not None:
+                acc = mt5.account_info()
+                if acc and (not login or acc.login == login):
+                    logger.info(f"✅ Connection already active on Account #{acc.login} ({acc.server}) - Balance: ${acc.balance:.2f}")
+                    self.connected = True
+                    return True
+
+            # Initialize terminal
+            init_success = False
+            for attempt in range(3):
+                logger.info(f"Connecting to MT5 terminal (Attempt {attempt+1}/3)...")
+                if mt5.initialize(path=terminal_path) or mt5.initialize():
+                    init_success = True
+                    break
+                time.sleep(1)
+
+            if not init_success:
+                logger.error(f"❌ MT5 initialization failed: {mt5.last_error()}")
+                return False
+
+            # If login credentials provided, perform login
             if login and password and server:
                 if not mt5.login(login, password=password, server=server):
-                    logger.error(f"MT5 login failed: {mt5.last_error()}")
                     acc = mt5.account_info()
                     if acc and acc.login == login:
-                        logger.info("Terminal is already logged into the correct account manually. Proceeding.")
+                        logger.info(f"Terminal already logged into account #{login}")
                     else:
+                        logger.error(f"❌ MT5 login failed: {mt5.last_error()}")
                         return False
-            
+            else:
+                acc = mt5.account_info()
+                if acc and acc.login > 0:
+                    logger.info(f"✅ Attached to active terminal session on Account #{acc.login}")
+                else:
+                    logger.warning("⚠️ No MT5 credentials configured, continuing with active session")
+
             self.connected = True
-            account_info = mt5.account_info()
-            if account_info:
-                logger.info(f"Connected to MT5 - Balance: ${account_info.balance:.2f}")
+            acc = mt5.account_info()
+            if acc:
+                logger.info(f"✅ Connected to MT5 - Account #{acc.login} | Balance: ${acc.balance:.2f}")
             return True
         except Exception as e:
             logger.error(f"MT5 connection error: {e}")
             return False
+
     
     async def is_connected(self) -> bool:
         """Check if MT5 is still connected and responsive"""
@@ -77,6 +95,7 @@ class MT5Broker:
     def get_market_data(self, symbol: str, timeframe: str = "M5", count: int = 500) -> pd.DataFrame:
         """Get market data from MT5"""
         try:
+            mt5.symbol_select(symbol, True)
             tf_map = {
                 "M1":  mt5.TIMEFRAME_M1, "M3":  mt5.TIMEFRAME_M3, "M5":  mt5.TIMEFRAME_M5,
                 "M15": mt5.TIMEFRAME_M15, "M30": mt5.TIMEFRAME_M30, "H1":  mt5.TIMEFRAME_H1,

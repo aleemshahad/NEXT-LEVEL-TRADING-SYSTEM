@@ -45,31 +45,48 @@ class LivePortfolioDashboard:
         
         self._create_widgets()
         
-        # Start background update thread
-        self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
-        self.update_thread.start()
+        # Start the update loop on the main thread instead of a background thread
+        # to prevent Tkinter silent crashes (Tcl async errors).
+        self.root.after(1000, self._update_loop)
         
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
     def _setup_styles(self):
-        self.style.configure("TFrame", background="#0a0a0a")
-        self.style.configure("Card.TFrame", background="#151515", relief="flat", borderwidth=0)
-        self.style.configure("TLabel", background="#151515", foreground="#ffffff", font=('Segoe UI', 10))
-        self.style.configure("Header.TLabel", background="#0a0a0a", foreground="#00e676", font=('Segoe UI', 16, 'bold'))
-        self.style.configure("Stat.TLabel", background="#151515", foreground="#00e676", font=('Consolas', 16, 'bold')) # Increased for better fill
-        self.style.configure("Metric.TLabel", background="#151515", foreground="#8b949e", font=('Segoe UI', 10))
-        self.style.configure("Ticker.TLabel", background="#050505", foreground="#00e676", font=('Consolas', 11, 'italic'))
-        
+        # Modern palette
+        self.C = {
+            'bg': '#0b0e14', 'card': '#131822', 'card2': '#0f141d',
+            'border': '#232c3d', 'text': '#e8eef7', 'muted': '#8593a8',
+            'green': '#00e676', 'mint': '#2be9a7', 'blue': '#4cc2ff',
+            'orange': '#ffb454', 'red': '#ff5252', 'purple': '#a78bfa',
+            'chip': '#1c2530', 'dim': '#5b6b82',
+        }
+        self.style.configure("TFrame", background=self.C['bg'])
+        self.style.configure("Card.TFrame", background=self.C['card'], relief="flat", borderwidth=0)
+        self.style.configure("TLabel", background=self.C['card'], foreground=self.C['text'], font=('Segoe UI', 10))
+        self.style.configure("Header.TLabel", background=self.C['bg'], foreground=self.C['green'], font=('Segoe UI', 16, 'bold'))
+        self.style.configure("Stat.TLabel", background=self.C['card'], foreground=self.C['green'], font=('Consolas', 15, 'bold'))
+        self.style.configure("Metric.TLabel", background=self.C['card'], foreground=self.C['muted'], font=('Segoe UI', 9))
+        self.style.configure("Ticker.TLabel", background="#05070b", foreground=self.C['green'], font=('Consolas', 11, 'italic'))
+
         # Treeview styles
-        self.style.configure("Treeview", 
-                           background="#151515", 
-                           foreground="white", 
-                           fieldbackground="#151515",
-                           rowheight=28,
-                           font=('Segoe UI', 10))
-        self.style.map("Treeview", background=[('selected', '#3d3d3d')])
-        self.style.configure("Treeview.Heading", background="#212121", foreground="white", font=('Segoe UI', 10, 'bold'))
-        
+        self.style.configure("Treeview",
+                           background=self.C['card'],
+                           foreground="#dfe7f2",
+                           fieldbackground=self.C['card'],
+                           rowheight=30,
+                           font=('Segoe UI', 10),
+                           borderwidth=0)
+        self.style.map("Treeview", background=[('selected', '#33415a')])
+        self.style.configure("Treeview.Heading", background='#1a222f', foreground='#aebbd0',
+                           font=('Segoe UI', 9, 'bold'), relief='flat')
+        self.style.map("Treeview.Heading", background=[('active', '#223046')])
+
+        # Card helper: bordered flat frame
+        def _card_frame(parent, bg=None):
+            return tk.Frame(parent, bg=bg or self.C['card2'],
+                            highlightbackground=self.C['border'], highlightthickness=1, bd=0)
+        self._card = _card_frame
+
         # Treeview tags for coloring
         self.pos_tree_tags = {
             'profit': {'foreground': '#00e676'},
@@ -77,223 +94,248 @@ class LivePortfolioDashboard:
         }
 
     def _create_widgets(self):
-        # Main Container
-        main_frame = ttk.Frame(self.root, padding="15")
+        main_frame = ttk.Frame(self.root, padding="12")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 1. Header
-        header_frame = ttk.Frame(main_frame, style="TFrame")
-        header_frame.pack(fill=tk.X, pady=(0, 15))
-        
-        title = tk.Label(header_frame, text="NEXT LEVEL - LIVE PERFORMANCE", 
-                        bg="#0a0a0a", fg="#00e676", font=('Segoe UI', 22, 'bold'))
-        title.pack(side=tk.LEFT)
-        
-        self.status_label = tk.Label(header_frame, text="● SYSTEM ACTIVE", bg="#0a0a0a", 
-                                   fg="#00e676", font=('Segoe UI', 10, 'bold'))
-        self.status_label.pack(side=tk.RIGHT)
+        # ============ 1. MODERN HEADER (accent line + brand + status) ============
+        header = tk.Frame(main_frame, bg=self.C['card2'],
+                          highlightbackground=self.C['border'], highlightthickness=1, bd=0)
+        header.pack(fill=tk.X, pady=(0, 10))
 
-        # 2. Performance Summary Metrics (Restored)
-        perf_container = ttk.Frame(main_frame, style="Card.TFrame", padding="15")
-        perf_container.pack(fill=tk.X, pady=10)
-        
+        brand_box = tk.Frame(header, bg=self.C['card2'])
+        brand_box.pack(side=tk.LEFT, padx=16, pady=10)
+        tk.Label(brand_box, text="NEXT LEVEL", bg=self.C['card2'], fg="#ffffff",
+                 font=('Segoe UI', 20, 'bold')).pack(anchor=tk.W)
+        tk.Label(brand_box, text="LIVE PERFORMANCE & CONTROL  ·  XAUUSDm",
+                 bg=self.C['card2'], fg=self.C['muted'], font=('Segoe UI', 9)).pack(anchor=tk.W)
+
+        right_box = tk.Frame(header, bg=self.C['card2'])
+        right_box.pack(side=tk.RIGHT, padx=16, pady=8)
+        self.clock_label = tk.Label(right_box, text="--:--:--", bg=self.C['card2'],
+                                    fg=self.C['blue'], font=('Consolas', 13, 'bold'))
+        self.clock_label.pack(anchor=tk.E)
+        self.status_label = tk.Label(right_box, text="● SYSTEM ACTIVE", bg=self.C['card2'],
+                                     fg=self.C['green'], font=('Segoe UI', 10, 'bold'))
+        self.status_label.pack(anchor=tk.E, pady=(2, 0))
+
+        # gradient accent line
+        accent = tk.Canvas(main_frame, height=3, highlightthickness=0, bd=0, bg=self.C['bg'])
+        accent.pack(fill=tk.X, pady=(0, 12))
+        aw = accent.winfo_reqwidth() or 1180
+        cols = ['#00e676', '#2be9a7', '#4cc2ff', '#a78bfa']
+        seg = max(1, aw // len(cols))
+        for i, c in enumerate(cols):
+            accent.create_rectangle(i * seg, 0, (i + 1) * seg + 2, 3, fill=c, outline=c)
+
+        # ============ 2. PERFORMANCE METRICS ROW ============
+        perf_container = self._card(main_frame, bg=self.C['card'])
+        perf_container.pack(fill=tk.X, pady=(0, 10))
+        metrics_host = tk.Frame(perf_container, bg=self.C['card2'])
+        metrics_host.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=6, pady=8)
+
         metrics_list = [
-            ("Total Trades", "total_trades"),
-            ("Win Rate", "win_rate"),
-            ("Total P&L", "total_pnl"),
-            ("Profit Factor", "profit_factor"),
-            ("Max Drawdown", "max_drawdown")
+            ("Total Trades", "total_trades", self.C['text']),
+            ("Win Rate", "win_rate", self.C['mint']),
+            ("Total P&L", "total_pnl", self.C['green']),
+            ("Profit Factor", "profit_factor", self.C['blue']),
+            ("Max Drawdown", "max_drawdown", self.C['red']),
         ]
-        
         self.metric_labels = {}
-        for i, (label, key) in enumerate(metrics_list):
-            m_frame = ttk.Frame(perf_container, style="Card.TFrame")
-            m_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5) # Allow expansion to fill gap
-            
-            ttk.Label(m_frame, text=f"{label}:", font=('Segoe UI', 9, 'bold'), foreground="#888888").pack(anchor=tk.CENTER)
-            self.metric_labels[key] = ttk.Label(m_frame, text="--", style="Stat.TLabel")
-            self.metric_labels[key].pack(anchor=tk.CENTER)
+        for i, (label, key, color) in enumerate(metrics_list):
+            m = tk.Frame(metrics_host, bg=self.C['card2'])
+            m.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
+            tk.Label(m, text=f"{label.upper()}", bg=self.C['card2'], fg=self.C['muted'],
+                     font=('Segoe UI', 8, 'bold')).pack(anchor=tk.CENTER)
+            self.metric_labels[key] = tk.Label(m, text="--", bg=self.C['card2'], fg=color,
+                                               font=('Consolas', 16, 'bold'))
+            self.metric_labels[key].pack(anchor=tk.CENTER, pady=2)
 
-        # --- ICT CONCEPTS (The "Rail Board") Scaled to fill ---
-        self.ict_frame = tk.LabelFrame(perf_container, text=" 🧠 ICT CONCEPTS ", 
-                                      font=("Arial", 10, "bold"), bg="#151515", fg="#58a6ff", bd=1)
-        self.ict_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10)
-        
+        # --- INSTITUTIONAL FILTERS (Rail Board) ---
+        self.ict_frame = tk.LabelFrame(perf_container, text=" INSTITUTIONAL FILTERS ",
+                                       font=("Arial", 9, "bold"), bg=self.C['card2'],
+                                       fg=self.C['mint'], bd=0, highlightthickness=1,
+                                       highlightbackground=self.C['border'])
+        self.ict_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=8)
         self.ict_labels = {}
         concepts = [
-            ("MSS", "mss"), 
-            ("Liq", "sweep"), 
-            ("FVG", "fvg"), 
-            ("OB", "ob"), 
-            ("RR", "rr"),
-            ("Zne", "range"),
-            ("OTE", "ote")
+            ("H4 TREND", "status_h4", self.C['blue']),
+            ("TRAP FILTER", "status_trap", self.C['orange']),
+            ("D1 PIVOT", "daily_pivot", self.C['green']),
         ]
-        for label_text, key in concepts:
-            f = tk.Frame(self.ict_frame, bg="#151515")
-            f.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=2)
-            tk.Label(f, text=f"{label_text}:", font=("Arial", 8, "bold"), bg="#151515", fg="#8b949e").pack()
-            l = tk.Label(f, text="OFF", font=("Arial", 11, "bold"), bg="#151515", fg="#888888")
-            l.pack()
+        for label_text, key, color in concepts:
+            f = tk.Frame(self.ict_frame, bg=self.C['card2'])
+            f.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=12, pady=4)
+            tk.Label(f, text=f"{label_text}:", font=("Arial", 8, "bold"), bg=self.C['card2'], fg=self.C['muted']).pack(anchor=tk.CENTER)
+            l = tk.Label(f, text="--", font=("Consolas", 12, "bold"), bg=self.C['card2'], fg=color)
+            l.pack(anchor=tk.CENTER, pady=2)
             self.ict_labels[key] = l
 
-        # 3. Portfolio Summary Cards (Real-time)
+        # ============ 3. PORTFOLIO SUMMARY CARDS ============
         summary_container = ttk.Frame(main_frame, style="TFrame")
-        summary_container.pack(fill=tk.X, pady=10)
-        
+        summary_container.pack(fill=tk.X, pady=(0, 10))
+
         self.cards = {}
         items = [
             ("STARTING BALANCE", "start_val", "#ffffff"),
             ("ACCOUNT BALANCE", "balance_val", "#ffffff"),
-            ("FLOATING EQUITY", "equity_val", "#58a6ff"),
-            ("SESSION PNL", "session_val", "#00e676"),
-            ("MAX FLOATING (-) $", "drawdown_val", "#ff5252"),
-            ("MARGIN LEVEL", "margin_val", "#03a9f4")
+            ("FLOATING EQUITY", "equity_val", self.C['blue']),
+            ("SESSION PNL", "session_val", self.C['green']),
+            ("MAX FLOATING (-)", "drawdown_val", self.C['red']),
+            ("MARGIN LEVEL", "margin_val", self.C['mint']),
         ]
-        
         for i, (label, key, color) in enumerate(items):
-            card = ttk.Frame(summary_container, style="Card.TFrame", padding="15")
-            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3)
-            
-            ttk.Label(card, text=label, font=('Segoe UI', 9, 'bold'), foreground="#8b949e").pack(anchor=tk.CENTER)
-            self.cards[key] = tk.Label(card, text="$0.00", bg="#151515", 
-                                      fg=color, font=('Consolas', 18, 'bold')) # Balanced size for 6 cards
-            self.cards[key].pack(anchor=tk.CENTER, pady=5)
-            
-        # 3.5 Grid & Trailing Status Card (NEW)
-        grid_container = ttk.Frame(main_frame, style="Card.TFrame", padding="15")
-        grid_container.pack(fill=tk.X, pady=10)
-        
-        ttk.Label(grid_container, text="🕸️ GRID & STRATEGY MONITOR", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,10))
-        
-        status_sub_frame = ttk.Frame(grid_container, style="Card.TFrame")
-        status_sub_frame.pack(fill=tk.X)
-        
+            card = self._card(summary_container)
+            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3, pady=3)
+            tk.Label(card, text=label, font=('Segoe UI', 8, 'bold'), fg=self.C['muted'], bg=self.C['card2']).pack(anchor=tk.CENTER, pady=(8, 1))
+            self.cards[key] = tk.Label(card, text="$0.00", bg=self.C['card2'],
+                                       fg=color, font=('Consolas', 17, 'bold'))
+            self.cards[key].pack(anchor=tk.CENTER, pady=(2, 8))
+
+        # ============ 4. GRID & STRATEGY MONITOR ============
+        grid_container = self._card(main_frame)
+        grid_container.pack(fill=tk.X, pady=(0, 10))
+        head_row = tk.Frame(grid_container, bg=self.C['card2']); head_row.pack(fill=tk.X, padx=12, pady=(10, 6))
+        ttk.Label(head_row, text="GRID & STRATEGY MONITOR", font=('Segoe UI', 10, 'bold'), foreground=self.C['mint']).pack(side=tk.LEFT)
+
+        status_sub_frame = tk.Frame(grid_container, bg=self.C['card2'])
+        status_sub_frame.pack(fill=tk.X, padx=6, pady=(0, 10))
+
         self.grid_cards = {}
         grid_items = [
             ("STRATEGY", "grid_mode", "#ffffff"),
-            ("BIAS / TREND", "current_bias", "#58a6ff"),
-            ("VOLATILITY (ATR)", "current_atr", "#ffffff"),
+            ("BIAS / TREND", "current_bias", self.C['blue']),
+            ("VOLATILITY ATR", "current_atr", "#ffffff"),
             ("DCA PROGRESS", "grid_progress", "#ffffff"),
-            ("BASKET PNL", "peak_val", "#00e676"),
-            ("SAFETY LVL", "lock_val", "#ff5252"),
-            ("SEASON TIMER", "season_timer", "#00e676")
+            ("VOLUME FLOW", "volume_flow", self.C['purple']),
+            ("BASKET PNL", "peak_val", self.C['green']),
+            ("SAFETY", "lock_val", self.C['red']),
+            ("SEASON", "season_timer", self.C['green']),
         ]
-        
         for label, key, color in grid_items:
-            f = ttk.Frame(status_sub_frame, style="Card.TFrame")
+            f = tk.Frame(status_sub_frame, bg=self.C['card2'])
             f.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            ttk.Label(f, text=label, font=('Segoe UI', 8, 'bold'), foreground="#888888").pack(anchor=tk.CENTER)
-            self.grid_cards[key] = tk.Label(f, text="--", bg="#151515", fg=color, font=('Consolas', 14, 'bold'))
-            self.grid_cards[key].pack(anchor=tk.CENTER)
+            tk.Label(f, text=label, font=('Segoe UI', 8, 'bold'), fg=self.C['muted'], bg=self.C['card2']).pack(anchor=tk.CENTER, pady=2)
+            self.grid_cards[key] = tk.Label(f, text="--", bg=self.C['card2'], fg=color,
+                                            font=('Consolas', 13, 'bold'))
+            self.grid_cards[key].pack(anchor=tk.CENTER, pady=(0, 2))
 
-        # 4. Content Area: Three Columns (Active Trades | Performance Curve | Live Risk Monitor)
-        self.content_frame = ttk.Frame(main_frame, style="TFrame")
-        self.content_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        # Left Column: Active Positions (32%)
-        self.left_col = ttk.Frame(self.content_frame, style="Card.TFrame", padding=10)
+        # DCA progress bar
+        bar_row = tk.Frame(grid_container, bg=self.C['card2']); bar_row.pack(fill=tk.X, padx=14, pady=(0, 10))
+        tk.Label(bar_row, text="DCA LEVELS", bg=self.C['card2'], fg=self.C['muted'],
+                 font=('Segoe UI', 7, 'bold')).pack(side=tk.LEFT, padx=(0, 8))
+        self.dca_bar = tk.Canvas(bar_row, height=14, bg=self.C['card'], highlightthickness=1,
+                                 highlightbackground=self.C['border'])
+        self.dca_bar.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # ============ 5. CONTENT AREA ============
+        self.content_frame = tk.Frame(main_frame, bg=self.C['bg'])
+        self.content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
+
+        # Left: Active Positions
+        self.left_col = self._card(self.content_frame)
         self.left_col.place(relx=0, rely=0, relwidth=0.32, relheight=1)
-        
-        ttk.Label(self.left_col, text="💹 ACTIVE POSITIONS", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,5))
-        
+        pad_left = tk.Frame(self.left_col, bg=self.C['card2']); pad_left.pack(fill=tk.X, padx=10, pady=8)
+        tk.Label(pad_left, text="ACTIVE POSITIONS", font=('Segoe UI', 10, 'bold'), fg=self.C['mint'], bg=self.C['card2']).pack(anchor=tk.W)
+
         self.pos_tree = ttk.Treeview(self.left_col, columns=("symbol", "side", "lots", "profit"), show="headings")
-        self.pos_tree.heading("symbol", text="Symbol")
-        self.pos_tree.heading("side", text="Side")
-        self.pos_tree.heading("lots", text="Lots")
-        self.pos_tree.heading("profit", text="Profit ($)")
+        self.pos_tree.heading("symbol", text="SYMBOL")
+        self.pos_tree.heading("side", text="SIDE")
+        self.pos_tree.heading("lots", text="LOTS")
+        self.pos_tree.heading("profit", text="PROFIT ($)")
         for col in ("symbol", "side", "lots", "profit"):
-            self.pos_tree.column(col, anchor=tk.CENTER, width=65)
-        self.pos_tree.pack(fill=tk.BOTH, expand=True)
-        
-        # Middle Column: Equity Performance Curve (34%)
-        self.mid_col = ttk.Frame(self.content_frame, style="Card.TFrame", padding=10)
-        self.mid_col.place(relx=0.33, rely=0, relwidth=0.34, relheight=1)
-        
-        ttk.Label(self.mid_col, text="📈 PERFORMANCE CURVE (EQUITY)", font=('Segoe UI', 10, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(0,5))
-        self.chart_canvas = tk.Canvas(self.mid_col, bg="#0d1117", highlightthickness=0)
-        self.chart_canvas.pack(fill=tk.BOTH, expand=True)
-        
-        # Right Column: Live Risk Monitor (32%)
-        self.right_col = ttk.Frame(self.content_frame, style="Card.TFrame", padding=15)
-        self.right_col.place(relx=0.68, rely=0, relwidth=0.32, relheight=1)
-        
-        ttk.Label(self.right_col, text="🛡️ LIVE RISK & EXPOSURE MONITOR", font=('Segoe UI', 11, 'bold'), foreground="#ffa726").pack(anchor=tk.W, pady=(0,15))
-        
-        calc_inner = ttk.Frame(self.right_col, style="Card.TFrame")
-        calc_inner.pack(fill=tk.BOTH, expand=True)
-        
-        # Live Data Section
-        stats_frame = ttk.Frame(calc_inner, style="Card.TFrame")
-        stats_frame.pack(fill=tk.X, pady=5)
-        
-        self.live_price_label = tk.Label(stats_frame, text="LIVE PRICE: --", bg="#151515", fg="#ffffff", font=('Consolas', 11, 'bold'))
-        self.live_price_label.pack(anchor=tk.W)
-        
-        self.net_lots_label = tk.Label(stats_frame, text="NET EXPOSURE: --", bg="#151515", fg="#ffffff", font=('Consolas', 11, 'bold'))
-        self.net_lots_label.pack(anchor=tk.W)
-
-        self.floating_pnl_label = tk.Label(stats_frame, text="CURRENT PNL: --", bg="#151515", fg="#00e676", font=('Consolas', 11, 'bold'))
-        self.floating_pnl_label.pack(anchor=tk.W)
-
-        ttk.Label(calc_inner, text="--- TOTAL PNL IF MARKET MOVES AGAINST YOU ---", font=('Segoe UI', 8, 'bold'), foreground="#888888").pack(pady=(5,10))
-        
-        self.proj_cards = {}
-        # Scenarios: Price move in Dollars (e.g. Gold -1, -2 etc)
-        # We'll label them as Pips but show the $ impact clearly
-        scenarios = [
-            ("$10 Move (1000 Pips)", 1000),
-            ("$20 Move (2000 Pips)", 2000),
-            ("$50 Move (5000 Pips)", 5000),
-            ("$100 Move (10000 Pips)", 10000),
-            ("$150 Move (15000 Pips)", 15000)
-        ]
-        
-        for label, pips in scenarios:
-            f = ttk.Frame(calc_inner, style="Card.TFrame")
-            f.pack(fill=tk.X, pady=4)
-            ttk.Label(f, text=label, font=('Segoe UI', 9), foreground="#cccccc").pack(side=tk.LEFT)
-            self.proj_cards[pips] = tk.Label(f, text="$0.00", bg="#151515", fg="#ff5252", font=('Consolas', 12, 'bold'))
-            self.proj_cards[pips].pack(side=tk.RIGHT)
-
-        # 4.5 Live Terminal Logs (Integrated to avoid seeing both)
-        ttk.Label(self.right_col, text="📝 LIVE TERMINAL LOGS", font=('Segoe UI', 11, 'bold'), foreground="#00e676").pack(anchor=tk.W, pady=(20,10))
-        self.log_text = tk.Text(self.right_col, bg="#0d1117", fg="#c9d1d9", font=('Consolas', 9), height=10, relief="flat")
-        self.log_text.pack(fill=tk.BOTH, expand=True)
-        self.log_text.tag_configure("INFO", foreground="#00e676")
-        self.log_text.tag_configure("WARNING", foreground="#ffa726")
-        self.log_text.tag_configure("ERROR", foreground="#ff5252")
-        self._last_log_pos = 0
-
-        # Remove the previous horizontal risk_calc_frame if it exists to clean up
-        # Note: Previous risk_calc_frame was at footer, we'll hide it to focus on this one
-        
-        # Configure tags for pos_tree
+            self.pos_tree.column(col, anchor=tk.CENTER, width=78)
         self.pos_tree.tag_configure('profit', foreground='#00e676')
         self.pos_tree.tag_configure('loss', foreground='#ff5252')
+        self.pos_tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
 
-        # 5. Bottom AI Ticker (Scrolling Thoughts)
-        ticker_bg = tk.Frame(main_frame, bg="#050505", height=40)
-        ticker_bg.pack(fill=tk.X, pady=(10, 0), side=tk.BOTTOM)
-        
-        # More dynamic ticker text
-        # Ticker text with Education, Demo notice and Strategy Praise
-        self.ticker_text = "[XAUUSD] NEXT LEVEL TRADING: GOLD SCALPING SPECIALIST... | [NOTICE] FOR EDUCATIONAL PURPOSES ONLY... | [ACCOUNT] DEMO ACCOUNT TRADING LIVE... | [STRATEGY] ELITE GRID-SCALPING IN ACTION: THE SMARTEST WAY TO PROFIT FROM MARKET PULLBACKS... | [STATUS] 100% OPERATIONAL... | [YT LIVE] STREAMING LIVE PERFORMANCE... | [MODE] FULL AUTO-TRAILING ACTIVE... "
-        self.ticker_label = tk.Label(ticker_bg, text=self.ticker_text * 3, 
-                                     bg="#050505", fg="#00e676", 
+        # Middle: Equity Chart
+        self.mid_col = self._card(self.content_frame)
+        self.mid_col.place(relx=0.33, rely=0, relwidth=0.34, relheight=1)
+        pad_mid = tk.Frame(self.mid_col, bg=self.C['card2']); pad_mid.pack(fill=tk.X, padx=10, pady=8)
+        tk.Label(pad_mid, text="PERFORMANCE CURVE (EQUITY)", font=('Segoe UI', 10, 'bold'), fg=self.C['mint'], bg=self.C['card2']).pack(anchor=tk.W)
+        self.chart_canvas = tk.Canvas(self.mid_col, bg=self.C['bg'], highlightthickness=0)
+        self.chart_canvas.pack(fill=tk.BOTH, expand=True, padx=6, pady=(0, 6))
+
+        # Right: Risk + Logs
+        self.right_col = self._card(self.content_frame)
+        self.right_col.place(relx=0.68, rely=0, relwidth=0.32, relheight=1)
+        pad_right = tk.Frame(self.right_col, bg=self.C['card2']); pad_right.pack(fill=tk.X, padx=10, pady=8)
+        tk.Label(pad_right, text="RISK & EXPOSURE", font=('Segoe UI', 10, 'bold'),
+                 fg='#ffa726', bg=self.C['card2']).pack(anchor=tk.W)
+
+        calc_inner = tk.Frame(self.right_col, bg=self.C['card2'])
+        calc_inner.pack(fill=tk.X, padx=10, pady=(0, 4))
+
+        stats_frame = tk.Frame(calc_inner, bg=self.C['card2'])
+        stats_frame.pack(fill=tk.X, pady=2)
+        self.live_price_label = tk.Label(stats_frame, text="LIVE PRICE: --", bg=self.C['card2'], fg="#ffffff",
+                                         font=('Consolas', 11, 'bold'))
+        self.live_price_label.pack(anchor=tk.W)
+        self.net_lots_label = tk.Label(stats_frame, text="NET EXPOSURE: --", bg=self.C['card2'], fg="#ffffff",
+                                       font=('Consolas', 11, 'bold'))
+        self.net_lots_label.pack(anchor=tk.W)
+        self.floating_pnl_label = tk.Label(stats_frame, text="CURRENT PNL: --", bg=self.C['card2'], fg=self.C['green'],
+                                           font=('Consolas', 11, 'bold'))
+        self.floating_pnl_label.pack(anchor=tk.W)
+
+        tk.Label(calc_inner, text="TOTAL PNL IF MARKET MOVES AGAINST YOU",
+                 font=('Segoe UI', 8, 'bold'), fg=self.C['muted'], bg=self.C['card2']).pack(pady=(6, 4))
+
+        self.proj_cards = {}
+        scenarios = [
+            ("$10", 1000), ("$20", 2000), ("$50", 5000),
+            ("$100", 10000), ("$150", 15000),
+        ]
+        for label, pips in scenarios:
+            f = tk.Frame(calc_inner, bg=self.C['card2'])
+            f.pack(fill=tk.X, pady=3)
+            tk.Label(f, text=label, font=('Segoe UI', 9), fg="#c3ccda", bg=self.C['card2']).pack(side=tk.LEFT)
+            self.proj_cards[pips] = tk.Label(f, text="$0.00", bg=self.C['card2'], fg=self.C['red'],
+                                             font=('Consolas', 12, 'bold'))
+            self.proj_cards[pips].pack(side=tk.RIGHT)
+
+        # Terminal logs
+        tk.Label(self.right_col, text="LIVE TERMINAL LOGS", font=('Segoe UI', 10, 'bold'),
+                 fg=self.C['mint'], bg=self.C['card2']).pack(anchor=tk.W, padx=10, pady=(10, 6))
+        log_frame = self._card(self.right_col, bg=self.C['bg'])
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        self.log_text = tk.Text(log_frame, bg=self.C['bg'], fg="#c9d1d9", font=('Consolas', 9),
+                                height=10, relief="flat", borderwidth=0, highlightthickness=0)
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
+        self.log_text.tag_configure("INFO", foreground=self.C['green'])
+        self.log_text.tag_configure("WARNING", foreground=self.C['orange'])
+        self.log_text.tag_configure("ERROR", foreground=self.C['red'])
+        self._last_log_pos = 0
+
+        # ============ 6. TICKER ============
+        ticker_bg = tk.Frame(main_frame, bg="#05070b", height=36)
+        ticker_bg.pack(fill=tk.X, pady=(4, 8), side=tk.BOTTOM)
+        self.ticker_text = "[XAUUSD] NEXT LEVEL TRADING: GOLD SCALPING SPECIALIST... | [NOTICE] FOR EDUCATIONAL PURPOSES ONLY... | [ACCOUNT] DEMO ACCOUNT TRADING LIVE... | [STRATEGY] ELITE GRID-SCALPING IN ACTION: THE SMARTEST WAY TO PROFIT FROM MARKET PULLBACKS... | [STATUS] 100% OPERATIONAL... | [MODE] FULL AUTO-TRAILING ACTIVE... "
+        self.ticker_label = tk.Label(ticker_bg, text=self.ticker_text * 3,
+                                     bg="#05070b", fg=self.C['green'],
                                      font=('Consolas', 11, 'italic'),
                                      anchor='w')
-        self.ticker_label.place(x=0, y=10)
+        self.ticker_label.place(x=0, y=9)
         self._scroll_ticker()
 
-        # Footer Actions (Smaller, to side)
+        # ============ 7. FOOTER ============
         footer = ttk.Frame(main_frame, style="TFrame")
-        footer.pack(fill=tk.X, pady=10, side=tk.BOTTOM)
-        
-        tk.Button(footer, text="🚨 EMERGENCY RESET", command=self._emergency_reset, bg="#ff1744", fg="white", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="🧹 DELETE ALL PENDINGS", command=self._delete_pendings, bg="#ff5252", fg="white", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="🧹 CLEAR HISTORY", command=self._clear_history, bg="#ff9100", fg="black", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="📊 GENERATE FULL REPORT", command=self._generate_report, bg="#00e676", fg="black", font=('Segoe UI', 9, 'bold')).pack(side=tk.RIGHT, padx=5)
+        footer.pack(fill=tk.X, pady=(0, 2), side=tk.BOTTOM)
+        btn_style = {
+            'font': ('Segoe UI', 9, 'bold'),
+        }
+        tk.Button(footer, text="🚨 EMERGENCY RESET", command=self._emergency_reset, bg="#ff1744",
+                  fg="white", relief="flat", activebackground="#e53935", activeforeground="white",
+                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
+        tk.Button(footer, text="🧹 DELETE ALL PENDINGS", command=self._delete_pendings, bg="#ff5252",
+                  fg="white", relief="flat", activebackground="#e53935", activeforeground="white",
+                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
+        tk.Button(footer, text="CLEAR HISTORY", command=self._clear_history, bg="#ff9100",
+                  fg="black", relief="flat", activebackground="#fb8c00", activeforeground="black",
+                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
+        tk.Button(footer, text="FULL REPORT", command=self._generate_report, bg=self.C['green'],
+                  fg="black", relief="flat", activebackground=self.C['mint'], activeforeground="black",
+                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
 
     def _delete_pendings(self):
         if not messagebox.askyesno("Confirm", "Delete all pending orders?"): return
@@ -742,7 +784,7 @@ class LivePortfolioDashboard:
     def _load_reset_config(self):
         try:
             config_file = Path("logs/reset_config.json")
-            if config_file.exists():
+            if config_file.exists() and config_file.stat().st_size > 0:
                 with open(config_file, 'r') as f:
                     data = json.load(f)
                     return data.get('reset_timestamp', 0), data.get('session_max_drawdown', 0.0), data.get('start_balance', 0.0)
@@ -811,7 +853,7 @@ class LivePortfolioDashboard:
         # Update metrics to 0 immediately
         for key in self.metric_labels:
             self.metric_labels[key].config(text="0.0" if "rate" not in key else "0.0%")
-        self.cards['session_val'].config(text="$0.00", foreground="#00e676")
+        self.cards['session_val'].config(text="$0.00", fg="#00e676")
         
         # User requested: DO NOT reset max floating (-) in emergency reset
         # self.session_max_drawdown = 0.0 # Reset session max drawdown (REMOVED as requested)
@@ -822,7 +864,7 @@ class LivePortfolioDashboard:
         messagebox.showinfo("Reset Complete", f"Emergency Reset Successful:\n- Closed: {closed_count} positions\n- Deleted: {deleted_count} pending orders\n- Performance Metrics Resetted.")
 
     def _update_loop(self):
-        terminal_path = r"C:\Users\Next\AppData\Roaming\MetaTrader 5 EXNESS\terminal64.exe"
+        terminal_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
         if not mt5.initialize(path=terminal_path):
             messagebox.showerror("Error", f"MT5 initialize failed: {mt5.last_error()}")
             self.running = False
@@ -838,74 +880,79 @@ class LivePortfolioDashboard:
             if not mt5.login(login, password=password, server=server):
                 print(f"MT5 login failed in dashboard: {mt5.last_error()}")
 
-        while self.running:
-            try:
-                # 0. Check if live trading is still active via lock file
-                # Link: trading_active.lock is created/deleted by live_trading.py
-                lock_file = Path("logs/trading_active.lock")
-                if not lock_file.exists():
-                    self.root.after(0, self._on_closing)
-                    break
+        if not self.running: return
+        
+        try:
+            # 0. Check if live trading is still active via lock file
+            lock_file = Path("logs/trading_active.lock")
+            if not lock_file.exists():
+                self._on_closing()
+                return
 
-                # 1. Update Account and Trading Stats
-                acc = mt5.account_info()
-                if acc:
-                    balance = acc.balance
-                    equity = acc.equity
-                    
-                    # Initialize Starting Balance if not set
-                    if self.start_balance == 0:
-                        self.start_balance = balance
-                        self._save_reset_config()
-                    balance = acc.balance
-                    equity = acc.equity
-                    
-                    # Update Trading Cards
-                    session_pnl = balance - self.start_balance
-                    session_color = "#00e676" if session_pnl >= 0 else "#ff5252"
-                    
-                    self.cards['start_val'].config(text=f"${self.start_balance:,.2f}")
-                    self.cards['balance_val'].config(text=f"${balance:,.2f}")
-                    self.cards['equity_val'].config(text=f"${equity:,.2f}")
-                    self.cards['session_val'].config(text=f"${session_pnl:,.2f}", fg=session_color)
-                    
-                    margin_pct = f"{acc.margin_level:.1f}%" if acc.margin_level else "0%"
-                    self.cards['margin_val'].config(text=margin_pct)
-                    
-                    # Track Chart History (Persistent & Long-Term)
-                    now = time.time()
-                    if not self.equity_history:
-                        self.equity_history.append(self.start_balance)
-                    
-                    # Append every 60 seconds OR if balance changed significantly
-                    last_point = self.equity_history[-1]
-                    if now - self._last_chart_append > 60 or abs(balance - last_point) > 0.01:
-                        self.equity_history.append(balance)
-                        if len(self.equity_history) > 200: self.equity_history.pop(0)
-                        self._last_chart_append = now
-                        self._save_chart_history()
+            # 1. Update Account and Trading Stats
+            acc = mt5.account_info()
+            if acc:
+                balance = acc.balance
+                equity = acc.equity
+                
+                # Initialize Starting Balance if not set
+                if self.start_balance == 0:
+                    self.start_balance = balance
+                    self._save_reset_config()
+                balance = acc.balance
+                equity = acc.equity
+                
+                # Update Trading Cards
+                session_pnl = balance - self.start_balance
+                session_color = "#00e676" if session_pnl >= 0 else "#ff5252"
+                
+                self.cards['start_val'].config(text=f"${self.start_balance:,.2f}")
+                self.cards['balance_val'].config(text=f"${balance:,.2f}")
+                self.cards['equity_val'].config(text=f"${equity:,.2f}")
+                self.cards['session_val'].config(text=f"${session_pnl:,.2f}", fg=session_color)
+                
+                margin_pct = f"{acc.margin_level:.1f}%" if acc.margin_level else "0%"
+                self.cards['margin_val'].config(text=margin_pct)
+                
+                # Track Chart History (Persistent & Long-Term)
+                now = time.time()
+                if not self.equity_history:
+                    self.equity_history.append(self.start_balance)
+                
+                # Append every 60 seconds OR if balance changed significantly
+                last_point = self.equity_history[-1]
+                if now - self._last_chart_append > 60 or abs(balance - last_point) > 0.01:
+                    self.equity_history.append(balance)
+                    if len(self.equity_history) > 200: self.equity_history.pop(0)
+                    self._last_chart_append = now
+                    self._save_chart_history()
 
-                positions = mt5.positions_get()
-                current_floating_pnl = sum(p.profit for p in positions) if positions else 0.0
-                
-                # Update Max Floating Minus Tracker
-                if current_floating_pnl < self.session_max_drawdown:
-                    self.session_max_drawdown = current_floating_pnl
-                    self._save_reset_config() # Persist new drawdown peak
-                
-                self.cards['drawdown_val'].config(text=f"${self.session_max_drawdown:,.2f}")
-                
-                self._draw_chart()
-                self._update_risk_calculator(positions)
-                self._update_positions_tree(positions)
-                self._update_full_history()
-                self._update_grid_status()
-                self._update_log_console()
-                
-                time.sleep(1) # Increased frequency to 1 second
-            except Exception as e:
-                print(f"UI Update error: {e}")
-                time.sleep(5)
+            positions = mt5.positions_get()
+            current_floating_pnl = sum(p.profit for p in positions) if positions else 0.0
+            
+            # Update Max Floating Minus Tracker
+            if current_floating_pnl < self.session_max_drawdown:
+                self.session_max_drawdown = current_floating_pnl
+                self._save_reset_config() # Persist new drawdown peak
+            
+            self.cards['drawdown_val'].config(text=f"${self.session_max_drawdown:,.2f}")
+            
+            self._draw_chart()
+            self._update_risk_calculator(positions)
+            self._update_positions_tree(positions)
+            self._update_full_history()
+            self._update_grid_status()
+            self._update_log_console()
+
+            # Live clock
+            self.clock_label.config(text=datetime.now().strftime('%H:%M:%S'))
+            
+        except Exception as e:
+            print(f"UI Update error: {e}")
+        
+        # Schedule the next tick
+        if self.running:
+            self.root.after(1000, self._update_loop)
 
     def _draw_chart(self):
         try:
@@ -921,75 +968,89 @@ class LivePortfolioDashboard:
 
             min_val = min(points)
             max_val = max(points)
-            
-            # Smart Scale: Ensure some 'breathing room' so points aren't flat on edges
+
             val_range = max_val - min_val
-            if val_range < 0.1: # If flat, give a small range
+            if val_range < 0.1:
                 val_range = 10.0
                 min_val = max_val - 5.0
                 max_val = max_val + 5.0
             else:
-                padding = val_range * 0.1
+                padding = val_range * 0.12
                 min_val -= padding
                 max_val += padding
                 val_range = max_val - min_val
 
-            # Padding
-            pad = 25
-            
-            # Draw Grid Lines
-            for i in range(5):
-                y = pad + (h - 2*pad) * i / 4
-                self.chart_canvas.create_line(pad, y, w-pad, y, fill="#1e2229", dash=(2, 2))
+            pad = 28
 
-            # Scaled points
+            # Grid lines + right-axis labels
+            for i in range(5):
+                y = pad + (h - 2 * pad) * i / 4
+                self.chart_canvas.create_line(pad, y, w - pad, y, fill="#1c2431", dash=(3, 3))
+                lvl = max_val - val_range * i / 4
+                self.chart_canvas.create_text(w - pad - 4, y, text=f"{lvl:,.0f}",
+                                              fill=self.C['dim'], font=('Consolas', 8),
+                                              anchor=tk.E)
+
             coords = []
             for i, val in enumerate(points):
-                x = pad + (w - 2*pad) * i / (len(points) - 1 if len(points) > 1 else 1)
-                y = h - pad - (h - 2*pad) * (val - min_val) / val_range
+                x = pad + (w - 2 * pad) * i / (len(points) - 1)
+                y = h - pad - (h - 2 * pad) * (val - min_val) / val_range
                 coords.append((x, y))
 
-            line_color = "#00e676" 
-            
-            # 1. Draw Area Fill (Polygon)
+            line_color = self.C['green']
+
+            # Gradient area fill (horizontal bands, fading upward)
             if len(coords) > 1:
-                poly_coords = [coords[0][0], h - pad] # Start at bottom left
-                for x, y in coords:
-                    poly_coords.extend([x, y])
-                poly_coords.extend([coords[-1][0], h - pad]) # End at bottom right
-                self.chart_canvas.create_polygon(poly_coords, fill="#00e676", stipple="gray25", outline="")
-                # Note: gray25 is a built-in bitmap for transparency in Tkinter
-            
-            # 2. Draw Curve
-            for i in range(len(coords) - 1):
-                self.chart_canvas.create_line(coords[i][0], coords[i][1], 
-                                            coords[i+1][0], coords[i+1][1], 
-                                            fill=line_color, width=3, smooth=True)
-            
-            # 3. Draw Hollow Dots at intervals
-            # If we have many points, only draw some dots to avoid clutter
-            step = max(1, len(coords) // 10)
-            for i in range(0, len(coords), step):
-                cx, cy = coords[i]
-                self.chart_canvas.create_oval(cx-3, cy-3, cx+3, cy+3, 
-                                            fill="#0d1117", outline=line_color, width=2)
-            
-            # Final point always has a dot
-            self.chart_canvas.create_oval(coords[-1][0]-4, coords[-1][1]-4, 
-                                        coords[-1][0]+4, coords[-1][1]+4, 
-                                        fill="#ffffff", outline=line_color, width=2)
-            
-            # Labels (Moved inside chart for better visibility)
-            self.chart_canvas.create_text(pad + 5, pad + 10, text=f"${max_val:,.0f}", fill="#8b949e", font=('Segoe UI', 8, 'bold'), anchor=tk.W)
-            self.chart_canvas.create_text(pad + 5, h - pad - 10, text=f"${min_val:,.0f}", fill="#8b949e", font=('Segoe UI', 8, 'bold'), anchor=tk.W)
-            
+                base = (0, 18, 14)      # bottom (dark green tint)
+                fade = '#0b1620'        # top fade target
+                bands = 24
+                band_h = float(h - pad) / bands
+                for b in range(bands):
+                    k = 1.0 - b / max(1, bands)       # 1 at bottom -> 0 at top
+                    rr = int(base[0] * k)
+                    gg = int(base[1] * k)
+                    bb = int(base[2] * k)
+                    fill = '#%02x%02x%02x' % (rr, gg, bb)
+                    y0 = (coords[-1][1] if coords else h - pad) - (bands - b) * band_h
+                    poly = [coords[0][0], h - pad]
+                    for x, y in coords:
+                        px = x
+                        py = y if y > y0 + band_h else y0 + band_h
+                        poly.extend([px, py])
+                    poly.extend([coords[-1][0], h - pad])
+                    self.chart_canvas.create_polygon(poly, fill=fill, outline="")
+
+                # Crisp line on top
+                for i in range(len(coords) - 1):
+                    self.chart_canvas.create_line(coords[i][0], coords[i][1],
+                                                  coords[i + 1][0], coords[i + 1][1],
+                                                  fill=line_color, width=2.2, smooth=True)
+
+                # Sample hollow dots
+                step = max(1, len(coords) // 12)
+                for i in range(0, len(coords), step):
+                    cx, cy = coords[i]
+                    self.chart_canvas.create_oval(cx - 3, cy - 3, cx + 3, cy + 3,
+                                                  fill=self.C['card'], outline=line_color, width=1.6)
+
+                # End-point glow
+                ex, ey = coords[-1]
+                self.chart_canvas.create_oval(ex - 6, ey - 6, ex + 6, ey + 6,
+                                              fill=self.C['green'], outline=self.C['green'])
+                self.chart_canvas.create_oval(ex - 2, ey - 2, ex + 2, ey + 2, fill="#ffffff", outline="")
+
+                # Baseline labels
+                self.chart_canvas.create_text(pad + 5, pad + 10, text=f"${max_val:,.0f}",
+                                              fill=self.C['muted'], font=('Segoe UI', 8, 'bold'), anchor=tk.W)
+                self.chart_canvas.create_text(pad + 5, h - pad - 10, text=f"${min_val:,.0f}",
+                                              fill=self.C['muted'], font=('Segoe UI', 8, 'bold'), anchor=tk.W)
         except Exception as e:
             print(f"Chart draw error: {e}")
 
     def _load_chart_history(self):
         try:
             path = Path("logs/chart_history.json")
-            if path.exists():
+            if path.exists() and path.stat().st_size > 0:
                 with open(path, 'r') as f:
                     return json.load(f)
         except: pass
@@ -1022,7 +1083,7 @@ class LivePortfolioDashboard:
 
             if not positions:
                 self.net_lots_label.config(text="NET EXPOSURE: 0.00")
-                for pips in [50, 100, 200, 300, 500]: 
+                for pips in self.proj_cards:
                     self.proj_cards[pips].config(text="$0.00", fg="#888888")
                 return
 
@@ -1079,8 +1140,12 @@ class LivePortfolioDashboard:
                     bias = data.get('bias', 'NEUTRAL')
                     atr = data.get('atr', 1.0)
                     is_trailing = data.get('is_trailing', False)
-                    last_idx = data.get('last_index', 0)
-                    progress = f"LVL {last_idx} / 10"
+                    # Support both new (level_count) and legacy (last_index) state keys
+                    level_cnt = data.get('level_count', data.get('last_index', 0))
+                    max_lvl   = data.get('max_dca_levels', 6)
+                    frozen_tp = data.get('basket_target_pivot', 0.0)
+                    tp_str    = f"TP@{frozen_tp:.2f}" if frozen_tp > 0 else "--"
+                    progress  = f"LVL {level_cnt} | {tp_str}"
                     
                     # Calculate Basket PnL from trades with current magic
                     positions = mt5.positions_get(symbol=symbol)
@@ -1090,6 +1155,19 @@ class LivePortfolioDashboard:
                     self.grid_cards['current_bias'].config(text=bias)
                     self.grid_cards['current_atr'].config(text=f"{atr:.2f}")
                     self.grid_cards['grid_progress'].config(text=progress)
+
+                    # Volume flow chip (from grid_state volume_flow key)
+                    vf = data.get('volume_flow') or {}
+                    if vf.get('score') is not None:
+                        arrow = '▲' if vf.get('bullish') else '▼'
+                        vcolor = self.C['green'] if vf.get('bullish') else self.C['red']
+                        self.grid_cards['volume_flow'].config(
+                            text=f"{arrow} {vf['score']:.2f}", fg=vcolor)
+                    else:
+                        self.grid_cards['volume_flow'].config(text="--", fg=self.C['dim'])
+
+                    # DCA progress bar
+                    self._draw_dca_bar(level_cnt, max_lvl)
                     
                     pnl_col = "#00e676" if basket_pnl >= 0 else "#ff5252"
                     if is_trailing: pnl_col = "#58a6ff" # Blue for trailing
@@ -1108,21 +1186,21 @@ class LivePortfolioDashboard:
                             else:
                                 self.grid_cards['lock_val'].config(text="SAFE", fg="#00e676")
                     
-                    # --- Update ICT Labels (Rail Board) ---
-                    # These values are often put in logs/grid_state.json as metadata by the bot
-                    ict_status = data.get('ict_status', {})
+                    # --- Update Institutional Labels ---
                     for key, label in self.ict_labels.items():
-                        val = str(ict_status.get(key, "OFF")).upper()
-                        color = "#888888"
-                        
-                        # Dynamic Coloring based on ICT logic
-                        if any(x in val for x in ["BULLISH", "BUY", "DISCOUNT", "VALID", "BOS", "SHIFT", "SWEEP"]):
-                            if "BEARISH" not in val: color = "#00e676"
-                        
-                        if any(x in val for x in ["BEARISH", "SELL", "PREMIUM", "FAILED"]):
-                            color = "#ff5252"
-                            
-                        if val == "NEUTRAL" or val == "OFF": color = "#888888"
+                        if key == "status_h4":
+                            val = data.get("status_h4", "NORMAL")
+                            color = "#ff5252" if val == "TREND EXP" else "#00e676"
+                        elif key == "status_trap":
+                            val = data.get("status_trap", "WAITING")
+                            color = "#00e676" if val == "CONFIRMED" else "#ffa726"
+                        elif key == "daily_pivot":
+                            pv = data.get("daily_pivot", 0.0)
+                            val = f"${pv:.2f}" if pv > 0 else "--"
+                            color = "#58a6ff"
+                        else:
+                            val = "--"
+                            color = "#888888"
                         
                         label.config(text=val, fg=color)
             else:
@@ -1130,6 +1208,26 @@ class LivePortfolioDashboard:
                     self.grid_cards[key].config(text="OFF", fg="#888888")
         except Exception as e:
             print(f"Grid Status Update error: {e}")
+
+    def _draw_dca_bar(self, level_cnt, max_lvl):
+        try:
+            self.dca_bar.delete("all")
+            w = self.dca_bar.winfo_width()
+            h = self.dca_bar.winfo_height()
+            if w < 20:
+                return
+            max_lvl = max(1, int(max_lvl))
+            level_cnt = max(0, int(level_cnt))
+            step = (w - 8) / max_lvl
+            for i in range(max_lvl):
+                x1 = 4 + i * step
+                x2 = x1 + step - 3
+                filled = i < level_cnt
+                self.dca_bar.create_rectangle(
+                    x1, 2, x2, h - 2, fill=self.C['green'] if filled else self.C['border'],
+                    outline=self.C['bg'])
+        except Exception as e:
+            print(f"DCA bar error: {e}")
 
     def _update_log_console(self):
         """Read and append latest logs from the shared log file"""
