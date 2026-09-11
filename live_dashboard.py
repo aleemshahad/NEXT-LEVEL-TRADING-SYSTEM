@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import ttk, messagebox
 import MetaTrader5 as mt5
 import pandas as pd
@@ -18,7 +19,7 @@ load_dotenv()
 class LivePortfolioDashboard:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("NEXT LEVEL - LIVE PERFORMANCE & CONTROL")
+        self.root.title("NEXUS AUTOMATION - LIVE PERFORMANCE & CONTROL")
         self.root.geometry("1200x850")
         self.root.configure(bg='#0a0a0a') # Deeper Dark Background
         
@@ -103,8 +104,8 @@ class LivePortfolioDashboard:
         header.pack(fill=tk.X, pady=(0, 10))
 
         brand_box = tk.Frame(header, bg=self.C['card2'])
-        brand_box.pack(side=tk.LEFT, padx=16, pady=10)
-        tk.Label(brand_box, text="NEXT LEVEL", bg=self.C['card2'], fg="#ffffff",
+        brand_box.pack(side=tk.LEFT, padx=(10, 16), pady=10)
+        tk.Label(brand_box, text="NEXUS AUTOMATION", bg=self.C['card2'], fg="#ffffff",
                  font=('Segoe UI', 20, 'bold')).pack(anchor=tk.W)
         tk.Label(brand_box, text="LIVE PERFORMANCE & CONTROL  ·  XAUUSDm",
                  bg=self.C['card2'], fg=self.C['muted'], font=('Segoe UI', 9)).pack(anchor=tk.W)
@@ -310,9 +311,9 @@ class LivePortfolioDashboard:
         # ============ 6. TICKER ============
         ticker_bg = tk.Frame(main_frame, bg="#05070b", height=36)
         ticker_bg.pack(fill=tk.X, pady=(4, 8), side=tk.BOTTOM)
-        self.ticker_text = "[XAUUSD] NEXT LEVEL TRADING: GOLD SCALPING SPECIALIST... | [NOTICE] FOR EDUCATIONAL PURPOSES ONLY... | [ACCOUNT] DEMO ACCOUNT TRADING LIVE... | [STRATEGY] ELITE GRID-SCALPING IN ACTION: THE SMARTEST WAY TO PROFIT FROM MARKET PULLBACKS... | [STATUS] 100% OPERATIONAL... | [MODE] FULL AUTO-TRAILING ACTIVE... "
+        self.ticker_text = "[RISK DISCLAIMER] FOR EDUCATIONAL PURPOSES ONLY • NOT FINANCIAL ADVICE (NFA) • TRADING FINANCIAL ASSETS INVOLVES HIGH RISK AND CAN RESULT IN CAPITAL LOSS • DO YOUR OWN RESEARCH (DYOR) • NEXUS AUTOMATION ACCEPTS NO LIABILITY FOR TRADING LOSSES"
         self.ticker_label = tk.Label(ticker_bg, text=self.ticker_text * 3,
-                                     bg="#05070b", fg=self.C['green'],
+                                     bg="#05070b", fg="#ffcc00",
                                      font=('Consolas', 11, 'italic'),
                                      anchor='w')
         self.ticker_label.place(x=0, y=9)
@@ -381,10 +382,14 @@ class LivePortfolioDashboard:
         messagebox.showinfo("History Cleared", "Dashboard metrics and chart history have been reset successfully.")
 
     def _scroll_ticker(self):
-        """Infinite horizontal scroll for AI Ticker"""
+        """Infinite horizontal scroll for AI Ticker - seamless full-cycle loop."""
         if not hasattr(self, '_ticker_pos'): self._ticker_pos = 0
+        if not hasattr(self, '_ticker_cycle'):
+            font = tkfont.Font(family='Consolas', size=11, slant='italic')
+            self._ticker_cycle = font.measure(self.ticker_text)
         self._ticker_pos -= 1
-        if self._ticker_pos < -1000: self._ticker_pos = 0
+        if self._ticker_pos <= -self._ticker_cycle:
+            self._ticker_pos += self._ticker_cycle
         self.ticker_label.place(x=self._ticker_pos, y=5)
         self.root.after(40, self._scroll_ticker)
 
@@ -1110,102 +1115,151 @@ class LivePortfolioDashboard:
 
     # _update_chart removed as requested
 
+    def _compute_h4_trend(self, symbol):
+        """Always-on H4 trend from latest H4 candles - never returns placeholder."""
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H4, 0, 30)
+            if rates is None or len(rates) < 20:
+                return "NORMAL", "#ffa726"
+            df = pd.DataFrame(rates)
+            closes = df["close"].values
+            fast = float(np.mean(closes[-5:]))
+            slow = float(np.mean(closes[-20:]))
+            if fast > slow * 1.0005: return "BULLISH", "#00e676"
+            if fast < slow * 0.9995: return "BEARISH", "#ff5252"
+            return "NEUTRAL", "#ffa726"
+        except Exception:
+            return "NORMAL", "#ffa726"
+
+    def _compute_trap_filter(self, symbol):
+        """Always-on trap/liquidity-sweep filter from latest H4 candles."""
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H4, 0, 20)
+            if rates is None or len(rates) < 8:
+                return "CLEAR", "#ffa726"
+            df = pd.DataFrame(rates)
+            window = df.iloc[-8:-1]
+            last = df.iloc[-1]
+            swept_high = float(last["high"]) > float(window["high"].max()) and float(last["close"]) < float(window["high"].max())
+            swept_low = float(last["low"]) < float(window["low"].min()) and float(last["close"]) > float(window["low"].min())
+            return ("CONFIRMED", "#00e676") if (swept_high or swept_low) else ("CLEAR", "#ffa726")
+        except Exception:
+            return "CLEAR", "#ffa726"
+
+    def _compute_daily_pivot(self, symbol):
+        """Always-on classic D1 pivot from the previous (closed) D1 candle."""
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 2)
+            if rates is None or len(rates) < 2:
+                return 0.0
+            prev = rates[-2]
+            H = float(prev["high"]); L = float(prev["low"]); C = float(prev["close"])
+            return round((H + L + C) / 3.0, 2)
+        except Exception:
+            return 0.0
+
+    def _compute_live_atr(self, symbol):
+        """Always-on ATR from latest M15 candles."""
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M15, 0, 30)
+            if rates is None or len(rates) < 14:
+                return 1.0
+            df = pd.DataFrame(rates)
+            tr = np.maximum(df["high"] - df["low"], np.maximum(abs(df["high"] - df["close"].shift(1)), abs(df["low"] - df["close"].shift(1))))
+            return float(tr.rolling(14).mean().iloc[-1])
+        except Exception:
+            return 1.0
+
     def _update_grid_status(self):
         try:
+            state = {}
             state_file = Path("logs/grid_state.json")
             if state_file.exists():
                 with open(state_file, 'r') as f:
                     state = json.load(f)
-                
-                # Intelligent Symbol Selection: 
-                # 1. Prefer symbol from state that has active MT5 positions
-                # 2. Otherwise prefer XAUUSDc if it exists in state
-                # 3. Fallback to first available key
-                if state:
-                    symbol = None
-                    all_positions = mt5.positions_get()
-                    if all_positions:
-                        active_syms = set(p.symbol for p in all_positions)
-                        for s in state.keys():
-                            if s in active_syms:
-                                symbol = s
-                                break
-                    
-                    if not symbol:
-                        symbol = "XAUUSDc" if "XAUUSDc" in state else list(state.keys())[0]
-                    
-                    data = state.get(symbol, {})
-                    
-                    strategy = data.get('strategy', 'WAITING...')
-                    bias = data.get('bias', 'NEUTRAL')
-                    atr = data.get('atr', 1.0)
-                    is_trailing = data.get('is_trailing', False)
-                    # Support both new (level_count) and legacy (last_index) state keys
-                    level_cnt = data.get('level_count', data.get('last_index', 0))
-                    max_lvl   = data.get('max_dca_levels', 6)
-                    frozen_tp = data.get('basket_target_pivot', 0.0)
-                    tp_str    = f"TP@{frozen_tp:.2f}" if frozen_tp > 0 else "--"
-                    progress  = f"LVL {level_cnt} | {tp_str}"
-                    
-                    # Calculate Basket PnL from trades with current magic
-                    positions = mt5.positions_get(symbol=symbol)
-                    basket_pnl = sum(p.profit for p in positions) if positions else 0.0
-                    
-                    self.grid_cards['grid_mode'].config(text=strategy)
-                    self.grid_cards['current_bias'].config(text=bias)
-                    self.grid_cards['current_atr'].config(text=f"{atr:.2f}")
-                    self.grid_cards['grid_progress'].config(text=progress)
 
-                    # Volume flow chip (from grid_state volume_flow key)
-                    vf = data.get('volume_flow') or {}
-                    if vf.get('score') is not None:
-                        arrow = '▲' if vf.get('bullish') else '▼'
-                        vcolor = self.C['green'] if vf.get('bullish') else self.C['red']
-                        self.grid_cards['volume_flow'].config(
-                            text=f"{arrow} {vf['score']:.2f}", fg=vcolor)
-                    else:
-                        self.grid_cards['volume_flow'].config(text="--", fg=self.C['dim'])
+            all_positions = mt5.positions_get()
+            active_syms = set(p.symbol for p in all_positions) if all_positions else set()
 
-                    # DCA progress bar
-                    self._draw_dca_bar(level_cnt, max_lvl)
-                    
-                    pnl_col = "#00e676" if basket_pnl >= 0 else "#ff5252"
-                    if is_trailing: pnl_col = "#58a6ff" # Blue for trailing
-                    self.grid_cards['peak_val'].config(text=f"${basket_pnl:,.2f}", fg=pnl_col)
-                    
-                    # Safety Level: Spread Guard status OR Trailing Status
-                    if is_trailing:
-                        self.grid_cards['lock_val'].config(text="TRAILING", fg="#58a6ff")
-                    else:
-                        tick = mt5.symbol_info_tick(symbol)
-                        if tick:
-                            spread = abs(tick.ask - tick.bid)
-                            limit = atr * 0.1
-                            if spread > limit:
-                                self.grid_cards['lock_val'].config(text="PAUSED", fg="#ffa726")
-                            else:
-                                self.grid_cards['lock_val'].config(text="SAFE", fg="#00e676")
-                    
-                    # --- Update Institutional Labels ---
-                    for key, label in self.ict_labels.items():
-                        if key == "status_h4":
-                            val = data.get("status_h4", "NORMAL")
-                            color = "#ff5252" if val == "TREND EXP" else "#00e676"
-                        elif key == "status_trap":
-                            val = data.get("status_trap", "WAITING")
-                            color = "#00e676" if val == "CONFIRMED" else "#ffa726"
-                        elif key == "daily_pivot":
-                            pv = data.get("daily_pivot", 0.0)
-                            val = f"${pv:.2f}" if pv > 0 else "--"
-                            color = "#58a6ff"
-                        else:
-                            val = "--"
-                            color = "#888888"
-                        
-                        label.config(text=val, fg=color)
+            # Symbol selection: prefer live positions, else state, else default
+            symbol = None
+            if all_positions:
+                symbol = max(active_syms, key=lambda s: sum(p.volume for p in all_positions if p.symbol == s))
+            if not symbol and state:
+                symbol = "XAUUSDc" if "XAUUSDc" in state else list(state.keys())[0]
+            if not symbol:
+                symbol = "XAUUSDc"
+
+            data = state.get(symbol, {}) or {}
+
+            # --- Always-on Institutional Filters (never "--" or "OFF") ---
+            h4_val, h4_col = self._compute_h4_trend(symbol)
+            if data.get("status_h4") in ("BULLISH", "BEARISH", "NEUTRAL", "NORMAL", "TREND EXP"):
+                h4_val = data["status_h4"]
+                h4_col = "#ff5252" if h4_val == "TREND EXP" else "#00e676"
+
+            trap_val, trap_col = self._compute_trap_filter(symbol)
+            if data.get("status_trap"):
+                trap_val = data["status_trap"]
+                trap_col = "#00e676" if trap_val == "CONFIRMED" else "#ffa726"
+
+            pivot = self._compute_daily_pivot(symbol)
+            if data.get("daily_pivot"):
+                pivot = float(data["daily_pivot"])
+
+            self.ict_labels['status_h4'].config(text=h4_val, fg=h4_col)
+            self.ict_labels['status_trap'].config(text=trap_val, fg=trap_col)
+            self.ict_labels['daily_pivot'].config(text=f"${pivot:.2f}" if pivot > 0 else "--", fg="#58a6ff")
+
+            # --- Grid & Strategy Monitor: real-time computed state ---
+            strategy = data.get('strategy', 'SYSTEM ACTIVE')
+            bias = data.get('bias', h4_val)
+            atr = data.get('atr', self._compute_live_atr(symbol))
+            is_trailing = data.get('is_trailing', False)
+            level_cnt = data.get('level_count', data.get('last_index', 0))
+            if not level_cnt and all_positions:
+                level_cnt = len([p for p in all_positions if p.symbol == symbol])
+            max_lvl = data.get('max_dca_levels', 6)
+            frozen_tp = data.get('min_profit', data.get('basket_target_pivot', 0.0))
+            tp_str = f"TP@{frozen_tp:.2f}" if frozen_tp > 0 else "--"
+            progress = f"LVL {level_cnt} | {tp_str}"
+
+            positions = mt5.positions_get(symbol=symbol)
+            basket_pnl = sum(p.profit for p in positions) if positions else 0.0
+
+            self.grid_cards['grid_mode'].config(text=strategy)
+            self.grid_cards['current_bias'].config(text=bias)
+            self.grid_cards['current_atr'].config(text=f"{atr:.2f}")
+            self.grid_cards['grid_progress'].config(text=progress)
+
+            # Volume flow: from state, else live monitoring state
+            vf = data.get('volume_flow') or {}
+            if vf.get('score') is not None:
+                arrow = '▲' if vf.get('bullish') else '▼'
+                vcolor = self.C['green'] if vf.get('bullish') else self.C['red']
+                self.grid_cards['volume_flow'].config(text=f"{arrow} {vf['score']:.2f}", fg=vcolor)
             else:
-                for key in self.grid_cards:
-                    self.grid_cards[key].config(text="OFF", fg="#888888")
+                self.grid_cards['volume_flow'].config(text="WATCHING", fg=self.C['purple'])
+
+            # DCA progress bar
+            self._draw_dca_bar(level_cnt, max_lvl)
+
+            pnl_col = "#00e676" if basket_pnl >= 0 else "#ff5252"
+            if is_trailing: pnl_col = "#58a6ff"
+            self.grid_cards['peak_val'].config(text=f"${basket_pnl:,.2f}", fg=pnl_col)
+
+            # Safety Level: Spread Guard status OR Trailing Status
+            if is_trailing:
+                self.grid_cards['lock_val'].config(text="TRAILING", fg="#58a6ff")
+            else:
+                tick = mt5.symbol_info_tick(symbol)
+                if tick:
+                    spread = abs(tick.ask - tick.bid)
+                    limit = atr * 0.1
+                    if spread > limit:
+                        self.grid_cards['lock_val'].config(text="PAUSED", fg="#ffa726")
+                    else:
+                        self.grid_cards['lock_val'].config(text="SAFE", fg="#00e676")
         except Exception as e:
             print(f"Grid Status Update error: {e}")
 

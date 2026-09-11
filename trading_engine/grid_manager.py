@@ -21,15 +21,19 @@ class GridManager:
         self.ai_magic = 234000  # AI single orders
 
         self.base_lot = float(grid_config.get("lot_size", 0.01))
-        self.spacing_multiplier = float(grid_config.get("spacing", 0.4))
-        self.max_dca_levels = int(grid_config.get("max_dca_levels", 10))
         self.max_total_exposure = float(grid_config.get("max_total_exposure", 0.10))
-        self.batch_size = int(grid_config.get("batch_size", 2))
         self.lot_growth = float(grid_config.get("lot_growth", 1.3))
         self.max_order_lot = float(grid_config.get("max_order_lot", 0.10))
-        self.recovery_levels = [float(d) for d in grid_config.get("level_distances_usd", [15, 30, 50, 70, 100])]
-        self.floor_reference_price = float(grid_config.get("floor_reference_price", 4400.0))
-        self.use_d1_pivot = bool(grid_config.get("use_d1_pivot", True))
+
+        # Fibonacci-Anchored DCA Engine (fully replaces legacy ATR / fixed-pip spacing)
+        fib_cfg = (config or {}).get("fib_dca", {})
+        self.fib_enabled = bool(fib_cfg.get("enabled", True))
+        self.fib_lookback_bars = int(fib_cfg.get("lookback_bars", 40))
+        self.fib_max_open_layers = int(fib_cfg.get("max_open_layers", 3))
+        self.fib_proximity_tolerance = float(fib_cfg.get("proximity_tolerance", 0.40))
+        self.fib_body_ratio_limit = float(fib_cfg.get("body_ratio_limit", 0.70))
+        self.fib_wick_ratio_min = float(fib_cfg.get("wick_ratio_min", 0.20))
+        self.fib_freeze_on_flip = bool(fib_cfg.get("freeze_on_gchannel_flip", True))
 
         self.volume_flow_filter = bool(grid_config.get("volume_flow_filter", True))
         self.flow_surge_threshold = float(grid_config.get("flow_surge_threshold", 1.5))
@@ -44,8 +48,11 @@ class GridManager:
         self.state_file = Path("logs/grid_state.json")
         self.active_grids: Dict[str, dict] = {}
         self._last_grid_log: Dict[str, float] = {}
+        self._last_dca_log: Dict[str, float] = {}
+        self._last_collision_log: Dict[str, float] = {}
         self.last_pivots: Dict[str, dict] = {}
         self.last_flow: Dict[str, dict] = {}
+        self.grid_frozen: Dict[str, str] = {}
 
         self.TIMEFRAME_MAP = {
             "M1": mt5.TIMEFRAME_M1,
@@ -73,7 +80,7 @@ class GridManager:
                 flw = self.last_flow.get(sym)
                 if flw:
                     self.active_grids[sym]["volume_flow"] = flw
-            with open(self.state_file, "w") as f:
+            with open(self.state_file, "w", encoding="utf-8") as f:
                 json.dump(self.active_grids, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save grid state: {e}")
@@ -81,7 +88,7 @@ class GridManager:
     def _load_state(self) -> None:
         try:
             if self.state_file.exists() and self.state_file.stat().st_size > 0:
-                with open(self.state_file, "r") as f:
+                with open(self.state_file, "r", encoding="utf-8") as f:
                     self.active_grids = json.load(f)
             else:
                 self.active_grids = {}
@@ -94,16 +101,178 @@ class GridManager:
         # Capped individual order size
         return min(round(lot, 2), self.max_order_lot)
 
-    def _calculate_grid_price(self, base_price: float, index: int, atr: float, direction: str) -> float:
-        dynamic_spacing = self.spacing_multiplier
-        if index >= 2:
-            dynamic_spacing *= 1.5
-        if index >= 5:
-            dynamic_spacing *= 2.0
+    # ------------------------------------------------------------------
+    # Structural Fibonacci-Anchored DCA Engine
+    # ------------------------------------------------------------------
+    FIB_RATIOS = {1: 0.50, 2: 0.618, 3: 0.786}   # DCA1 = 50%, DCA2 = Golden Pocket, DCA3 = Deep Value
 
-        spacing = atr * dynamic_spacing
-        offset = spacing * index
-        return base_price - offset if direction == "BUY" else base_price + offset
+    def _get_m15_closed_df(self, symbol: str):
+        """Fetch the last N closed M15 bars for swing detection (excludes forming candle)."""
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M15, 0, self.fib_lookback_bars + 5)
+            if rates is None or len(rates) < self.fib_lookback_bars:
+                return None
+            return pd.DataFrame(rates[:-1])  # drop the still-forming candle
+        except Exception as e:
+            logger.debug(f"M15 fetch failed for {symbol}: {e}")
+            return None
+
+    def _get_m1_closed_df(self, symbol: str):
+        """Fetch the last closed M1 candle + buffer for the deceleration filter."""
+        try:
+            rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 5)
+            if rates is None or len(rates) < 2:
+                return None
+            return pd.DataFrame(rates[:-1])
+        except Exception as e:
+            logger.debug(f"M1 fetch failed for {symbol}: {e}")
+            return None
+
+    def _get_swing_range(self, m15_df) -> Dict:
+        """Detect the active impulsive swing from closed M15 bars."""
+        try:
+            if m15_df is None or len(m15_df) < 2:
+                return {}
+            window = m15_df.tail(self.fib_lookback_bars)
+            swing_high = float(window["high"].max())
+            swing_low = float(window["low"].min())
+            swing_range = swing_high - swing_low
+            if swing_range <= 0:
+                return {}
+            return {
+                "swing_high": swing_high,
+                "swing_low": swing_low,
+                "swing_range": swing_range,
+            }
+        except Exception as e:
+            logger.debug(f"Swing calc failed: {e}")
+            return {}
+
+    def get_fibonacci_dca_level(self, direction: str, layer: int, m15_df) -> Optional[Dict]:
+        """Calculate the exact Fibonacci DCA target price for a layer.
+
+        Returns None when the layer has no defined ratio (Layer 4+ = invalidated).
+        For BUY:  target = swing_high - swing_range * ratio
+        For SELL: target = swing_low + swing_range * ratio
+        """
+        try:
+            ratio = self.FIB_RATIOS.get(layer)
+            if ratio is None:
+                return None  # no blind layers beyond the defined structure
+            swing = self._get_swing_range(m15_df)
+            if not swing:
+                return None
+            factor = swing["swing_range"] * ratio
+            if direction == "BUY":
+                target = swing["swing_high"] - factor
+            else:
+                target = swing["swing_low"] + factor
+            return {
+                "target": float(target),
+                "ratio": ratio,
+                "layer": layer,
+                "swing_high": swing["swing_high"],
+                "swing_low": swing["swing_low"],
+            }
+        except Exception as e:
+            logger.debug(f"Fib DCA level calc failed: {e}")
+            return None
+
+    def is_m1_rejection_confirmed(self, direction: str, m1_df) -> bool:
+        """Candle deceleration / knife filter on the latest closed M1 candle.
+
+        - A candle whose body is > fib_body_ratio_limit AGAINST the position
+          (i.e. bearish body for a BUY DCA, bullish body for a SELL DCA) blocks the fire.
+        - BUY DCA requires a bottom wick >= fib_wick_ratio_min of the M1 range (buyer defense).
+        - SELL DCA requires a top wick >= fib_wick_ratio_min of the M1 range (seller rejection).
+        """
+        try:
+            if m1_df is None or len(m1_df) < 1:
+                return False  # no data -> do not fire
+            bar = m1_df.iloc[-1]
+            o, h, l, c = float(bar["open"]), float(bar["high"]), float(bar["low"]), float(bar["close"])
+            rng = h - l
+            if rng <= 0:
+                return False
+            body = abs(c - o)
+            body_ratio = body / rng
+            bottom_wick = (min(o, c) - l) / rng
+            top_wick = (h - max(o, c)) / rng
+
+            if direction == "BUY":
+                # Bearish momentum candle > 70% body = falling knife -> wait
+                if c < o and body_ratio > self.fib_body_ratio_limit:
+                    return False
+                return bottom_wick >= self.fib_wick_ratio_min  # buyer defense
+            else:
+                # Bullish momentum candle > 70% body = no seller rejection yet -> wait
+                if c > o and body_ratio > self.fib_body_ratio_limit:
+                    return False
+                return top_wick >= self.fib_wick_ratio_min  # seller rejection
+        except Exception as e:
+            logger.debug(f"M1 rejection check failed: {e}")
+            return False
+
+    async def _try_place_dca_layer(self, symbol: str, active_type: str, current_price: float,
+                                    atr: float, now_t: float, magic: int,
+                                    active_pos: list, grid_vol: float):
+        """Attempt to place a pending-limit DCA layer at the next Fibonacci target."""
+        if not self.fib_enabled:
+            self._save_state()
+            return
+
+        m15_df = self._get_m15_closed_df(symbol)
+        m1_df = self._get_m1_closed_df(symbol)
+
+        next_layer = max(1, len(active_pos))
+        if next_layer > self.fib_max_open_layers:
+            logger.info(
+                f"⛔ [DCA] {symbol} Layer {next_layer} >= max_open_layers {self.fib_max_open_layers} — no further averaging."
+            )
+            self._save_state()
+            return
+
+        fib = self.get_fibonacci_dca_level(active_type, next_layer, m15_df)
+        if fib is None:
+            logger.info(
+                f"⛔ [DCA] {symbol} Layer {next_layer} has no defined fib ratio (Layer 4+ invalidated) — no blind layers."
+            )
+            self._save_state()
+            return
+
+        # Price-tap convergence: within tolerance zone of the fib target
+        proximity_ok = (active_type == "BUY" and fib["target"] - self.fib_proximity_tolerance <= current_price <= fib["target"]) or \
+                       (active_type == "SELL" and fib["target"] <= current_price <= fib["target"] + self.fib_proximity_tolerance)
+        rejection_ok = self.is_m1_rejection_confirmed(active_type, m1_df)
+        condition_met = bool(proximity_ok and rejection_ok)
+
+        _dca_log_key = f"{symbol}_dca"
+        if now_t - self._last_dca_log.get(_dca_log_key, 0) > 30:
+            logger.info(
+                f"DCA Layer {next_layer} target: {fib['target']:.2f} (Fib: {fib['ratio']}). "
+                f"Current Price: {current_price:.2f} -> Condition Met: {condition_met}"
+            )
+            self._last_dca_log[_dca_log_key] = now_t
+
+        if condition_met:
+            lot_size = self._calculate_martingale_lot(next_layer, atr)
+            if grid_vol + lot_size <= self.max_total_exposure:
+                res = await self.broker.place_order(
+                    symbol=symbol, action=active_type, volume=lot_size,
+                    price=fib["target"], use_limit=True, magic=magic
+                )
+                if res.get("success"):
+                    self.active_grids[symbol]["last_index"] = next_layer
+                    logger.info(
+                        f"⚡ [DCA] Pending Layer {next_layer} {active_type} @ {fib['target']:.2f} "
+                        f"(Fib {fib['ratio']}, proximity trigger on current price {current_price:.2f})"
+                    )
+                else:
+                    logger.warning(f"⚠️ [DCA] Layer {next_layer} order failed: {res.get('error')}")
+            else:
+                logger.info(f"⛔ [DCA] {symbol} exposure cap {self.max_total_exposure} reached — skip Layer {next_layer}")
+
+        self._save_state()
 
     def _add_gchannel_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         if df is None or len(df) < 20:
@@ -225,18 +394,24 @@ class GridManager:
             hl_high, hl_low, buy_level, sell_level = 0.0, 0.0, 0.0, 0.0
 
             if rates is not None and len(rates) >= 50:
+                # Full series (incl. forming candle) kept for volume flow
                 df = pd.DataFrame(rates)
-                df["tr"] = np.maximum(
-                    df["high"] - df["low"],
+
+                # Use only CLOSED bars for ATR + G-Channel bands so the level
+                # set freezes per candle instead of swimming with the forming
+                # bar's live high/low (root cause of pending order churn).
+                df_closed = pd.DataFrame(rates[:-1])
+                df_closed["tr"] = np.maximum(
+                    df_closed["high"] - df_closed["low"],
                     np.maximum(
-                        abs(df["high"] - df["close"].shift(1)),
-                        abs(df["low"] - df["close"].shift(1)),
+                        abs(df_closed["high"] - df_closed["close"].shift(1)),
+                        abs(df_closed["low"] - df_closed["close"].shift(1)),
                     ),
                 )
-                atr = float(df["tr"].rolling(14).mean().iloc[-1])
+                atr = float(df_closed["tr"].rolling(14).mean().iloc[-1])
 
-                df = self._add_gchannel_indicators(df)
-                curr = df.iloc[-1]
+                df_closed = self._add_gchannel_indicators(df_closed)
+                curr = df_closed.iloc[-1]
                 gchannel_bullish = bool(curr["gchannel_bullish"])
                 hl_high = float(curr["hl_high"])
                 hl_low = float(curr["hl_low"])
@@ -253,10 +428,18 @@ class GridManager:
             buy_positions = [p for p in symbol_positions if p["type"] == "BUY"]
             sell_positions = [p for p in symbol_positions if p["type"] == "SELL"]
 
+            grid_only_positions = [
+                p for p in symbol_positions
+                if p.get("magic") in (self.magic_buy, self.magic_sell)
+            ]
+            ict_positions = [
+                p for p in symbol_positions if p.get("magic") == self.ai_magic
+            ]
+
             all_pendings = mt5.orders_get(symbol=symbol) or []
             grid_pendings = [o for o in all_pendings if o.magic in [self.magic_buy, self.magic_sell]]
 
-            total_open_vol = sum(p["volume"] for p in symbol_positions)
+            grid_open_vol = sum(p["volume"] for p in grid_only_positions)
             total_exposure = self._get_active_exposure(symbol_positions, grid_pendings)
             total_grid_pnl = sum(p["profit"] + p.get("swap", 0.0) for p in symbol_positions)
 
@@ -264,7 +447,7 @@ class GridManager:
             now_t = time.time()
             if now_t - self._last_grid_log.get(f"{symbol}_pnl", 0) > 60:
                 logger.info(
-                    f"📊 [Grid Status] {symbol} | Open Vol: {total_open_vol:.2f} | Total Exp: {total_exposure:.2f}/{self.max_total_exposure:.2f} | PnL: ${total_grid_pnl:.2f}"
+                    f"📊 [Grid Status] {symbol} | Open Vol: {grid_open_vol:.2f} | Total Exp: {total_exposure:.2f}/{self.max_total_exposure:.2f} | PnL: ${total_grid_pnl:.2f}"
                 )
                 self._last_grid_log[f"{symbol}_pnl"] = now_t
 
@@ -282,8 +465,19 @@ class GridManager:
                 flow = self._compute_volume_flow(df) if self.volume_flow_filter else None
                 self.last_flow[symbol] = flow or {}
 
+                # Hybrid Collision Lock: no new Grid basket while ICT holds exposure
+                if ict_positions and not grid_only_positions:
+                    if now_t - self._last_collision_log.get(f"{symbol}_grid", 0) > 30:
+                        logger.info(
+                            f"🛡️ Hybrid Collision Prevented: Skipping Grid entry because ICT has active exposure "
+                            f"({len(ict_positions)} ICT position(s) on {symbol})."
+                        )
+                        self._last_collision_log[f"{symbol}_grid"] = now_t
+                    self._save_state()
+                    return
+
                 # 1. Initial Basket Entry
-                if not symbol_positions and not grid_pendings:
+                if not grid_only_positions and not grid_pendings:
                     # Volume-flow gate: direction only trades WITH confirmed flow
                     if flow:
                         flow_dir_ok = flow["bullish"] if gchannel_bullish else not flow["bullish"]
@@ -334,79 +528,51 @@ class GridManager:
                             rounded_tp = self.broker.round_price(symbol, target_tp)
                             self.broker.modify_sl_tp(p["ticket"], sl=0.0, tp=rounded_tp)
 
-                    # Check Exposure Limit (open position volume only, so healthy DCA
-                    # pendings are not placed-and-cancelled on every cycle)
-                    if total_open_vol >= self.max_total_exposure:
+                    # Check Exposure Limit (open position volume only)
+                    if grid_open_vol >= self.max_total_exposure:
                         if pendings:
                             self.broker.cancel_all_pendings(symbol)
                         return
 
-                    # Trailing Level Calculations (dynamic channel levels + D1 pivots + deeper dollar-floor recovery)
-                    dynamic_levels = (
-                        [l for l in [hl_low, buy_level] if 0 < l < current_price]
-                        if active_type == "BUY"
-                        else [l for l in [hl_high, sell_level] if l > 0 and l > current_price]
-                    )
-                    base_price = self.active_grids.get(symbol, {}).get("base_price", current_price)
-                    price_scale = current_price / self.floor_reference_price
-                    if price_scale <= 0 or current_price <= 0:
-                        price_scale = 1.0
-                    if active_type == "BUY":
-                        floor_levels = [base_price - d * price_scale for d in self.recovery_levels
-                                        if (base_price - d * price_scale) < current_price]
-                    else:
-                        floor_levels = [base_price + d * price_scale for d in self.recovery_levels
-                                        if (base_price + d * price_scale) > current_price]
+                    # D1 pivots still published for the shared dashboard state bridge
+                    self.last_pivots[symbol] = self._get_daily_pivots(symbol)
 
-                    pivots = self._get_daily_pivots(symbol)
-                    self.last_pivots[symbol] = pivots
-                    if self.use_d1_pivot and pivots:
-                        pivot_levels = (
-                            [pivots["S1"], pivots["S2"], pivots["S3"]]
-                            if active_type == "BUY"
-                            else [pivots["R1"], pivots["R2"], pivots["R3"]]
+                    m15_df = self._get_m15_closed_df(symbol)
+
+                    # M15 G-Channel flip guard -> FROZEN (no averaging into a flipped structure)
+                    frozen = False
+                    if self.fib_freeze_on_flip and m15_df is not None and len(m15_df) >= 20:
+                        try:
+                            m15_ctx = self._add_gchannel_indicators(m15_df.copy())
+                            m15_bull = bool(m15_ctx["gchannel_bullish"].iloc[-1])
+                            frozen = (active_type == "BUY" and not m15_bull) or (active_type == "SELL" and m15_bull)
+                        except Exception as e:
+                            logger.debug(f"M15 flip check failed for {symbol}: {e}")
+
+                    if frozen:
+                        self.grid_frozen[symbol] = "FROZEN"
+                        logger.info(
+                            f"🧊 [FROZEN] {symbol} M15 G-Channel flipped against {active_type} basket — no averaging."
                         )
-                        pivot_levels = [p for p in pivot_levels if p > 0]
+                        self._save_state()
                     else:
-                        pivot_levels = []
-
-                    valid_levels = dynamic_levels + pivot_levels + floor_levels
-                    # Deduplicate near-identical levels (min separation ~ 0.4 * ATR)
-                    min_sep = max(atr * 0.4, 1.0 * price_scale)
-                    unique_levels = []
-                    for lvl in sorted(valid_levels, key=lambda x: abs(current_price - x)):
-                        if lvl > 0 and all(abs(lvl - e) >= min_sep for e in unique_levels):
-                            unique_levels.append(lvl)
-                    valid_levels = sorted(unique_levels, key=lambda x: abs(current_price - x))
-                    # Keep only the nearest levels that fit under max_dca_levels
-                    valid_levels = valid_levels[:max(0, self.max_dca_levels - len(active_pos))]
-
-                    # Incremental reconciliation — only add missing / remove stale pendings.
-                    # Healthy levels are NEVER removed+re-placed (eliminates order churn).
-                    if (len(active_pos) + len(valid_levels)) <= self.max_dca_levels:
-                        tol = max(atr * 0.05, 0.10)
-                        order_type = mt5.ORDER_TYPE_BUY_LIMIT if active_type == "BUY" else mt5.ORDER_TYPE_SELL_LIMIT
-
-                        # 1) Remove pendings that no longer match any target level
-                        placed_vol = total_open_vol + sum(o.volume_initial for o in pendings)
-                        for o in list(pendings):
-                            if not any(abs(o.price_open - lvl) <= tol for lvl in valid_levels):
-                                mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
-                                placed_vol -= o.volume_initial
-
-                        # 2) Place missing levels, respecting the exposure cap
-                        for idx, lvl in enumerate(valid_levels):
-                            lot_size = self._calculate_martingale_lot(len(active_pos) + idx + 1, atr)
-                            if any(abs(o.price_open - lvl) <= tol for o in pendings):
-                                continue
-                            if placed_vol + lot_size > self.max_total_exposure:
-                                break
-                            rounded_lvl = self.broker.round_price(symbol, lvl)
-                            res = await self.broker.place_pending_order(symbol, order_type, lot_size, rounded_lvl, magic)
-                            if res.get("success"):
-                                placed_vol += lot_size
-
-                    self._save_state()
+                        self.grid_frozen.pop(symbol, None)
+                        # Structural invalidation: price beyond 100% of the swing -> freeze DCA layers
+                        swing = self._get_swing_range(m15_df)
+                        if swing:
+                            if (active_type == "BUY" and current_price < swing["swing_low"]) or \
+                               (active_type == "SELL" and current_price > swing["swing_high"]):
+                                self.grid_frozen[symbol] = "FROZEN"
+                                logger.info(
+                                    f"🧊 [FROZEN] {symbol} price {current_price:.2f} broke the 100% swing "
+                                    f"({'swing_low' if active_type == 'BUY' else 'swing_high'}) — no blind layers."
+                                )
+                                self._save_state()
+                            else:
+                                await self._try_place_dca_layer(
+                                    symbol, active_type, current_price, atr, now_t, magic,
+                                    active_pos, grid_open_vol
+                                )
                 return
 
             # -------------------------------------------------------------
@@ -414,7 +580,18 @@ class GridManager:
             # -------------------------------------------------------------
             pivot = (hl_high + hl_low) / 2.0 if hl_high > 0 else current_price
 
-            if not symbol_positions and not grid_pendings:
+            # Hybrid Collision Lock: no new Grid basket while ICT holds exposure
+            if ict_positions and not grid_only_positions:
+                if now_t - self._last_collision_log.get(f"{symbol}_grid", 0) > 30:
+                    logger.info(
+                        f"🛡️ Hybrid Collision Prevented: Skipping Grid entry because ICT has active exposure "
+                        f"({len(ict_positions)} ICT position(s) on {symbol})."
+                    )
+                    self._last_collision_log[f"{symbol}_grid"] = now_t
+                self._save_state()
+                return
+
+            if not grid_only_positions and not grid_pendings:
                 grid_type = "BUY" if bias == "BULLISH" else ("SELL" if bias == "BEARISH" else None)
                 if not grid_type:
                     grid_type = "SELL" if current_price > pivot else "BUY"
@@ -450,35 +627,15 @@ class GridManager:
                 pendings = [o for o in grid_pendings if o.magic == magic]
                 active_pos = buy_positions if active_type == "BUY" else sell_positions
 
-                if total_open_vol >= self.max_total_exposure:
+                if grid_open_vol >= self.max_total_exposure:
                     if pendings:
                         self.broker.cancel_all_pendings(symbol)
                     return
 
-                if len(pendings) < self.batch_size and (len(active_pos) + len(pendings)) < self.max_dca_levels:
-                    base_price = self.active_grids.get(symbol, {}).get("base_price", current_price)
-                    start_idx = len(active_pos) + len(pendings) + 1
-                    order_type = mt5.ORDER_TYPE_BUY_LIMIT if active_type == "BUY" else mt5.ORDER_TYPE_SELL_LIMIT
-                    placed_vol = total_open_vol + sum(o.volume_initial for o in pendings)
-
-                    for i in range(start_idx, min(start_idx + self.batch_size, self.max_dca_levels + 1)):
-                        entry_price = self.broker.round_price(symbol, self._calculate_grid_price(base_price, i, atr, active_type))
-                        lot_size = self._calculate_martingale_lot(i, atr)
-
-                        # Enforce total exposure ceiling (includes already-placed pendings)
-                        if placed_vol + lot_size > self.max_total_exposure:
-                            break
-
-                        if any(abs(o.price_open - entry_price) < (atr * 0.05) for o in pendings):
-                            continue
-
-                        if (active_type == "BUY" and entry_price < current_price) or (active_type == "SELL" and entry_price > current_price):
-                            logger.info(f"⏳ [Grid] Placing Level {i} {active_type} Limit ({lot_size}) @ {entry_price:.2f}")
-                            res = await self.broker.place_pending_order(symbol, order_type, lot_size, entry_price, magic)
-                            if res.get("success"):
-                                placed_vol += lot_size
-
-                    self._save_state()
+                await self._try_place_dca_layer(
+                    symbol, active_type, current_price, atr, now_t, magic,
+                    active_pos, grid_open_vol
+                )
 
         except Exception as e:
             logger.error(f"Grid update error on {symbol}: {e}", exc_info=True)

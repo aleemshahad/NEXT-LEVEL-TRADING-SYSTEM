@@ -32,20 +32,29 @@ grid:
   
   lot_size: 0.05
   lot_growth: 1.3          # lot multiplier per DCA level (1.0 = flat size)
-  max_order_lot: 0.10      # ceiling for a single grid order
+  max_order_lot: 0.20      # ceiling for a single grid order
   max_total_exposure: 0.20 # total committed volume cap (positions + pendings)
-  spacing: 0.6 # Distance between levels (ATR multiplier)
   profit_target_usd: 5 # Target profit to close a grid basket
   profit_target_pct: 0.25 # Relative profit target
   trailing_enabled: false # true = enable trailing, false = disable trailing
-  level_distances_usd: [15, 30, 50, 70, 100] # extra deeper DCA recovery levels below the G-Channel (dollar floors)
-  floor_reference_price: 4400 # reference price for floor scaling (auto-scales for BTC/weekends)
-  use_d1_pivot: true # add classic Daily pivots (S1/S2 for BUY, R1/R2 for SELL) as extra DCA levels
   volume_flow_filter: true # gate basket direction with volume flow (OBV + surge) before G-Channel entry
   flow_surge_threshold: 1.5 # latest candle volume >= this x its 20-bar avg to count as a conviction surge
   flow_obv_short: 5 # OBV short MA for flow trend
   flow_obv_long: 20 # OBV long MA for flow trend
   flow_min_score: 0.6 # entry chahiye to min flow score (0.6 = OBV must align; surge optional boost). 0 = sirf direction check
+
+# 📐 FIBONACCI-ANCHORED DCA ENGINE
+# Replaces the legacy ATR-pip / fixed-dollar floor DCA (spacing, level_distances_usd,
+# floor_reference_price, use_d1_pivot, max_dca_levels, batch_size) with structural
+# swing-based Fibonacci DCA levels + M1 micro-rejection confluence.
+fib_dca:
+  enabled: true             # false = DCA off entirely (Layer 0 only)
+  lookback_bars: 40         # M15 closed bars scanned to detect the impulsive swing
+  max_open_layers: 3        # max DCA layers on top of the initial trade (50% / 61.8% / 78.6%)
+  proximity_tolerance: 0.40 # ± price tolerance zone around the fib target that counts as a "tap"
+  body_ratio_limit: 0.70    # M1 candle body ratio that blocks a DCA against momentum (knife filter)
+  wick_ratio_min: 0.20      # required bottom (BUY) / top (SELL) wick share of the M1 range for rejection
+  freeze_on_gchannel_flip: true # freeze DCA if M15 G-Channel flips against the basket
 
 # 🕒 NEWS SETTINGS
 news:
