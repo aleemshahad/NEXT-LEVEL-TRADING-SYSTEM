@@ -10,6 +10,7 @@ class RiskManager:
         self.max_drawdown = config.get('max_drawdown', 0.15)
         self.daily_pnl = 0.0
         self._session_start_balance = 0.0  # Set on first update
+        self._daily_loss_warned = False
 
     def update_daily_pnl(self, current_balance: float):
         """FIX #2: Called every cycle from live_trading run loop to keep daily_pnl live."""
@@ -55,10 +56,13 @@ class RiskManager:
     
     def check_risk_limits(self, account_balance: float, current_drawdown: float) -> bool:
         """Check if trading is allowed based on risk limits"""
-        # Check daily loss limit
-        if abs(self.daily_pnl) > account_balance * self.max_daily_loss:
-            logger.warning("Daily loss limit reached")
+        # Check daily loss limit (only a real LOSS can block — profit never blocks)
+        if self.daily_pnl < -account_balance * self.max_daily_loss:
+            if not self._daily_loss_warned:
+                logger.warning("Daily loss limit reached")
+                self._daily_loss_warned = True
             return False
+        self._daily_loss_warned = False
             
         # Check maximum drawdown
         if current_drawdown > self.max_drawdown:
