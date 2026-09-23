@@ -729,6 +729,7 @@ class GridManager:
                     # D1 pivots still published for the shared dashboard state bridge
                     self.last_pivots[symbol] = self._get_daily_pivots(symbol)
 
+<<<<<<< HEAD
                     # --- MARKET SHIFT DETECTION (proactive multi-signal) ---
                     shift = self._detect_market_shift(symbol, active_type, rates, df, df_closed)
                     if shift["stage"] != "NONE":
@@ -780,6 +781,44 @@ class GridManager:
                                         )
                         except Exception as e:
                             logger.debug(f"M15 flip check failed for {symbol}: {e}")
+=======
+                    m15_df = self._get_m15_closed_df(symbol)
+
+                    # M15 G-Channel flip guard -> FROZEN (no averaging into a flipped structure)
+                    frozen = False
+                    if self.fib_freeze_on_flip and m15_df is not None and len(m15_df) >= 20:
+                        try:
+                            m15_ctx = self._add_gchannel_indicators(m15_df.copy())
+                            m15_bull = bool(m15_ctx["gchannel_bullish"].iloc[-1])
+                            frozen = (active_type == "BUY" and not m15_bull) or (active_type == "SELL" and m15_bull)
+                        except Exception as e:
+                            logger.debug(f"M15 flip check failed for {symbol}: {e}")
+
+                    if frozen:
+                        self.grid_frozen[symbol] = "FROZEN"
+                        logger.info(
+                            f"🧊 [FROZEN] {symbol} M15 G-Channel flipped against {active_type} basket — no averaging."
+                        )
+                        self._save_state()
+                    else:
+                        self.grid_frozen.pop(symbol, None)
+                        # Structural invalidation: price beyond 100% of the swing -> freeze DCA layers
+                        swing = self._get_swing_range(m15_df)
+                        if swing:
+                            if (active_type == "BUY" and current_price < swing["swing_low"]) or \
+                               (active_type == "SELL" and current_price > swing["swing_high"]):
+                                self.grid_frozen[symbol] = "FROZEN"
+                                logger.info(
+                                    f"🧊 [FROZEN] {symbol} price {current_price:.2f} broke the 100% swing "
+                                    f"({'swing_low' if active_type == 'BUY' else 'swing_high'}) — no blind layers."
+                                )
+                                self._save_state()
+                            else:
+                                await self._try_place_dca_layer(
+                                    symbol, active_type, current_price, atr, now_t, magic,
+                                    active_pos, grid_open_vol
+                                )
+>>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
                 return
 
             # -------------------------------------------------------------

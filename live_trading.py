@@ -360,6 +360,7 @@ class LiveTradingSystem:
 
                 count = len(grid_positions)
 
+<<<<<<< HEAD
                 # USD profit target tiered by position count
                 if count <= 3: min_p = target_usd
                 elif count <= 5: min_p = target_usd * 0.6
@@ -369,15 +370,25 @@ class LiveTradingSystem:
                 if count <= 3: dist = atr * 0.8
                 elif count <= 5: dist = atr * 0.5
                 else: dist = atr * 0.1
+=======
+                if count <= 3: dist = atr * 0.8; min_p = target_usd
+                elif count <= 5: dist = atr * 0.5; min_p = target_usd * 0.6
+                else: dist = atr * 0.1; min_p = target_usd * 0.3
+
+>>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
                 target_p = waep + dist if direction == 'BUY' else waep - dist
 
                 basket_pnl = sum(p['profit'] + p.get('swap', 0) for p in grid_positions)
+<<<<<<< HEAD
 
                 # FIX: Hard exit ONLY on USD profit target. No ATR-based early exit.
                 at_target = basket_pnl >= min_p
 
                 # Trailing activates earlier (70% of min_p) to protect profits
                 trailing_threshold = min_p * 0.7
+=======
+                at_target = (direction == 'BUY' and cp >= target_p) or (direction == 'SELL' and cp <= target_p) or (basket_pnl >= min_p)
+>>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
 
                 if symbol not in self.basket_trailing: self.basket_trailing[symbol] = {}
                 trailing = self.basket_trailing[symbol].get(direction, {'active': False, 'peak': 0.0})
@@ -385,6 +396,7 @@ class LiveTradingSystem:
                 should_exit = False
                 trailing_enabled = self.config.get('grid', {}).get('trailing_enabled', True)
 
+<<<<<<< HEAD
                 # Activate trailing when PnL hits 70% of target
                 if not trailing['active'] and trailing_enabled and basket_pnl >= trailing_threshold:
                     logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
@@ -404,6 +416,21 @@ class LiveTradingSystem:
                 elif not trailing['active'] and basket_pnl < 0:
                     # If no trailing and already underwater, also exit (don't hold losers)
                     pass
+=======
+                if at_target:
+                    if not trailing_enabled:
+                        logger.info(f"🎯 HARD EXIT (Trailing Off) for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
+                        should_exit = True
+                    else:
+                        if not trailing['active']:
+                            logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
+                            trailing = {'active': True, 'peak': basket_pnl}
+                            self.basket_trailing[symbol][direction] = trailing
+                            if symbol in self.grid_manager.active_grids: self.grid_manager.active_grids[symbol]['is_trailing'] = True; self.grid_manager._save_state()
+                        if basket_pnl > trailing['peak']: trailing['peak'] = basket_pnl; self.basket_trailing[symbol][direction] = trailing
+                        if basket_pnl < trailing['peak'] * 0.85 or basket_pnl < min_p * 0.5: should_exit = True
+                elif trailing['active'] and basket_pnl < min_p * 0.5: should_exit = True
+>>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
 
                 # Store target info for dashboard
                 if symbol in self.grid_manager.active_grids:
