@@ -38,7 +38,7 @@ class LiveTradingSystem:
         self.grid_manager = GridManager(self.broker, self.config)
         
         self.running = False
-        self.symbols = self.config.get('symbols', ['XAUUSDc'])
+        self.symbols = self.config.get('symbols', ['XAUUSDm'])
         self.timeframe = self.config.get('timeframe', 'M5')
         self.strategy = "ICT SMC"
         
@@ -154,7 +154,7 @@ class LiveTradingSystem:
             if Path(config_path).exists():
                 with open(config_path, 'r', encoding='utf-8') as f:
                     return yaml.safe_load(f)
-            return {'symbols': ['XAUUSDc'], 'timeframe': 'M5', 'risk': {'max_risk_per_trade': 0.02, 'max_daily_loss': 0.05, 'max_drawdown': 0.15}}
+            return {'symbols': ['XAUUSDm'], 'timeframe': 'M5', 'risk': {'max_risk_per_trade': 0.02, 'max_daily_loss': 0.05, 'max_drawdown': 0.15}}
         except Exception as e:
             logger.error(f"Config loading error: {e}"); return {}
     
@@ -237,7 +237,21 @@ class LiveTradingSystem:
 
                         logger.info(f"🎯 ICT Signal: {ai_analysis['action']} {symbol} (Conf: {ai_analysis['confidence']:.2f})")
                         try:
-                            await self.discord.send_signal(symbol, ai_analysis['action'], ai_analysis['confidence'], ai_analysis['reasoning'], ai_analysis.get('entry_price', 0), ai_analysis.get('take_profit', 0), ai_analysis.get('stop_loss', 0))
+                            extra_data = {
+                                'tp_levels': ai_analysis.get('tp_levels', {}),
+                                'volume_surge': ai_analysis.get('volume_surge', False),
+                                'signal_meta': ai_analysis.get('signal_meta', {}),
+                            }
+                            await self.discord.send_signal(
+                                symbol, 
+                                ai_analysis['action'], 
+                                ai_analysis['confidence'], 
+                                ai_analysis['reasoning'], 
+                                ai_analysis.get('entry_price', 0), 
+                                ai_analysis.get('take_profit', 0), 
+                                ai_analysis.get('stop_loss', 0),
+                                extra=extra_data
+                            )
                         except: pass
                         await self._execute_trade(symbol, ai_analysis)
         except Exception as e: logger.error(f"Analysis error for {symbol}: {e}")
@@ -346,13 +360,24 @@ class LiveTradingSystem:
 
                 count = len(grid_positions)
 
-                if count <= 3: dist = atr * 0.8; min_p = target_usd
-                elif count <= 5: dist = atr * 0.5; min_p = target_usd * 0.6
-                else: dist = atr * 0.1; min_p = target_usd * 0.3
+                # USD profit target tiered by position count
+                if count <= 3: min_p = target_usd
+                elif count <= 5: min_p = target_usd * 0.6
+                else: min_p = target_usd * 0.3
 
+                # ATR-based distance ONLY for reference (dashboard display)
+                if count <= 3: dist = atr * 0.8
+                elif count <= 5: dist = atr * 0.5
+                else: dist = atr * 0.1
                 target_p = waep + dist if direction == 'BUY' else waep - dist
+
                 basket_pnl = sum(p['profit'] + p.get('swap', 0) for p in grid_positions)
-                at_target = (direction == 'BUY' and cp >= target_p) or (direction == 'SELL' and cp <= target_p) or (basket_pnl >= min_p)
+
+                # FIX: Hard exit ONLY on USD profit target. No ATR-based early exit.
+                at_target = basket_pnl >= min_p
+
+                # Trailing activates earlier (70% of min_p) to protect profits
+                trailing_threshold = min_p * 0.7
 
                 if symbol not in self.basket_trailing: self.basket_trailing[symbol] = {}
                 trailing = self.basket_trailing[symbol].get(direction, {'active': False, 'peak': 0.0})
@@ -360,19 +385,25 @@ class LiveTradingSystem:
                 should_exit = False
                 trailing_enabled = self.config.get('grid', {}).get('trailing_enabled', True)
 
-                if at_target:
-                    if not trailing_enabled:
-                        logger.info(f"🎯 HARD EXIT (Trailing Off) for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
-                        should_exit = True
-                    else:
-                        if not trailing['active']:
-                            logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
-                            trailing = {'active': True, 'peak': basket_pnl}
-                            self.basket_trailing[symbol][direction] = trailing
-                            if symbol in self.grid_manager.active_grids: self.grid_manager.active_grids[symbol]['is_trailing'] = True; self.grid_manager._save_state()
-                        if basket_pnl > trailing['peak']: trailing['peak'] = basket_pnl; self.basket_trailing[symbol][direction] = trailing
-                        if basket_pnl < trailing['peak'] * 0.85 or basket_pnl < min_p * 0.5: should_exit = True
-                elif trailing['active'] and basket_pnl < min_p * 0.5: should_exit = True
+                # Activate trailing when PnL hits 70% of target
+                if not trailing['active'] and trailing_enabled and basket_pnl >= trailing_threshold:
+                    logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
+                    trailing = {'active': True, 'peak': basket_pnl}
+                    self.basket_trailing[symbol][direction] = trailing
+                    if symbol in self.grid_manager.active_grids: self.grid_manager.active_grids[symbol]['is_trailing'] = True; self.grid_manager._save_state()
+
+                # HARD EXIT: when min_p reached and trailing is OFF
+                if at_target and not trailing_enabled:
+                    logger.info(f"🎯 HARD EXIT (Trailing Off) for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
+                    should_exit = True
+
+                # TRAILING EXIT: lock in profits — exit if PnL drops below 85% of peak or 50% of target
+                if trailing['active']:
+                    if basket_pnl > trailing['peak']: trailing['peak'] = basket_pnl; self.basket_trailing[symbol][direction] = trailing
+                    if basket_pnl < trailing['peak'] * 0.85 or basket_pnl < min_p * 0.5: should_exit = True
+                elif not trailing['active'] and basket_pnl < 0:
+                    # If no trailing and already underwater, also exit (don't hold losers)
+                    pass
 
                 # Store target info for dashboard
                 if symbol in self.grid_manager.active_grids:
@@ -584,7 +615,7 @@ def select_trade_setup():
         except Exception:
             tf = "M5"
 
-    symbols = config.get('symbols', ['XAUUSDc'])
+    symbols = config.get('symbols', ['XAUUSDm'])
     return symbols, strategy, tf
 
 def launch_dashboard():

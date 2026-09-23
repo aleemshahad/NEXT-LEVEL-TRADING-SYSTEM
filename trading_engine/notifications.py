@@ -39,18 +39,40 @@ class DiscordNotifier:
         # Run synchronous request in a thread to avoid blocking the event loop
         return await asyncio.to_thread(_send)
 
-    async def send_signal(self, symbol: str, action: str, confidence: float, reasoning: str, price: float, tp: float, sl: float):
+    async def send_signal(self, symbol: str, action: str, confidence: float, reasoning: str, price: float, tp: float, sl: float, extra: dict = None):
         # 🟢 Bullish for BUY, 🔴 Bearish for SELL
         color = 0x00e676 if action == "BUY" else 0xff5252
-        content = (
-            f"🚀 **Symbol**: `{symbol}`\n"
-            f"🎯 **Action**: `{action}`\n"
-            f"💎 **Confidence**: `{confidence:.2f}`\n"
-            f"💰 **Entry Price**: `{price:.5f}`\n"
-            f"✅ **Take Profit**: `{tp:.5f}`\n"
-            f"🛡️ **Stop Loss**: `{sl:.5f}`\n\n"
-            f"🧠 **Logic**: {reasoning}"
-        )
+        
+        # Build content with multiple TP levels
+        content = f"🚀 **Symbol**: `{symbol}`\n"
+        content += f"🎯 **Action**: `{action}`\n"
+        content += f"💎 **Confidence**: `{confidence:.2f}`\n"
+        content += f"💰 **Entry Price**: `{price:.5f}`\n"
+        content += f"🛡️ **Stop Loss**: `{sl:.5f}`\n"
+        
+        # Add multiple TP levels
+        if extra and 'tp_levels' in extra:
+            tpls = extra['tp_levels']
+            content += f"\n📊 **Take Profit Levels**:\n"
+            content += f"  • **TP1**: `{tpls.get('tp1', '-')} (Conservative)`\n"
+            content += f"  • **TP2**: `{tpls.get('tp2', '-')}`\n"
+            content += f"  • **TP3**: `{tpls.get('tp3', '-')}`\n"
+            content += f"  • **TP4**: `{tpls.get('tp4', '-')} (Full Target)`\n"
+        else:
+            content += f"✅ **Take Profit**: `{tp:.5f}`\n"
+        
+        # Add volume info
+        if extra and extra.get('volume_surge'):
+            content += f"📈 **Volume Surge**: ✅ Confirmed\n"
+        
+        # Add signal metadata
+        if extra and 'signal_meta' in extra:
+            meta = extra['signal_meta']
+            content += f"\n🧠 **Signal Type**: `{meta.get('plan', 'SCAN')}`\n"
+            content += f"⏱️ **ATR**: `{meta.get('atr', '-')}` | **SL Dist**: `{meta.get('sl_distance', '-')}`\n"
+        
+        content += f"\n💡 **Logic**: {reasoning}"
+        
         return await self.send_message(content, title=f"🚨 New ICT Signal: {action} on {symbol}", color=color)
 
     async def send_heartbeat(self, account_info, daily_pnl, trades_today, active_positions) -> bool:

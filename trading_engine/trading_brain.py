@@ -244,6 +244,24 @@ class TradingBrain:
             hl_low = float(df["hl_low"].iloc[idx])
             current_price = float(df["close"].iloc[idx])
 
+            # Calculate ATR for dynamic SL/TP
+            if len(df) >= 14 and "tr" in df.columns:
+                atr = float(df["tr"].rolling(14).mean().iloc[-1])
+            else:
+                atr = current_price * 0.01  # fallback 1%
+
+            # Volume analysis for ICT signals
+            vol_surge = False
+            if "tick_volume" in df.columns and len(df) >= 20:
+                recent_vol = df["tick_volume"].values[-20:]
+                avg_vol = float(np.mean(recent_vol[:-1]))
+                latest_vol = float(recent_vol[-1])
+                surge_ratio = latest_vol / (avg_vol + 1e-9)
+                vol_surge = surge_ratio >= 1.5
+                volume_info = {"surge": vol_surge, "ratio": round(surge_ratio, 2)}
+            else:
+                volume_info = {"surge": False, "ratio": 0}
+
             gchannel_buy_sig = gchannel_bullish and not gchannel_bullish_prev
             gchannel_sell_sig = not gchannel_bullish and gchannel_bullish_prev
 
@@ -253,8 +271,14 @@ class TradingBrain:
             entry_plan = "SCAN"
             reason = "No structural setup detected"
 
-            # Plan 1: Momentum Breakout
-            if gchannel_buy_sig and ltf_trend == "BULLISH":
+            # Plan 1: Momentum Breakout (highest conviction)
+            if gchannel_buy_sig and ltf_trend == "BULLISH" and vol_surge:
+                action, bias, confidence, entry_plan = "BUY", "BULLISH", 0.95, "BREAKOUT_VOL"
+                reason = "Breakout BUY: G-Channel Bullish Flip + OHLC Alignment + Volume Surge"
+            elif gchannel_sell_sig and ltf_trend == "BEARISH" and vol_surge:
+                action, bias, confidence, entry_plan = "SELL", "BEARISH", 0.95, "BREAKOUT_VOL"
+                reason = "Breakout SELL: G-Channel Bearish Flip + OHLC Alignment + Volume Surge"
+            elif gchannel_buy_sig and ltf_trend == "BULLISH":
                 action, bias, confidence, entry_plan = "BUY", "BULLISH", 0.90, "BREAKOUT"
                 reason = "Breakout BUY: G-Channel Bullish Flip + OHLC Alignment"
             elif gchannel_sell_sig and ltf_trend == "BEARISH":
@@ -277,7 +301,38 @@ class TradingBrain:
                 action, bias, confidence, entry_plan = "SELL", "BEARISH", 0.70, "RANGE_SCALP"
                 reason = "Scalp SELL: Bearish G-Channel + Momentum"
 
-            take_profit = sell_level if action == "BUY" else (buy_level if action == "SELL" else 0.0)
+            # === MULTI-TIMEFRAME TP/SL CALCULATION ===
+            # SL: ATR-based below entry (for BUY) or above entry (for SELL)
+            if action in ["BUY", "SELL"]:
+                sl_distance = atr * 1.5  # 1.5 ATR stop
+                tp1_distance = atr * 1.0   # Conservative (partial profit)
+                tp2_distance = atr * 2.0   # Standard target
+                tp3_distance = atr * 3.0   # Advanced
+                tp4_distance = atr * 5.0   # Full channel target
+
+                if action == "BUY":
+                    stop_loss = current_price - sl_distance
+                    take_profit_1 = current_price + tp1_distance
+                    take_profit_2 = current_price + tp2_distance
+                    take_profit_3 = current_price + tp3_distance
+                    take_profit_4 = current_price + tp4_distance
+                    # Primary TP = hl_high (G-Channel upper band)
+                    primary_tp = min(hl_high, take_profit_4)
+                else:
+                    stop_loss = current_price + sl_distance
+                    take_profit_1 = current_price - tp1_distance
+                    take_profit_2 = current_price - tp2_distance
+                    take_profit_3 = current_price - tp3_distance
+                    take_profit_4 = current_price - tp4_distance
+                    # Primary TP = hl_low (G-Channel lower band)
+                    primary_tp = max(hl_low, take_profit_4)
+            else:
+                stop_loss = 0.0
+                primary_tp = 0.0
+                take_profit_1 = 0.0
+                take_profit_2 = 0.0
+                take_profit_3 = 0.0
+                take_profit_4 = 0.0
 
             # Check Economic News Impact Window
             if await self.check_news_block(symbol):
@@ -286,7 +341,7 @@ class TradingBrain:
                     "bias": bias,
                     "confidence": 0.0,
                     "reasoning": "NEWS BLOCK: Active USD High-Impact Window",
-                    "ict_status": {"status": "NEWS BLOCK"},
+                    "ict_status": {"status": "NEWS_BLOCK"},
                 }
 
             return {
@@ -296,12 +351,30 @@ class TradingBrain:
                 "reasoning": reason,
                 "entry_price": current_price,
                 "use_limit": False,
-                "stop_loss": 0.0,
-                "take_profit": take_profit,
+                "stop_loss": stop_loss,
+                "take_profit": primary_tp,
+                # Multiple TP levels for partial exits
+                "tp_levels": {
+                    "tp1": take_profit_1,
+                    "tp2": take_profit_2,
+                    "tp3": take_profit_3,
+                    "tp4": take_profit_4,
+                },
+                # Volume confirmation flag
+                "volume_surge": vol_surge,
+                # Signal metadata
+                "signal_meta": {
+                    "plan": entry_plan,
+                    "atr": round(atr, 2),
+                    "sl_distance": round(sl_distance, 2),
+                    "ltf_trend": ltf_trend,
+                    "gchannel_flip": gchannel_buy_sig if action == "BUY" else gchannel_sell_sig,
+                },
                 "ict_status": {
                     "trend": "BULLISH" if gchannel_bullish else "BEARISH",
                     "mode": entry_plan,
                     "ltf_trend": ltf_trend,
+                    "volume_surge": vol_surge,
                 },
                 "risk_modifier": self.risk_modifier,
             }

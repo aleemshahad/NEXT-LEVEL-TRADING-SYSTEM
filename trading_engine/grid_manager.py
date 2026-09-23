@@ -383,6 +383,186 @@ class GridManager:
         pnd_vol = sum(o.volume_initial for o in pendings)
         return round(pos_vol + pnd_vol, 2)
 
+    def _detect_market_shift(self, symbol: str, active_type: str, rates: list, df: pd.DataFrame, df_closed: pd.DataFrame) -> Dict:
+        """Multi-signal market shift detection.
+
+        Returns a dict with:
+          - 'stage': 'NONE' | 'WARNING' | 'CONFIRMED' | 'EXTENDED'
+          - 'signals': list of active signal names
+          - 'score': 0-6 count of active signals
+          - 'details': per-signal info
+        """
+        try:
+            if len(rates) < 22 or df_closed is None or len(df_closed) < 5:
+                return {"stage": "NONE", "signals": [], "score": 0, "details": {}}
+
+            signals = []
+            details = {}
+            n = min(len(df_closed), 30)
+            recent = df_closed.tail(n)
+
+            # Signal 1: M15 G-Channel cross (actual flip)
+            if len(df_closed) >= 2:
+                gchannel_bullish_now = bool(df_closed.iloc[-1]["gchannel_bullish"])
+                gchannel_bullish_prev = bool(df_closed.iloc[-2]["gchannel_bullish"])
+                if active_type == "BUY" and not gchannel_bullish_now and gchannel_bullish_prev:
+                    signals.append("GCHANNEL_CROSS")
+                    details["gchannel_cross"] = "bearish_flip"
+                elif active_type == "SELL" and gchannel_bullish_now and not gchannel_bullish_prev:
+                    signals.append("GCHANNEL_CROSS")
+                    details["gchannel_cross"] = "bullish_flip"
+                elif active_type == "BUY" and not gchannel_bullish_now:
+                    signals.append("GCHANNEL_OVERTURN")
+                    details["gchannel_overturn"] = "still_bearish"
+                elif active_type == "SELL" and gchannel_bullish_now:
+                    signals.append("GCHANNEL_OVERTURN")
+                    details["gchannel_overturn"] = "still_bullish"
+
+            # Signal 2: Consecutive directional candles against position
+            closes = recent["close"].values
+            opens = recent["open"].values
+            if len(closes) >= 3:
+                last3_bearish = sum(1 for i in range(len(closes)-3, len(closes)) if closes[i] < opens[i])
+                last3_bullish = sum(1 for i in range(len(closes)-3, len(closes)) if closes[i] > opens[i])
+                if active_type == "BUY" and last3_bearish >= 3:
+                    signals.append("CONSECUTIVE_BEARISH")
+                    details["consecutive_bearish"] = last3_bearish
+                elif active_type == "SELL" and last3_bullish >= 3:
+                    signals.append("CONSECUTIVE_BULLISH")
+                    details["consecutive_bullish"] = last3_bullish
+
+            # Signal 3: Volume surge on wrong side (reversal candle with volume)
+            if "tick_volume" in df_closed.columns and len(df_closed) >= 5:
+                vol = df_closed["tick_volume"].values.astype(float)
+                avg_vol = float(np.mean(vol[:-1]))
+                latest_vol = float(vol[-1])
+                surge_ratio = latest_vol / (avg_vol + 1e-9)
+                if surge_ratio >= self.flow_surge_threshold:
+                    last_candle_bearish = bool(closes[-1] < opens[-1])
+                    last_candle_bullish = bool(closes[-1] > opens[-1])
+                    if active_type == "BUY" and last_candle_bearish:
+                        signals.append("VOLUME_REVERSAL")
+                        details["volume_surge"] = round(surge_ratio, 2)
+                    elif active_type == "SELL" and last_candle_bullish:
+                        signals.append("VOLUME_REVERSAL")
+                        details["volume_surge"] = round(surge_ratio, 2)
+
+            # Signal 4: Price broke below buy_level or above sell_level (structural break)
+            if len(df_closed) >= 1:
+                curr = df_closed.iloc[-1]
+                current_price = float(curr["close"])
+                buy_level = float(curr["buy_level"])
+                sell_level = float(curr["sell_level"])
+                if active_type == "BUY" and current_price < buy_level:
+                    signals.append("STRUCTURAL_BREAK")
+                    details["broke_below"] = "buy_level"
+                elif active_type == "SELL" and current_price > sell_level:
+                    signals.append("STRUCTURAL_BREAK")
+                    details["broke_above"] = "sell_level"
+
+            # Signal 5: ATR expansion (volatility spike often accompanies shifts)
+            if len(df_closed) >= 14 and "tr" in df_closed.columns:
+                tr = df_closed["tr"].values
+                atr_14 = float(np.mean(tr[-14:]))
+                atr_7 = float(np.mean(tr[-7:])) if len(tr) >= 7 else atr_14
+                if atr_7 > atr_14 * 1.3:
+                    signals.append("ATR_EXPANSION")
+                    details["atr_expansion"] = round(atr_7 / atr_14, 2)
+
+            # Signal 6: G-Channel avg slope turning against position (early warning)
+            if len(df_closed) >= 5 and "gchannel_avg" in df_closed.columns:
+                gavg = df_closed["gchannel_avg"].values
+                gavg_slope = (gavg[-1] - gavg[-5]) / 5
+                if active_type == "BUY" and gavg_slope < 0:
+                    signals.append("GCHANNEL_SLOPE_DOWN")
+                    details["slope"] = round(gavg_slope, 2)
+                elif active_type == "SELL" and gavg_slope > 0:
+                    signals.append("GCHANNEL_SLOPE_DOWN")
+                    details["slope"] = round(gavg_slope, 2)
+
+            score = len(signals)
+            if score >= 5:
+                stage = "EXTENDED"
+            elif score >= 3:
+                stage = "CONFIRMED"
+            elif score >= 1:
+                stage = "WARNING"
+            else:
+                stage = "NONE"
+
+            return {
+                "stage": stage,
+                "signals": signals,
+                "score": score,
+                "details": details,
+            }
+        except Exception as e:
+            logger.debug(f"Market shift detection failed for {symbol}: {e}")
+            return {"stage": "NONE", "signals": [], "score": 0, "details": {}}
+
+    def _adaptive_response(self, symbol: str, shift: Dict, active_type: str,
+                           active_pos: list, pendings: list, grid_open_vol: float):
+        """Stage-based adaptive response to detected market shift.
+
+        WARNING: Tighten TP, log alert, no position change.
+        CONFIRMED: Cancel DCA pendings, switch to tight trailing exit.
+        EXTENDED: Close current basket and flip direction (reverse grid).
+        """
+        stage = shift["stage"]
+        if stage == "NONE":
+            return False
+
+        if stage == "WARNING":
+            logger.info(f"⚠️ [SHIFT WARNING] {len(shift['signals'])} signals for {symbol}: {shift['signals']}")
+            return False
+
+        if stage == "CONFIRMED":
+            if pendings:
+                for o in pendings:
+                    mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": o.ticket})
+                logger.info(f"🧹 [SHIFT CONFIRMED] Cancelled DCA pendings for {symbol} ({len(pendings)} orders)")
+            if symbol in self.active_grids:
+                self.active_grids[symbol]["shift_stage"] = "CONFIRMED"
+                self.active_grids[symbol]["tight_trailing"] = True
+            self._save_state()
+            return True
+
+        if stage == "EXTENDED":
+            logger.warning(f"🔄 [SHIFT EXTENDED] Reversing {active_type} basket on {symbol}")
+            for p in active_pos:
+                self.broker.close_position(symbol, p["ticket"])
+            self.broker.cancel_all_pendings(symbol)
+            new_type = "SELL" if active_type == "BUY" else "BUY"
+            new_magic = self.magic_sell if active_type == "BUY" else self.magic_buy
+            tick = mt5.symbol_info_tick(symbol)
+            current_price = tick.bid if tick else 0.0
+            res = self.broker.place_order(
+                symbol=symbol, action=new_type, volume=self.base_lot,
+                price=current_price, use_limit=False, magic=new_magic
+            )
+            if res.get("success"):
+                self.active_grids[symbol] = {
+                    "type": new_type,
+                    "base_price": current_price,
+                    "last_index": 0,
+                    "bias_at_start": "BEARISH" if new_type == "BUY" else "BULLISH",
+                    "shift_reversed": True,
+                }
+                self._save_state()
+                logger.info(f"🔄 [SHIFT EXTENDED] New {new_type} basket opened on {symbol}")
+            else:
+                logger.warning(f"⚠️ [SHIFT EXTENDED] Failed to open reverse basket: {res.get('error')}")
+            return True
+
+        return False
+
+    def _get_current_price(self, symbol: str) -> float:
+        try:
+            tick = mt5.symbol_info_tick(symbol)
+            return tick.bid if tick else 0.0
+        except:
+            return 0.0
+
     async def update(self, symbol: str, current_price: float, bias: str, balance: float):
         """Processes tick update, manages trailing pending orders, and adjusts basket TP."""
         try:
@@ -521,8 +701,20 @@ class GridManager:
                     active_pos = buy_positions if active_type == "BUY" else sell_positions
                     pendings = [o for o in grid_pendings if o.magic == magic]
 
-                    # Synchronize Basket TP
-                    target_tp = hl_high if active_type == "BUY" else hl_low
+                    # Synchronize Basket TP — USD-based (not G-Channel bands)
+                    # Calculate price move needed to hit profit_target_usd with current total volume
+                    target_usd = self.config.get('grid', {}).get('profit_target_usd', 10)
+                    total_vol = sum(p['volume'] for p in active_pos) if active_pos else self.base_lot
+                    # Contract size: Gold=100oz, Crypto=~1 unit, Silver=5000oz, Forex=100000
+                    if 'XAU' in symbol or 'XAG' in symbol:
+                        contract_size = 100 if 'XAU' in symbol else 5000
+                    elif 'BTC' in symbol or 'ETH' in symbol:
+                        contract_size = 1.0
+                    else:
+                        contract_size = 100000
+                    price_per_point = total_vol * contract_size
+                    required_move = target_usd / max(price_per_point, 0.01)
+                    target_tp = waep + required_move if active_type == "BUY" else waep - required_move
                     for p in active_pos:
                         if abs(p.get("tp", 0.0) - target_tp) > (atr * 0.05) or p.get("sl", 0.0) != 0.0:
                             rounded_tp = self.broker.round_price(symbol, target_tp)
@@ -537,42 +729,57 @@ class GridManager:
                     # D1 pivots still published for the shared dashboard state bridge
                     self.last_pivots[symbol] = self._get_daily_pivots(symbol)
 
-                    m15_df = self._get_m15_closed_df(symbol)
+                    # --- MARKET SHIFT DETECTION (proactive multi-signal) ---
+                    shift = self._detect_market_shift(symbol, active_type, rates, df, df_closed)
+                    if shift["stage"] != "NONE":
+                        logger.info(
+                            f"📡 [SHIFT DETECTED] {symbol} | Stage: {shift['stage']} | "
+                            f"Signals: {shift['signals']} | Score: {shift['score']}/6"
+                        )
+                        # Always clear frozen state for fresh decision
+                        self.grid_frozen.pop(symbol, None)
 
-                    # M15 G-Channel flip guard -> FROZEN (no averaging into a flipped structure)
-                    frozen = False
+                        # Adaptive response based on shift stage
+                        response_taken = self._adaptive_response(
+                            symbol, shift, active_type, active_pos, pendings, grid_open_vol
+                        )
+                        if response_taken:
+                            return  # Response handled the position; exit this cycle
+
+                    # --- STRUCTURAL INVALIDATION + DCA (if no shift or WARNING only) ---
                     if self.fib_freeze_on_flip and m15_df is not None and len(m15_df) >= 20:
                         try:
                             m15_ctx = self._add_gchannel_indicators(m15_df.copy())
                             m15_bull = bool(m15_ctx["gchannel_bullish"].iloc[-1])
-                            frozen = (active_type == "BUY" and not m15_bull) or (active_type == "SELL" and m15_bull)
-                        except Exception as e:
-                            logger.debug(f"M15 flip check failed for {symbol}: {e}")
-
-                    if frozen:
-                        self.grid_frozen[symbol] = "FROZEN"
-                        logger.info(
-                            f"🧊 [FROZEN] {symbol} M15 G-Channel flipped against {active_type} basket — no averaging."
-                        )
-                        self._save_state()
-                    else:
-                        self.grid_frozen.pop(symbol, None)
-                        # Structural invalidation: price beyond 100% of the swing -> freeze DCA layers
-                        swing = self._get_swing_range(m15_df)
-                        if swing:
-                            if (active_type == "BUY" and current_price < swing["swing_low"]) or \
-                               (active_type == "SELL" and current_price > swing["swing_high"]):
+                            is_flipped = (active_type == "BUY" and not m15_bull) or (active_type == "SELL" and m15_bull)
+                            if is_flipped and shift["stage"] == "NONE":
                                 self.grid_frozen[symbol] = "FROZEN"
                                 logger.info(
-                                    f"🧊 [FROZEN] {symbol} price {current_price:.2f} broke the 100% swing "
-                                    f"({'swing_low' if active_type == 'BUY' else 'swing_high'}) — no blind layers."
+                                    f"🧊 [FROZEN] {symbol} M15 G-Channel flipped against {active_type} basket — no averaging."
                                 )
                                 self._save_state()
+                            elif is_flipped and shift["stage"] != "NONE":
+                                # Shift already detected above, skip simple FROZEN
+                                pass
                             else:
-                                await self._try_place_dca_layer(
-                                    symbol, active_type, current_price, atr, now_t, magic,
-                                    active_pos, grid_open_vol
-                                )
+                                self.grid_frozen.pop(symbol, None)
+                                swing = self._get_swing_range(m15_df)
+                                if swing:
+                                    if (active_type == "BUY" and current_price < swing["swing_low"]) or \
+                                       (active_type == "SELL" and current_price > swing["swing_high"]):
+                                        self.grid_frozen[symbol] = "FROZEN"
+                                        logger.info(
+                                            f"🧊 [FROZEN] {symbol} price {current_price:.2f} broke the 100% swing "
+                                            f"({'swing_low' if active_type == 'BUY' else 'swing_high'}) — no blind layers."
+                                        )
+                                        self._save_state()
+                                    else:
+                                        await self._try_place_dca_layer(
+                                            symbol, active_type, current_price, atr, now_t, magic,
+                                            active_pos, grid_open_vol
+                                        )
+                        except Exception as e:
+                            logger.debug(f"M15 flip check failed for {symbol}: {e}")
                 return
 
             # -------------------------------------------------------------
