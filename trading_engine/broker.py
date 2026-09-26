@@ -176,6 +176,38 @@ class MT5Broker:
             return result.retcode == mt5.TRADE_RETCODE_DONE
         except Exception as e: logger.error(f"Error closing position {ticket}: {e}"); return False
 
+    def close_partial(self, symbol: str, ticket: int, volume: float) -> bool:
+        """Close a slice of a position, falling back to a full close when the slice is too small"""
+        try:
+            position = mt5.positions_get(ticket=ticket)
+            if not position: return False
+            p = position[0]
+            info = mt5.symbol_info(symbol)
+            if not info: return False
+            vmin = info.volume_min or 0.01
+            slice_vol = self.normalize_volume(symbol, volume)
+            if slice_vol >= p.volume - vmin + 1e-8 or (p.volume - slice_vol) < vmin:
+                return self.close_position(symbol, ticket)
+            action = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
+            tick = mt5.symbol_info_tick(symbol)
+            if tick is None: return False
+            price = tick.bid if p.type == mt5.POSITION_TYPE_BUY else tick.ask
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL, "symbol": symbol, "volume": slice_vol,
+                "type": action, "position": p.ticket, "price": price,
+                "deviation": 200, "magic": p.magic, "comment": "ICT_TP_SLICE",
+                "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC,
+            }
+            result = mt5.order_send(request)
+            if result.retcode != mt5.TRADE_RETCODE_DONE:
+                logger.error(f"Partial close failed #{ticket}: {result.retcode} {result.comment}")
+                return False
+            logger.info(f"Partial close #{ticket}: {slice_vol} @ {price} (left {round(p.volume - slice_vol, 8)})")
+            return True
+        except Exception as e:
+            logger.error(f"Error partially closing #{ticket}: {e}")
+            return False
+
     def place_order(self, symbol: str, action: str, volume: float, price: float, 
                    stop_loss: float = None, take_profit: float = None,
                    use_limit: bool = False, magic: int = 234000) -> Dict:
@@ -206,7 +238,8 @@ class MT5Broker:
             result = mt5.order_send(request)
             if result.retcode != mt5.TRADE_RETCODE_DONE: return {'success': False, 'error': f'Order failed: {result.retcode}'}
             logger.info(f"Order placed: {action} {volume} {symbol} at {price} (Magic: {magic})")
-            return {'success': True, 'ticket': result.order, 'price': result.price, 'volume': result.volume}
+            position_ticket = getattr(result, 'position', 0) or result.order
+            return {'success': True, 'ticket': position_ticket, 'order': result.order, 'price': result.price, 'volume': result.volume}
         except Exception as e: logger.error(f"Order placement error: {e}"); return {'success': False, 'error': str(e)}
     
     def modify_sl_tp(self, ticket: int, sl: float = 0.0, tp: float = 0.0) -> bool:
@@ -241,3 +274,17 @@ class MT5Broker:
             info = mt5.symbol_info(symbol)
             return round(price, info.digits) if info else round(price, 2)
         except: return price
+
+    def normalize_volume(self, symbol: str, volume: float) -> float:
+        """Clamp volume to the symbol's min/max and align it to volume_step"""
+        try:
+            info = mt5.symbol_info(symbol)
+            if not info: return volume
+            vmin = info.volume_min or 0.01
+            vmax = info.volume_max or vmin
+            step = info.volume_step or 0.01
+            volume = max(vmin, min(vmax, volume))
+            steps = int(round(volume / step))
+            return round(max(1, steps) * step, 8)
+        except Exception:
+            return volume

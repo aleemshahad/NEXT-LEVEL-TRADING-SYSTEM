@@ -1,28 +1,40 @@
 import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk, messagebox
+import customtkinter as ctk
+import pywinstyles
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import threading
 import time
+import math
 import os
 import json
 from pathlib import Path
 from dotenv import load_dotenv
-# Charting removed to replace with Calculator
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.ticker import FuncFormatter
+from matplotlib.colors import LinearSegmentedColormap, to_rgba
 
 # Load environment variables
 load_dotenv()
 
 class LivePortfolioDashboard:
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("NEXUS AUTOMATION - LIVE PERFORMANCE & CONTROL")
-        self.root.geometry("1200x850")
-        self.root.configure(bg='#0a0a0a') # Deeper Dark Background
-        
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("dark-blue")
+
+        self.root = ctk.CTk()
+        self.root.title("NEXUS AUTOMATION")
+        self.root.geometry("1180x750")
+        self.root.minsize(1020, 680)
+        self.root.resizable(True, True)
+
+        self._apply_window_chrome()
+
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self._setup_styles()
@@ -43,6 +55,22 @@ class LivePortfolioDashboard:
         }
         self.equity_history = self._load_chart_history() # Load persistent history
         self._last_chart_append = 0
+        self._chart_anim_job = None
+        self._pulse_phase = 0
+        self._pulse_marker = None
+        self._pulse_glow = None
+        self._chart_growing = True
+
+        self._flash_job = None
+        self._flash_label = None
+        self._flash_text = ""
+        self._flash_color = "#00FF66"
+        self._flash_step = 0
+        self._last_pnl_seen = None
+        self._dot_job = None
+        self._dot_step = 0
+        self._ticker_job = None
+        self._chart_resize_job = None
         
         self._create_widgets()
         
@@ -52,14 +80,78 @@ class LivePortfolioDashboard:
         
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
+    def _apply_window_chrome(self):
+        """Native dark title bar + custom window icon (Windows only, best effort)."""
+        try:
+            pywinstyles.apply_style(self.root, "dark")
+            pywinstyles.change_header_color(self.root, self.C['bg'])
+            pywinstyles.change_title_color(self.root, "#ffffff")
+        except Exception:
+            pass
+        for icon_name in ("nexus.ico", "assets/nexus.ico", "g-channel.ico"):
+            icon_path = Path(__file__).parent / icon_name
+            if icon_path.exists():
+                try:
+                    self.root.iconbitmap(str(icon_path))
+                except Exception:
+                    pass
+                break
+
+    def animate_pnl_flash(self, label, text, base_color):
+        """Momentarily brighten a P&L label, then ease it back to its resting color."""
+        if not self.running or label is None:
+            return
+        self._flash_label = label
+        self._flash_text = text
+        self._flash_color = base_color
+        self._flash_step = 0
+        if self._flash_job is not None:
+            try:
+                self.root.after_cancel(self._flash_job)
+            except Exception:
+                pass
+        try:
+            label.configure(text=text, text_color=self.C['flash'])
+        except Exception:
+            return
+        self._flash_job = self.root.after(70, self._ease_pnl_flash)
+
+    def _ease_pnl_flash(self):
+        """Step the flashing P&L label back toward its normal color."""
+        if not self.running or self._flash_label is None:
+            self._flash_job = None
+            return
+        self._flash_step += 1
+        if self._flash_step >= 2:
+            try:
+                self._flash_label.configure(text=self._flash_text, text_color=self._flash_color)
+            except Exception:
+                pass
+            self._flash_job = None
+            return
+        self._flash_job = self.root.after(70, self._ease_pnl_flash)
+
+    def _animate_status_dot(self):
+        """Green pulsing SYSTEM ACTIVE dot."""
+        if not self.running:
+            self._dot_job = None
+            return
+        shades = (self.C['green'], '#00cc55', '#009944', '#00cc55')
+        try:
+            self.status_dot.configure(text_color=shades[self._dot_step % len(shades)])
+        except Exception:
+            pass
+        self._dot_step += 1
+        self._dot_job = self.root.after(650, self._animate_status_dot)
+
     def _setup_styles(self):
         # Modern palette
         self.C = {
-            'bg': '#0b0e14', 'card': '#131822', 'card2': '#0f141d',
-            'border': '#232c3d', 'text': '#e8eef7', 'muted': '#8593a8',
-            'green': '#00e676', 'mint': '#2be9a7', 'blue': '#4cc2ff',
-            'orange': '#ffb454', 'red': '#ff5252', 'purple': '#a78bfa',
-            'chip': '#1c2530', 'dim': '#5b6b82',
+            'bg': '#070a0e', 'card': '#0d131a', 'card2': '#0d131a',
+            'border': '#182330', 'text': '#ffffff', 'muted': '#7b8b9a',
+            'green': '#00FF66', 'mint': '#00E5FF', 'blue': '#3399ff',
+            'orange': '#ffa726', 'red': '#FF4D4D', 'purple': '#a78bfa',
+            'chip': '#141d27', 'dim': '#7b8b9a', 'flash': '#00FFC8',
         }
         self.style.configure("TFrame", background=self.C['bg'])
         self.style.configure("Card.TFrame", background=self.C['card'], relief="flat", borderwidth=0)
@@ -67,7 +159,7 @@ class LivePortfolioDashboard:
         self.style.configure("Header.TLabel", background=self.C['bg'], foreground=self.C['green'], font=('Segoe UI', 16, 'bold'))
         self.style.configure("Stat.TLabel", background=self.C['card'], foreground=self.C['green'], font=('Consolas', 15, 'bold'))
         self.style.configure("Metric.TLabel", background=self.C['card'], foreground=self.C['muted'], font=('Segoe UI', 9))
-        self.style.configure("Ticker.TLabel", background="#05070b", foreground=self.C['green'], font=('Consolas', 11, 'italic'))
+        self.style.configure("Ticker.TLabel", background=self.C['bg'], foreground=self.C['green'], font=('Consolas', 11, 'italic'))
 
         # Treeview styles
         self.style.configure("Treeview",
@@ -77,62 +169,81 @@ class LivePortfolioDashboard:
                            rowheight=30,
                            font=('Segoe UI', 10),
                            borderwidth=0)
-        self.style.map("Treeview", background=[('selected', '#33415a')])
-        self.style.configure("Treeview.Heading", background='#1a222f', foreground='#aebbd0',
+        self.style.map("Treeview", background=[('selected', '#1d3348')])
+        self.style.configure("Treeview.Heading", background=self.C['chip'], foreground='#aebbd0',
                            font=('Segoe UI', 9, 'bold'), relief='flat')
         self.style.map("Treeview.Heading", background=[('active', '#223046')])
 
-        # Card helper: bordered flat frame
+        # Card helper: bordered rounded frame
         def _card_frame(parent, bg=None):
-            return tk.Frame(parent, bg=bg or self.C['card2'],
-                            highlightbackground=self.C['border'], highlightthickness=1, bd=0)
+            return ctk.CTkFrame(parent, fg_color=bg or self.C['card'],
+                                border_color=self.C['border'], border_width=1,
+                                corner_radius=9)
         self._card = _card_frame
 
         # Treeview tags for coloring
         self.pos_tree_tags = {
-            'profit': {'foreground': '#00e676'},
-            'loss': {'foreground': '#ff5252'}
+            'profit': {'foreground': '#00FF66'},
+            'loss': {'foreground': '#FF4D4D'}
         }
 
     def _create_widgets(self):
-        main_frame = ttk.Frame(self.root, padding="12")
+        main_frame = ctk.CTkFrame(self.root, fg_color=self.C['bg'], corner_radius=0)
         main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame.grid_columnconfigure(0, weight=0)
+        main_frame.grid_columnconfigure(1, weight=1)
+        main_frame.grid_columnconfigure(2, weight=0)
+        main_frame.grid_rowconfigure(5, weight=1)
 
-        # ============ 1. MODERN HEADER (accent line + brand + status) ============
-        header = tk.Frame(main_frame, bg=self.C['card2'],
-                          highlightbackground=self.C['border'], highlightthickness=1, bd=0)
-        header.pack(fill=tk.X, pady=(0, 10))
+        pad = {"padx": 12}
 
-        brand_box = tk.Frame(header, bg=self.C['card2'])
-        brand_box.pack(side=tk.LEFT, padx=(10, 16), pady=10)
-        tk.Label(brand_box, text="NEXUS AUTOMATION", bg=self.C['card2'], fg="#ffffff",
-                 font=('Segoe UI', 20, 'bold')).pack(anchor=tk.W)
-        tk.Label(brand_box, text="LIVE PERFORMANCE & CONTROL  ·  XAUUSDm",
-                 bg=self.C['card2'], fg=self.C['muted'], font=('Segoe UI', 9)).pack(anchor=tk.W)
+        # ============ 1. MODERN HEADER (brand + status) ============
+        header = ctk.CTkFrame(main_frame, fg_color=self.C['card'],
+                              border_color=self.C['border'], border_width=1, corner_radius=9)
+        header.grid(row=0, column=0, columnspan=3, sticky="ew", **pad, pady=(6, 0))
+        header.grid_columnconfigure(1, weight=1)
 
-        right_box = tk.Frame(header, bg=self.C['card2'])
-        right_box.pack(side=tk.RIGHT, padx=16, pady=8)
-        self.clock_label = tk.Label(right_box, text="--:--:--", bg=self.C['card2'],
-                                    fg=self.C['blue'], font=('Consolas', 13, 'bold'))
-        self.clock_label.pack(anchor=tk.E)
-        self.status_label = tk.Label(right_box, text="● SYSTEM ACTIVE", bg=self.C['card2'],
-                                     fg=self.C['green'], font=('Segoe UI', 10, 'bold'))
-        self.status_label.pack(anchor=tk.E, pady=(2, 0))
+        brand_box = ctk.CTkFrame(header, fg_color="transparent")
+        brand_box.grid(row=0, column=0, sticky="w", padx=(14, 10), pady=7)
+        ctk.CTkLabel(brand_box, text="NEXUS AUTOMATION", text_color="#ffffff",
+                     font=ctk.CTkFont(size=19, weight="bold")).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(brand_box, text="• LIVE PERFORMANCE & CONTROL [XAUUSDm]",
+                     text_color=self.C['muted'],
+                     font=ctk.CTkFont(size=9)).grid(row=1, column=0, sticky="w")
+
+        right_box = ctk.CTkFrame(header, fg_color="transparent")
+        right_box.grid(row=0, column=2, sticky="e", padx=16, pady=6)
+        self.clock_label = ctk.CTkLabel(right_box, text="--:--:--", text_color=self.C['blue'],
+                                        font=ctk.CTkFont(family="Consolas", size=13, weight="bold"))
+        self.clock_label.grid(row=0, column=0, sticky="e")
+        status_row = ctk.CTkFrame(right_box, fg_color="transparent")
+        status_row.grid(row=1, column=0, sticky="e", pady=(2, 0))
+        self.status_dot = ctk.CTkLabel(status_row, text="●", text_color=self.C['green'],
+                                       font=ctk.CTkFont(size=10))
+        self.status_dot.grid(row=0, column=0, padx=(0, 5))
+        self.status_label = ctk.CTkLabel(status_row, text="SYSTEM ACTIVE", text_color=self.C['green'],
+                                         font=ctk.CTkFont(size=10, weight="bold"))
+        self.status_label.grid(row=0, column=1)
 
         # gradient accent line
         accent = tk.Canvas(main_frame, height=3, highlightthickness=0, bd=0, bg=self.C['bg'])
-        accent.pack(fill=tk.X, pady=(0, 12))
+        accent.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(8, 0))
         aw = accent.winfo_reqwidth() or 1180
-        cols = ['#00e676', '#2be9a7', '#4cc2ff', '#a78bfa']
+        cols = ['#00FF66', '#00E5FF', '#3399ff', '#a78bfa']
         seg = max(1, aw // len(cols))
         for i, c in enumerate(cols):
             accent.create_rectangle(i * seg, 0, (i + 1) * seg + 2, 3, fill=c, outline=c)
 
         # ============ 2. PERFORMANCE METRICS ROW ============
         perf_container = self._card(main_frame, bg=self.C['card'])
-        perf_container.pack(fill=tk.X, pady=(0, 10))
-        metrics_host = tk.Frame(perf_container, bg=self.C['card2'])
-        metrics_host.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=6, pady=8)
+        perf_container.grid(row=2, column=0, columnspan=3, sticky="ew", **pad, pady=(6, 0))
+        perf_container.grid_columnconfigure(0, weight=3)
+        perf_container.grid_columnconfigure(1, weight=1)
+
+        metrics_host = ctk.CTkFrame(perf_container, fg_color="transparent")
+        metrics_host.grid(row=0, column=0, sticky="nsew", padx=4, pady=5)
+        for i in range(5):
+            metrics_host.grid_columnconfigure(i, weight=1)
 
         metrics_list = [
             ("Total Trades", "total_trades", self.C['text']),
@@ -143,37 +254,43 @@ class LivePortfolioDashboard:
         ]
         self.metric_labels = {}
         for i, (label, key, color) in enumerate(metrics_list):
-            m = tk.Frame(metrics_host, bg=self.C['card2'])
-            m.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
-            tk.Label(m, text=f"{label.upper()}", bg=self.C['card2'], fg=self.C['muted'],
-                     font=('Segoe UI', 8, 'bold')).pack(anchor=tk.CENTER)
-            self.metric_labels[key] = tk.Label(m, text="--", bg=self.C['card2'], fg=color,
-                                               font=('Consolas', 16, 'bold'))
-            self.metric_labels[key].pack(anchor=tk.CENTER, pady=2)
+            m = ctk.CTkFrame(metrics_host, fg_color="transparent", corner_radius=8)
+            m.grid(row=0, column=i, sticky="nsew", padx=6)
+            ctk.CTkLabel(m, text=f"{label.upper()}", text_color=self.C['muted'],
+                         font=ctk.CTkFont(size=8, weight="bold")).grid(row=0, column=0)
+            self.metric_labels[key] = ctk.CTkLabel(m, text="--", text_color=color,
+                                                   font=ctk.CTkFont(family="Consolas", size=16, weight="bold"))
+            self.metric_labels[key].grid(row=1, column=0, pady=(2, 0))
 
         # --- INSTITUTIONAL FILTERS (Rail Board) ---
-        self.ict_frame = tk.LabelFrame(perf_container, text=" INSTITUTIONAL FILTERS ",
-                                       font=("Arial", 9, "bold"), bg=self.C['card2'],
-                                       fg=self.C['mint'], bd=0, highlightthickness=1,
-                                       highlightbackground=self.C['border'])
-        self.ict_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=8)
+        self.ict_frame = ctk.CTkFrame(perf_container, fg_color=self.C['chip'],
+                                      border_color=self.C['border'], border_width=1, corner_radius=8)
+        self.ict_frame.grid(row=0, column=1, sticky="nsew", padx=8, pady=5)
+        for i in range(3):
+            self.ict_frame.grid_columnconfigure(i, weight=1)
+        ctk.CTkLabel(self.ict_frame, text="INSTITUTIONAL FILTERS", text_color=self.C['mint'],
+                     font=ctk.CTkFont(size=8, weight="bold")).grid(row=0, column=0, columnspan=3, pady=(3, 0))
         self.ict_labels = {}
         concepts = [
             ("H4 TREND", "status_h4", self.C['blue']),
             ("TRAP FILTER", "status_trap", self.C['orange']),
             ("D1 PIVOT", "daily_pivot", self.C['green']),
         ]
-        for label_text, key, color in concepts:
-            f = tk.Frame(self.ict_frame, bg=self.C['card2'])
-            f.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=12, pady=4)
-            tk.Label(f, text=f"{label_text}:", font=("Arial", 8, "bold"), bg=self.C['card2'], fg=self.C['muted']).pack(anchor=tk.CENTER)
-            l = tk.Label(f, text="--", font=("Consolas", 12, "bold"), bg=self.C['card2'], fg=color)
-            l.pack(anchor=tk.CENTER, pady=2)
+        for col_i, (label_text, key, color) in enumerate(concepts):
+            f = ctk.CTkFrame(self.ict_frame, fg_color="transparent")
+            f.grid(row=1, column=col_i, sticky="nsew", padx=6, pady=(0, 4))
+            ctk.CTkLabel(f, text=f"{label_text}:", text_color=self.C['muted'],
+                         font=ctk.CTkFont(size=8, weight="bold")).grid(row=0, column=0)
+            l = ctk.CTkLabel(f, text="--", text_color=color,
+                             font=ctk.CTkFont(family="Consolas", size=12, weight="bold"))
+            l.grid(row=1, column=0, pady=(2, 0))
             self.ict_labels[key] = l
 
         # ============ 3. PORTFOLIO SUMMARY CARDS ============
-        summary_container = ttk.Frame(main_frame, style="TFrame")
-        summary_container.pack(fill=tk.X, pady=(0, 10))
+        summary_container = ctk.CTkFrame(main_frame, fg_color="transparent")
+        summary_container.grid(row=3, column=0, columnspan=3, sticky="ew", **pad, pady=(6, 0))
+        for i in range(6):
+            summary_container.grid_columnconfigure(i, weight=1)
 
         self.cards = {}
         items = [
@@ -186,20 +303,24 @@ class LivePortfolioDashboard:
         ]
         for i, (label, key, color) in enumerate(items):
             card = self._card(summary_container)
-            card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3, pady=3)
-            tk.Label(card, text=label, font=('Segoe UI', 8, 'bold'), fg=self.C['muted'], bg=self.C['card2']).pack(anchor=tk.CENTER, pady=(8, 1))
-            self.cards[key] = tk.Label(card, text="$0.00", bg=self.C['card2'],
-                                       fg=color, font=('Consolas', 17, 'bold'))
-            self.cards[key].pack(anchor=tk.CENTER, pady=(2, 8))
+            card.grid(row=0, column=i, sticky="nsew", padx=3, pady=3)
+            ctk.CTkLabel(card, text=label, text_color=self.C['muted'],
+                         font=ctk.CTkFont(size=8, weight="bold")).grid(row=0, column=0, pady=(5, 0))
+            self.cards[key] = ctk.CTkLabel(card, text="$0.00", text_color=color,
+                                           font=ctk.CTkFont(family="Consolas", size=16, weight="bold"))
+            self.cards[key].grid(row=1, column=0, pady=(1, 5))
 
         # ============ 4. GRID & STRATEGY MONITOR ============
         grid_container = self._card(main_frame)
-        grid_container.pack(fill=tk.X, pady=(0, 10))
-        head_row = tk.Frame(grid_container, bg=self.C['card2']); head_row.pack(fill=tk.X, padx=12, pady=(10, 6))
-        ttk.Label(head_row, text="GRID & STRATEGY MONITOR", font=('Segoe UI', 10, 'bold'), foreground=self.C['mint']).pack(side=tk.LEFT)
+        grid_container.grid(row=4, column=0, columnspan=3, sticky="ew", **pad, pady=(6, 0))
+        grid_container.grid_columnconfigure(0, weight=1)
+        head_row = ctk.CTkFrame(grid_container, fg_color="transparent")
+        head_row.grid(row=0, column=0, sticky="ew", padx=12, pady=(5, 1))
+        ctk.CTkLabel(head_row, text="GRID & STRATEGY MONITOR", text_color=self.C['mint'],
+                     font=ctk.CTkFont(size=9, weight="bold")).grid(row=0, column=0, sticky="w")
 
-        status_sub_frame = tk.Frame(grid_container, bg=self.C['card2'])
-        status_sub_frame.pack(fill=tk.X, padx=6, pady=(0, 10))
+        status_sub_frame = ctk.CTkFrame(grid_container, fg_color="transparent")
+        status_sub_frame.grid(row=1, column=0, sticky="ew", padx=6, pady=(0, 2))
 
         self.grid_cards = {}
         grid_items = [
@@ -212,131 +333,177 @@ class LivePortfolioDashboard:
             ("SAFETY", "lock_val", self.C['red']),
             ("SEASON", "season_timer", self.C['green']),
         ]
-        for label, key, color in grid_items:
-            f = tk.Frame(status_sub_frame, bg=self.C['card2'])
-            f.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            tk.Label(f, text=label, font=('Segoe UI', 8, 'bold'), fg=self.C['muted'], bg=self.C['card2']).pack(anchor=tk.CENTER, pady=2)
-            self.grid_cards[key] = tk.Label(f, text="--", bg=self.C['card2'], fg=color,
-                                            font=('Consolas', 13, 'bold'))
-            self.grid_cards[key].pack(anchor=tk.CENTER, pady=(0, 2))
+        for i, (label, key, color) in enumerate(grid_items):
+            status_sub_frame.grid_columnconfigure(i, weight=1, uniform="grid_items")
+            f = ctk.CTkFrame(status_sub_frame, fg_color="transparent")
+            f.grid(row=0, column=i, sticky="nsew", padx=(4, 4))
+            ctk.CTkLabel(f, text=label, text_color=self.C['muted'],
+                         font=ctk.CTkFont(size=8, weight="bold")).grid(row=0, column=0, pady=2)
+            self.grid_cards[key] = ctk.CTkLabel(f, text="--", text_color=color,
+                                                font=ctk.CTkFont(family="Consolas", size=13, weight="bold"))
+            self.grid_cards[key].grid(row=1, column=0, pady=(0, 2))
 
         # DCA progress bar
-        bar_row = tk.Frame(grid_container, bg=self.C['card2']); bar_row.pack(fill=tk.X, padx=14, pady=(0, 10))
-        tk.Label(bar_row, text="DCA LEVELS", bg=self.C['card2'], fg=self.C['muted'],
-                 font=('Segoe UI', 7, 'bold')).pack(side=tk.LEFT, padx=(0, 8))
-        self.dca_bar = tk.Canvas(bar_row, height=14, bg=self.C['card'], highlightthickness=1,
-                                 highlightbackground=self.C['border'])
-        self.dca_bar.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        bar_row = ctk.CTkFrame(grid_container, fg_color="transparent")
+        bar_row.grid(row=2, column=0, sticky="ew", padx=14, pady=(0, 6))
+        bar_row.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(bar_row, text="DCA LEVELS", text_color=self.C['muted'],
+                     font=ctk.CTkFont(size=7, weight="bold")).grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self.dca_bar = ctk.CTkProgressBar(bar_row, height=14, corner_radius=7,
+                                           progress_color=self.C['green'],
+                                           fg_color=self.C['border'],
+                                           border_color=self.C['card'], border_width=1)
+        self.dca_bar.grid(row=0, column=1, sticky="ew")
+        self.dca_bar.set(0)
 
         # ============ 5. CONTENT AREA ============
-        self.content_frame = tk.Frame(main_frame, bg=self.C['bg'])
-        self.content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
+        self.content_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        self.content_frame.grid(row=5, column=0, columnspan=3, sticky="nsew", **pad, pady=(6, 0))
+        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_columnconfigure(0, weight=1, uniform="cols")
+        self.content_frame.grid_columnconfigure(1, weight=1, uniform="cols")
+        self.content_frame.grid_columnconfigure(2, weight=1, uniform="cols")
 
         # Left: Active Positions
         self.left_col = self._card(self.content_frame)
-        self.left_col.place(relx=0, rely=0, relwidth=0.32, relheight=1)
-        pad_left = tk.Frame(self.left_col, bg=self.C['card2']); pad_left.pack(fill=tk.X, padx=10, pady=8)
-        tk.Label(pad_left, text="ACTIVE POSITIONS", font=('Segoe UI', 10, 'bold'), fg=self.C['mint'], bg=self.C['card2']).pack(anchor=tk.W)
+        self.left_col.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        self.left_col.grid_columnconfigure(0, weight=1)
+        self.left_col.grid_rowconfigure(1, weight=1)
+        ctk.CTkLabel(self.left_col, text="ACTIVE POSITIONS", text_color=self.C['mint'],
+                     font=ctk.CTkFont(size=10, weight="bold")).grid(row=0, column=0, sticky="w", padx=10, pady=(6, 2))
 
-        self.pos_tree = ttk.Treeview(self.left_col, columns=("symbol", "side", "lots", "profit"), show="headings")
+        pos_host = ctk.CTkFrame(self.left_col, fg_color="transparent")
+        pos_host.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
+        pos_host.grid_rowconfigure(0, weight=1)
+        pos_host.grid_columnconfigure(0, weight=1)
+
+        self.pos_tree = ttk.Treeview(pos_host, columns=("symbol", "side", "lots", "profit"),
+                                    show="headings", height=5)
         self.pos_tree.heading("symbol", text="SYMBOL")
         self.pos_tree.heading("side", text="SIDE")
         self.pos_tree.heading("lots", text="LOTS")
         self.pos_tree.heading("profit", text="PROFIT ($)")
         for col in ("symbol", "side", "lots", "profit"):
-            self.pos_tree.column(col, anchor=tk.CENTER, width=78)
-        self.pos_tree.tag_configure('profit', foreground='#00e676')
-        self.pos_tree.tag_configure('loss', foreground='#ff5252')
-        self.pos_tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
+            self.pos_tree.column(col, anchor=tk.CENTER, width=78, stretch=True)
+        self.pos_tree.tag_configure('profit', foreground='#00FF66')
+        self.pos_tree.tag_configure('loss', foreground='#FF4D4D')
+        self.pos_tree.grid(row=0, column=0, sticky="nsew")
 
         # Middle: Equity Chart
         self.mid_col = self._card(self.content_frame)
-        self.mid_col.place(relx=0.33, rely=0, relwidth=0.34, relheight=1)
-        pad_mid = tk.Frame(self.mid_col, bg=self.C['card2']); pad_mid.pack(fill=tk.X, padx=10, pady=8)
-        tk.Label(pad_mid, text="PERFORMANCE CURVE (EQUITY)", font=('Segoe UI', 10, 'bold'), fg=self.C['mint'], bg=self.C['card2']).pack(anchor=tk.W)
-        self.chart_canvas = tk.Canvas(self.mid_col, bg=self.C['bg'], highlightthickness=0)
-        self.chart_canvas.pack(fill=tk.BOTH, expand=True, padx=6, pady=(0, 6))
+        self.mid_col.grid(row=0, column=1, sticky="nsew", padx=5)
+        self.mid_col.grid_columnconfigure(0, weight=1)
+        self.mid_col.grid_rowconfigure(1, weight=1)
+        ctk.CTkLabel(self.mid_col, text="PERFORMANCE CURVE (EQUITY)", text_color=self.C['mint'],
+                     font=ctk.CTkFont(size=10, weight="bold")).grid(row=0, column=0, sticky="w", padx=10, pady=(6, 2))
 
-        # Right: Risk + Logs
+        chart_host = ctk.CTkFrame(self.mid_col, fg_color="transparent")
+        chart_host.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 6))
+        chart_host.grid_rowconfigure(0, weight=1)
+        chart_host.grid_columnconfigure(0, weight=1)
+
+        self.chart_fig = Figure(figsize=(3.2, 1.7), dpi=100, facecolor=self.C['card'])
+        self.chart_ax = self.chart_fig.add_subplot(111)
+        self.chart_ax.set_facecolor(self.C['card'])
+        self.chart_fig.subplots_adjust(left=0.11, right=0.995, top=0.93, bottom=0.04)
+        self.chart_agg = FigureCanvasTkAgg(self.chart_fig, master=chart_host)
+        self.chart_canvas = self.chart_agg.get_tk_widget()
+        self.chart_canvas.configure(highlightthickness=0, bd=0)
+        self.chart_canvas.grid(row=0, column=0, sticky="nsew")
+        self.chart_canvas.bind("<Configure>", self._on_chart_resize)
+
+        # Right: Risk + Exposure
         self.right_col = self._card(self.content_frame)
-        self.right_col.place(relx=0.68, rely=0, relwidth=0.32, relheight=1)
-        pad_right = tk.Frame(self.right_col, bg=self.C['card2']); pad_right.pack(fill=tk.X, padx=10, pady=8)
-        tk.Label(pad_right, text="RISK & EXPOSURE", font=('Segoe UI', 10, 'bold'),
-                 fg='#ffa726', bg=self.C['card2']).pack(anchor=tk.W)
+        self.right_col.grid(row=0, column=2, sticky="nsew", padx=(5, 0))
+        self.right_col.grid_columnconfigure(0, weight=1)
+        self.right_col.grid_rowconfigure(1, weight=1)
+        ctk.CTkLabel(self.right_col, text="RISK & EXPOSURE", text_color=self.C['orange'],
+                     font=ctk.CTkFont(size=10, weight="bold")).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 2))
 
-        calc_inner = tk.Frame(self.right_col, bg=self.C['card2'])
-        calc_inner.pack(fill=tk.X, padx=10, pady=(0, 4))
+        calc_inner = ctk.CTkFrame(self.right_col, fg_color="transparent")
+        calc_inner.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 8))
+        calc_inner.grid_columnconfigure(0, weight=1)
+        calc_inner.grid_columnconfigure(1, weight=1)
 
-        stats_frame = tk.Frame(calc_inner, bg=self.C['card2'])
-        stats_frame.pack(fill=tk.X, pady=2)
-        self.live_price_label = tk.Label(stats_frame, text="LIVE PRICE: --", bg=self.C['card2'], fg="#ffffff",
-                                         font=('Consolas', 11, 'bold'))
-        self.live_price_label.pack(anchor=tk.W)
-        self.net_lots_label = tk.Label(stats_frame, text="NET EXPOSURE: --", bg=self.C['card2'], fg="#ffffff",
-                                       font=('Consolas', 11, 'bold'))
-        self.net_lots_label.pack(anchor=tk.W)
-        self.floating_pnl_label = tk.Label(stats_frame, text="CURRENT PNL: --", bg=self.C['card2'], fg=self.C['green'],
-                                           font=('Consolas', 11, 'bold'))
-        self.floating_pnl_label.pack(anchor=tk.W)
-
-        tk.Label(calc_inner, text="TOTAL PNL IF MARKET MOVES AGAINST YOU",
-                 font=('Segoe UI', 8, 'bold'), fg=self.C['muted'], bg=self.C['card2']).pack(pady=(6, 4))
+        stats_frame = ctk.CTkFrame(calc_inner, fg_color="transparent")
+        stats_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=2)
+        self.live_price_label = ctk.CTkLabel(stats_frame, text="LIVE PRICE: --", text_color="#ffffff",
+                                             font=ctk.CTkFont(family="Consolas", size=11, weight="bold"),
+                                             anchor="w")
+        self.live_price_label.grid(row=0, column=0, sticky="w")
+        self.net_lots_label = ctk.CTkLabel(stats_frame, text="NET EXPOSURE: --", text_color="#ffffff",
+                                           font=ctk.CTkFont(family="Consolas", size=11, weight="bold"),
+                                           anchor="w")
+        self.net_lots_label.grid(row=1, column=0, sticky="w")
+        self.floating_pnl_label = ctk.CTkLabel(stats_frame, text="CURRENT PNL: --", text_color=self.C['green'],
+                                               font=ctk.CTkFont(family="Consolas", size=11, weight="bold"),
+                                               anchor="w")
+        self.floating_pnl_label.grid(row=2, column=0, sticky="w")
 
         self.proj_cards = {}
-        scenarios = [
-            ("$10", 1000), ("$20", 2000), ("$50", 5000),
-            ("$100", 10000), ("$150", 15000),
-        ]
-        for label, pips in scenarios:
-            f = tk.Frame(calc_inner, bg=self.C['card2'])
-            f.pack(fill=tk.X, pady=3)
-            tk.Label(f, text=label, font=('Segoe UI', 9), fg="#c3ccda", bg=self.C['card2']).pack(side=tk.LEFT)
-            self.proj_cards[pips] = tk.Label(f, text="$0.00", bg=self.C['card2'], fg=self.C['red'],
-                                             font=('Consolas', 12, 'bold'))
-            self.proj_cards[pips].pack(side=tk.RIGHT)
-
-        # Terminal logs
-        tk.Label(self.right_col, text="LIVE TERMINAL LOGS", font=('Segoe UI', 10, 'bold'),
-                 fg=self.C['mint'], bg=self.C['card2']).pack(anchor=tk.W, padx=10, pady=(10, 6))
-        log_frame = self._card(self.right_col, bg=self.C['bg'])
-        log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        self.log_text = tk.Text(log_frame, bg=self.C['bg'], fg="#c9d1d9", font=('Consolas', 9),
-                                height=10, relief="flat", borderwidth=0, highlightthickness=0)
-        self.log_text.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
-        self.log_text.tag_configure("INFO", foreground=self.C['green'])
-        self.log_text.tag_configure("WARNING", foreground=self.C['orange'])
-        self.log_text.tag_configure("ERROR", foreground=self.C['red'])
         self._last_log_pos = 0
 
-        # ============ 6. TICKER ============
-        ticker_bg = tk.Frame(main_frame, bg="#05070b", height=36)
-        ticker_bg.pack(fill=tk.X, pady=(4, 8), side=tk.BOTTOM)
-        self.ticker_text = "[RISK DISCLAIMER] FOR EDUCATIONAL PURPOSES ONLY • NOT FINANCIAL ADVICE (NFA) • TRADING FINANCIAL ASSETS INVOLVES HIGH RISK AND CAN RESULT IN CAPITAL LOSS • DO YOUR OWN RESEARCH (DYOR) • NEXUS AUTOMATION ACCEPTS NO LIABILITY FOR TRADING LOSSES"
-        self.ticker_label = tk.Label(ticker_bg, text=self.ticker_text * 3,
-                                     bg="#05070b", fg="#ffcc00",
-                                     font=('Consolas', 11, 'italic'),
-                                     anchor='w')
-        self.ticker_label.place(x=0, y=9)
-        self._scroll_ticker()
+        ctk.CTkLabel(calc_inner, text="LIVE TERMINAL LOGS", text_color=self.C['mint'],
+                     font=ctk.CTkFont(size=9, weight="bold")).grid(row=1, column=0, columnspan=2,
+                                                                  sticky="w", pady=(8, 3))
+        self.log_text = ctk.CTkTextbox(calc_inner, fg_color=self.C['bg'], text_color="#c9d1d9",
+                                       font=ctk.CTkFont(family="Consolas", size=9),
+                                       corner_radius=6, border_width=1,
+                                       border_color=self.C['border'],
+                                       scrollbar_button_color=self.C['border'],
+                                       scrollbar_button_hover_color=self.C['dim'])
+        self.log_text.grid(row=2, column=0, columnspan=2, sticky="nsew", pady=(0, 2))
+        self.log_text.tag_config("INFO", foreground=self.C['green'])
+        self.log_text.tag_config("WARNING", foreground=self.C['orange'])
+        self.log_text.tag_config("ERROR", foreground=self.C['red'])
+        self.log_text.configure(state="disabled")
+        calc_inner.grid_rowconfigure(2, weight=1)
 
-        # ============ 7. FOOTER ============
-        footer = ttk.Frame(main_frame, style="TFrame")
-        footer.pack(fill=tk.X, pady=(0, 2), side=tk.BOTTOM)
-        btn_style = {
-            'font': ('Segoe UI', 9, 'bold'),
-        }
-        tk.Button(footer, text="🚨 EMERGENCY RESET", command=self._emergency_reset, bg="#ff1744",
-                  fg="white", relief="flat", activebackground="#e53935", activeforeground="white",
-                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="🧹 DELETE ALL PENDINGS", command=self._delete_pendings, bg="#ff5252",
-                  fg="white", relief="flat", activebackground="#e53935", activeforeground="white",
-                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="CLEAR HISTORY", command=self._clear_history, bg="#ff9100",
-                  fg="black", relief="flat", activebackground="#fb8c00", activeforeground="black",
-                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
-        tk.Button(footer, text="FULL REPORT", command=self._generate_report, bg=self.C['green'],
-                  fg="black", relief="flat", activebackground=self.C['mint'], activeforeground="black",
-                  padx=10, pady=6, cursor="hand2", **btn_style).pack(side=tk.RIGHT, padx=5)
+        # ============ 6. FOOTER ============
+        footer = ctk.CTkFrame(main_frame, fg_color="transparent")
+        footer.grid(row=6, column=0, columnspan=3, sticky="ew", **pad, pady=(8, 0))
+        for i in range(4):
+            footer.grid_columnconfigure(i, weight=0)
+        footer.grid_columnconfigure(4, weight=1)
+        btn_font = ctk.CTkFont(size=9, weight="bold")
+        BTN_W = 146
+
+        self.btn_emergency_reset = ctk.CTkButton(footer, text="EMERGENCY RESET", command=self._emergency_reset,
+                                                 width=BTN_W,
+                                                 fg_color="#c62828", hover_color="#8e0000",
+                                                 text_color="#ffffff", corner_radius=7, height=30, font=btn_font)
+        self.btn_emergency_reset.grid(row=0, column=0, sticky="w", padx=(0, 6))
+
+        self.btn_delete_pendings = ctk.CTkButton(footer, text="DELETE PENDINGS", command=self._delete_pendings,
+                                                 width=BTN_W,
+                                                 fg_color="#f4511e", hover_color="#c43d0d",
+                                                 text_color="#ffffff", corner_radius=7, height=30, font=btn_font)
+        self.btn_delete_pendings.grid(row=0, column=1, sticky="w", padx=(0, 6))
+
+        self.btn_clear_history = ctk.CTkButton(footer, text="CLEAR HISTORY", command=self._clear_history,
+                                               width=BTN_W,
+                                               fg_color="#e65100", hover_color="#b84300",
+                                               text_color="#ffffff", corner_radius=7, height=30, font=btn_font)
+        self.btn_clear_history.grid(row=0, column=2, sticky="w", padx=(0, 6))
+
+        self.btn_full_report = ctk.CTkButton(footer, text="FULL REPORT", command=self._generate_report,
+                                             width=BTN_W,
+                                             fg_color="#00b0ff", hover_color="#008ecc",
+                                             text_color="#06121c", corner_radius=7, height=30, font=btn_font)
+        self.btn_full_report.grid(row=0, column=3, sticky="w", padx=(0, 6))
+
+        # ============ 7. TICKER ============
+        ticker_bg = ctk.CTkFrame(main_frame, fg_color=self.C['bg'], height=28, corner_radius=0)
+        ticker_bg.grid(row=7, column=0, columnspan=3, sticky="ew", pady=(8, 6))
+        ticker_bg.grid_propagate(False)
+        self.ticker_text = "[RISK DISCLAIMER] FOR EDUCATIONAL PURPOSES ONLY • NOT FINANCIAL ADVICE (NFA) • TRADING FINANCIAL ASSETS INVOLVES HIGH RISK AND CAN RESULT IN CAPITAL LOSS • DO YOUR OWN RESEARCH (DYOR) • NEXUS AUTOMATION ACCEPTS NO LIABILITY FOR TRADING LOSSES"
+        self._ticker_font = ctk.CTkFont(family="Consolas", size=11, slant="italic")
+        self.ticker_label = ctk.CTkLabel(ticker_bg, text=self.ticker_text * 3,
+                                         text_color="#ffcc00", font=self._ticker_font,
+                                         anchor="w", corner_radius=0)
+        self.ticker_label.place(x=0, y=6)
+        self._scroll_ticker()
+        self._animate_status_dot()
 
     def _delete_pendings(self):
         if not messagebox.askyesno("Confirm", "Delete all pending orders?"): return
@@ -370,28 +537,28 @@ class LivePortfolioDashboard:
         # 3. IMMEDIATELY update UI to show zero/cleaned state
         for key in self.metric_labels:
             default_val = "0.0%" if "rate" in key or "drawdown" in key else ("0" if "trades" in key else "$0.00")
-            self.metric_labels[key].config(text=default_val, foreground="#00e676")
+            self.metric_labels[key].configure(text=default_val, text_color=self.C['green'])
             
-        self.cards['session_val'].config(text="$0.00", fg="#00e676")
-        self.cards['drawdown_val'].config(text="$0.00", fg="#ff5252")
-        self.cards['start_val'].config(text=f"${self.start_balance:,.2f}")
+        self.cards['session_val'].configure(text="$0.00", text_color=self.C['green'])
+        self.cards['drawdown_val'].configure(text="$0.00", text_color=self.C['red'])
+        self.cards['start_val'].configure(text=f"${self.start_balance:,.2f}")
         
         # 4. Clear chart visual
-        self.chart_canvas.delete("all")
+        self._draw_chart()
         
         messagebox.showinfo("History Cleared", "Dashboard metrics and chart history have been reset successfully.")
 
     def _scroll_ticker(self):
-        """Infinite horizontal scroll for AI Ticker - seamless full-cycle loop."""
+        """Infinite horizontal scroll for Risk Disclaimer - seamless full-cycle loop."""
         if not hasattr(self, '_ticker_pos'): self._ticker_pos = 0
         if not hasattr(self, '_ticker_cycle'):
-            font = tkfont.Font(family='Consolas', size=11, slant='italic')
-            self._ticker_cycle = font.measure(self.ticker_text)
+            self._ticker_cycle = self._ticker_font.measure(self.ticker_text)
         self._ticker_pos -= 1
         if self._ticker_pos <= -self._ticker_cycle:
             self._ticker_pos += self._ticker_cycle
-        self.ticker_label.place(x=self._ticker_pos, y=5)
-        self.root.after(40, self._scroll_ticker)
+        self.ticker_label.place(x=self._ticker_pos, y=6)
+        if self.running:
+            self._ticker_job = self.root.after(40, self._scroll_ticker)
 
     def _generate_report(self):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -857,8 +1024,8 @@ class LivePortfolioDashboard:
         
         # Update metrics to 0 immediately
         for key in self.metric_labels:
-            self.metric_labels[key].config(text="0.0" if "rate" not in key else "0.0%")
-        self.cards['session_val'].config(text="$0.00", fg="#00e676")
+            self.metric_labels[key].configure(text="0.0" if "rate" not in key else "0.0%")
+        self.cards['session_val'].configure(text="$0.00", text_color=self.C['green'])
         
         # User requested: DO NOT reset max floating (-) in emergency reset
         # self.session_max_drawdown = 0.0 # Reset session max drawdown (REMOVED as requested)
@@ -909,15 +1076,20 @@ class LivePortfolioDashboard:
                 
                 # Update Trading Cards
                 session_pnl = balance - self.start_balance
-                session_color = "#00e676" if session_pnl >= 0 else "#ff5252"
+                session_color = self.C['green'] if session_pnl >= 0 else self.C['red']
                 
-                self.cards['start_val'].config(text=f"${self.start_balance:,.2f}")
-                self.cards['balance_val'].config(text=f"${balance:,.2f}")
-                self.cards['equity_val'].config(text=f"${equity:,.2f}")
-                self.cards['session_val'].config(text=f"${session_pnl:,.2f}", fg=session_color)
+                self.cards['start_val'].configure(text=f"${self.start_balance:,.2f}")
+                self.cards['balance_val'].configure(text=f"${balance:,.2f}")
+                self.cards['equity_val'].configure(text=f"${equity:,.2f}")
+                self.cards['session_val'].configure(text=f"${session_pnl:,.2f}", text_color=session_color)
+                
+                # Flash effect whenever session P&L changes
+                if self._last_pnl_seen is None or round(session_pnl, 2) != self._last_pnl_seen:
+                    self._last_pnl_seen = round(session_pnl, 2)
+                    self.animate_pnl_flash(self.cards['session_val'], f"${session_pnl:,.2f}", session_color)
                 
                 margin_pct = f"{acc.margin_level:.1f}%" if acc.margin_level else "0%"
-                self.cards['margin_val'].config(text=margin_pct)
+                self.cards['margin_val'].configure(text=margin_pct)
                 
                 # Track Chart History (Persistent & Long-Term)
                 now = time.time()
@@ -940,7 +1112,7 @@ class LivePortfolioDashboard:
                 self.session_max_drawdown = current_floating_pnl
                 self._save_reset_config() # Persist new drawdown peak
             
-            self.cards['drawdown_val'].config(text=f"${self.session_max_drawdown:,.2f}")
+            self.cards['drawdown_val'].configure(text=f"${self.session_max_drawdown:,.2f}")
             
             self._draw_chart()
             self._update_risk_calculator(positions)
@@ -950,7 +1122,7 @@ class LivePortfolioDashboard:
             self._update_log_console()
 
             # Live clock
-            self.clock_label.config(text=datetime.now().strftime('%H:%M:%S'))
+            self.clock_label.configure(text=datetime.now().strftime('%H:%M:%S'))
             
         except Exception as e:
             print(f"UI Update error: {e}")
@@ -959,16 +1131,80 @@ class LivePortfolioDashboard:
         if self.running:
             self.root.after(1000, self._update_loop)
 
+    def _on_chart_resize(self, event):
+        """Keep the matplotlib figure matched to the widget size (debounced)."""
+        w, h = event.width, event.height
+        if w < 40 or h < 40:
+            return
+        if self._chart_resize_job is not None:
+            try:
+                self.root.after_cancel(self._chart_resize_job)
+            except Exception:
+                pass
+        self._chart_resize_job = self.root.after(120, lambda: self._apply_chart_size(w, h))
+
+    def _apply_chart_size(self, w, h):
+        self._chart_resize_job = None
+        try:
+            dpi = self.chart_fig.dpi
+            self.chart_fig.set_size_inches(w / dpi, h / dpi)
+            self.chart_agg.draw_idle()
+        except Exception as e:
+            print(f"Chart resize error: {e}")
+
+    def _stop_chart_anim(self):
+        if self._chart_anim_job is not None:
+            try:
+                self.root.after_cancel(self._chart_anim_job)
+            except Exception:
+                pass
+            self._chart_anim_job = None
+
+    def _start_chart_anim(self):
+        self._stop_chart_anim()
+        if self._pulse_marker is None:
+            return
+        self._chart_anim_job = self.root.after(55, self._tick_chart_anim)
+
+    def _tick_chart_anim(self):
+        self._chart_anim_job = None
+        try:
+            self._pulse_phase += 1
+            t = (self._pulse_phase % 34) / 34.0
+            wave = (1.0 - math.cos(t * 2.0 * math.pi)) / 2.0
+
+            if self._pulse_marker is not None:
+                self._pulse_marker.set_markersize(3.4 + wave * 3.2)
+                self._pulse_marker.set_alpha(0.55 + wave * 0.45)
+            if self._pulse_glow is not None:
+                self._pulse_glow.set_markersize(7.0 + wave * 13.0)
+                self._pulse_glow.set_alpha(0.34 * (1.0 - wave))
+
+            self.chart_agg.draw_idle()
+            self._start_chart_anim()
+        except Exception:
+            self._pulse_marker = None
+            self._pulse_glow = None
+
     def _draw_chart(self):
         try:
-            self.chart_canvas.delete("all")
-            w = self.chart_canvas.winfo_width()
-            h = self.chart_canvas.winfo_height()
-            if w < 10 or h < 10 or not self.equity_history:
-                return
+            self._stop_chart_anim()
+            ax = self.chart_ax
+            ax.clear()
+            ax.set_facecolor(self.C['card'])
+            self._pulse_marker = None
+            self._pulse_glow = None
 
             points = self.equity_history
-            if len(points) < 2:
+            if not points or len(points) < 2:
+                ax.text(0.5, 0.5, "COLLECTING EQUITY DATA", transform=ax.transAxes,
+                        ha="center", va="center", color=self.C['dim'],
+                        fontsize=8, family="Consolas")
+                ax.set_xticks([]); ax.set_yticks([])
+                for spine in ax.spines.values():
+                    spine.set_visible(False)
+                self.chart_fig.patch.set_facecolor(self.C['card'])
+                self.chart_agg.draw_idle()
                 return
 
             min_val = min(points)
@@ -980,75 +1216,65 @@ class LivePortfolioDashboard:
                 min_val = max_val - 5.0
                 max_val = max_val + 5.0
             else:
-                padding = val_range * 0.12
+                padding = val_range * 0.05
                 min_val -= padding
                 max_val += padding
                 val_range = max_val - min_val
 
-            pad = 28
+            x = list(range(len(points)))
 
-            # Grid lines + right-axis labels
-            for i in range(5):
-                y = pad + (h - 2 * pad) * i / 4
-                self.chart_canvas.create_line(pad, y, w - pad, y, fill="#1c2431", dash=(3, 3))
-                lvl = max_val - val_range * i / 4
-                self.chart_canvas.create_text(w - pad - 4, y, text=f"{lvl:,.0f}",
-                                              fill=self.C['dim'], font=('Consolas', 8),
-                                              anchor=tk.E)
+            ax.set_xlim(0, len(points) - 1)
+            ax.set_ylim(min_val, max_val)
 
-            coords = []
-            for i, val in enumerate(points):
-                x = pad + (w - 2 * pad) * i / (len(points) - 1)
-                y = h - pad - (h - 2 * pad) * (val - min_val) / val_range
-                coords.append((x, y))
+            base_rgba = to_rgba(self.C['green'])
+            grad = np.linspace(0.0, 1.0, 256).reshape(-1, 1)
+            ax.imshow(grad, extent=[0, len(points) - 1, min_val, max_val],
+                      aspect='auto', origin='lower', interpolation='bilinear',
+                      cmap=LinearSegmentedColormap.from_list(
+                          'equity_fill', [(0, (0, 0, 0, 0)), (1, base_rgba)]),
+                      alpha=0.30, zorder=0)
 
-            line_color = self.C['green']
+            ax.step(x, points, where="post", color=self.C['green'], linewidth=2.0,
+                    marker="o", markersize=3.2, markerfacecolor=self.C['card'],
+                    markeredgecolor=self.C['green'], markeredgewidth=1.2, zorder=3)
 
-            # Gradient area fill (horizontal bands, fading upward)
-            if len(coords) > 1:
-                base = (0, 18, 14)      # bottom (dark green tint)
-                fade = '#0b1620'        # top fade target
-                bands = 24
-                band_h = float(h - pad) / bands
-                for b in range(bands):
-                    k = 1.0 - b / max(1, bands)       # 1 at bottom -> 0 at top
-                    rr = int(base[0] * k)
-                    gg = int(base[1] * k)
-                    bb = int(base[2] * k)
-                    fill = '#%02x%02x%02x' % (rr, gg, bb)
-                    y0 = (coords[-1][1] if coords else h - pad) - (bands - b) * band_h
-                    poly = [coords[0][0], h - pad]
-                    for x, y in coords:
-                        px = x
-                        py = y if y > y0 + band_h else y0 + band_h
-                        poly.extend([px, py])
-                    poly.extend([coords[-1][0], h - pad])
-                    self.chart_canvas.create_polygon(poly, fill=fill, outline="")
+            (self._pulse_glow,) = ax.plot([x[-1]], [points[-1]], marker="o", linestyle="none",
+                                          markersize=14, color=self.C['green'],
+                                          alpha=0.30, zorder=4)
+            (self._pulse_marker,) = ax.plot([x[-1]], [points[-1]], marker="o", linestyle="none",
+                                            markersize=5, color=self.C['mint'], zorder=5)
 
-                # Crisp line on top
-                for i in range(len(coords) - 1):
-                    self.chart_canvas.create_line(coords[i][0], coords[i][1],
-                                                  coords[i + 1][0], coords[i + 1][1],
-                                                  fill=line_color, width=2.2, smooth=True)
+            ax.grid(True, linestyle=":", linewidth=0.7, color=self.C['chip'])
+            ax.set_axisbelow(True)
 
-                # Sample hollow dots
-                step = max(1, len(coords) // 12)
-                for i in range(0, len(coords), step):
-                    cx, cy = coords[i]
-                    self.chart_canvas.create_oval(cx - 3, cy - 3, cx + 3, cy + 3,
-                                                  fill=self.C['card'], outline=line_color, width=1.6)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            for side in ('left', 'bottom'):
+                ax.spines[side].set_color(self.C['border'])
+            ax.tick_params(colors=self.C['dim'], labelsize=7)
+            for lbl in ax.get_xticklabels():
+                lbl.set_color(self.C['dim'])
+            for lbl in ax.get_yticklabels():
+                lbl.set_color(self.C['dim'])
+                lbl.set_fontfamily("Consolas")
 
-                # End-point glow
-                ex, ey = coords[-1]
-                self.chart_canvas.create_oval(ex - 6, ey - 6, ex + 6, ey + 6,
-                                              fill=self.C['green'], outline=self.C['green'])
-                self.chart_canvas.create_oval(ex - 2, ey - 2, ex + 2, ey + 2, fill="#ffffff", outline="")
+            ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:,.0f}"))
 
-                # Baseline labels
-                self.chart_canvas.create_text(pad + 5, pad + 10, text=f"${max_val:,.0f}",
-                                              fill=self.C['muted'], font=('Segoe UI', 8, 'bold'), anchor=tk.W)
-                self.chart_canvas.create_text(pad + 5, h - pad - 10, text=f"${min_val:,.0f}",
-                                              fill=self.C['muted'], font=('Segoe UI', 8, 'bold'), anchor=tk.W)
+            span = points[-1] - points[0]
+            trend_up = span >= 0
+            trend_col = self.C['green'] if trend_up else self.C['red']
+            arrow = "▲" if trend_up else "▼"
+            ax.text(0.985, 0.93, f"{arrow} LIVE", transform=ax.transAxes,
+                    color=trend_col, fontsize=7, family="Consolas",
+                    va="top", ha="right", zorder=6)
+            ax.text(0.01, 0.96, f"{max_val:,.0f}", transform=ax.transAxes, color=self.C['muted'],
+                    fontsize=7, family="Consolas", va="top", ha="left", zorder=6)
+            ax.text(0.01, 0.04, f"{min_val:,.0f}", transform=ax.transAxes, color=self.C['muted'],
+                    fontsize=7, family="Consolas", va="bottom", ha="left", zorder=6)
+
+            self.chart_fig.patch.set_facecolor(self.C['card'])
+            self.chart_agg.draw_idle()
+            self._start_chart_anim()
         except Exception as e:
             print(f"Chart draw error: {e}")
 
@@ -1079,17 +1305,17 @@ class LivePortfolioDashboard:
             # 2. Update Live Price
             tick = mt5.symbol_info_tick(symbol)
             if tick:
-                self.live_price_label.config(text=f"LIVE PRICE: {tick.bid:.3f}")
+                self.live_price_label.configure(text=f"LIVE PRICE: {tick.bid:.3f}")
             
             # 3. Calculate Exposure & Floating
             current_floating_pnl = sum(p.profit for p in positions) if positions else 0.0
-            pnl_color = "#00e676" if current_floating_pnl >= 0 else "#ff5252"
-            self.floating_pnl_label.config(text=f"CURRENT PNL: ${current_floating_pnl:,.2f}", fg=pnl_color)
+            pnl_color = self.C['green'] if current_floating_pnl >= 0 else self.C['red']
+            self.floating_pnl_label.configure(text=f"CURRENT PNL: ${current_floating_pnl:,.2f}", text_color=pnl_color)
 
             if not positions:
-                self.net_lots_label.config(text="NET EXPOSURE: 0.00")
+                self.net_lots_label.configure(text="NET EXPOSURE: 0.00")
                 for pips in self.proj_cards:
-                    self.proj_cards[pips].config(text="$0.00", fg="#888888")
+                    self.proj_cards[pips].configure(text="$0.00", text_color=self.C['dim'])
                 return
 
             total_buy_vol = sum(p.volume for p in positions if p.type == mt5.POSITION_TYPE_BUY)
@@ -1097,7 +1323,7 @@ class LivePortfolioDashboard:
             net_vol = total_buy_vol - total_sell_vol 
             
             direction = "BUY (Long)" if net_vol > 0 else "SELL (Short)" if net_vol < 0 else "HEDGED"
-            self.net_lots_label.config(text=f"NET EXPOSURE: {abs(net_vol):.2f} Lots {direction}")
+            self.net_lots_label.configure(text=f"NET EXPOSURE: {abs(net_vol):.2f} Lots {direction}")
             
             # 4. Scenario Projections (Total PnL = Current + Movement Impact)
             # Gold: $1 move (100 pips) = Lots * 100.
@@ -1106,9 +1332,9 @@ class LivePortfolioDashboard:
                 movement_impact = abs(net_vol) * pips # Pips * Vol = Impact in $
                 total_projected_pnl = current_floating_pnl - movement_impact
                 
-                proj_color = "#00e676" if total_projected_pnl >= 0 else "#ff5252"
+                proj_color = self.C['green'] if total_projected_pnl >= 0 else self.C['red']
                 if pips in self.proj_cards:
-                    self.proj_cards[pips].config(text=f"${total_projected_pnl:,.2f}", fg=proj_color)
+                    self.proj_cards[pips].configure(text=f"${total_projected_pnl:,.2f}", text_color=proj_color)
                 
         except Exception as e:
             print(f"Risk calc error: {e}")
@@ -1207,9 +1433,9 @@ class LivePortfolioDashboard:
             if data.get("daily_pivot"):
                 pivot = float(data["daily_pivot"])
 
-            self.ict_labels['status_h4'].config(text=h4_val, fg=h4_col)
-            self.ict_labels['status_trap'].config(text=trap_val, fg=trap_col)
-            self.ict_labels['daily_pivot'].config(text=f"${pivot:.2f}" if pivot > 0 else "--", fg="#58a6ff")
+            self.ict_labels['status_h4'].configure(text=h4_val, text_color=h4_col)
+            self.ict_labels['status_trap'].configure(text=trap_val, text_color=trap_col)
+            self.ict_labels['daily_pivot'].configure(text=f"${pivot:.2f}" if pivot > 0 else "--", text_color=self.C['blue'])
 
             # --- Grid & Strategy Monitor: real-time computed state ---
             strategy = data.get('strategy', 'SYSTEM ACTIVE')
@@ -1227,59 +1453,47 @@ class LivePortfolioDashboard:
             positions = mt5.positions_get(symbol=symbol)
             basket_pnl = sum(p.profit for p in positions) if positions else 0.0
 
-            self.grid_cards['grid_mode'].config(text=strategy)
-            self.grid_cards['current_bias'].config(text=bias)
-            self.grid_cards['current_atr'].config(text=f"{atr:.2f}")
-            self.grid_cards['grid_progress'].config(text=progress)
+            self.grid_cards['grid_mode'].configure(text=strategy)
+            self.grid_cards['current_bias'].configure(text=bias)
+            self.grid_cards['current_atr'].configure(text=f"{atr:.2f}")
+            self.grid_cards['grid_progress'].configure(text=progress)
 
             # Volume flow: from state, else live monitoring state
             vf = data.get('volume_flow') or {}
             if vf.get('score') is not None:
                 arrow = '▲' if vf.get('bullish') else '▼'
                 vcolor = self.C['green'] if vf.get('bullish') else self.C['red']
-                self.grid_cards['volume_flow'].config(text=f"{arrow} {vf['score']:.2f}", fg=vcolor)
+                self.grid_cards['volume_flow'].configure(text=f"{arrow} {vf['score']:.2f}", text_color=vcolor)
             else:
-                self.grid_cards['volume_flow'].config(text="WATCHING", fg=self.C['purple'])
+                self.grid_cards['volume_flow'].configure(text="WATCHING", text_color=self.C['purple'])
 
             # DCA progress bar
             self._draw_dca_bar(level_cnt, max_lvl)
 
-            pnl_col = "#00e676" if basket_pnl >= 0 else "#ff5252"
-            if is_trailing: pnl_col = "#58a6ff"
-            self.grid_cards['peak_val'].config(text=f"${basket_pnl:,.2f}", fg=pnl_col)
+            pnl_col = self.C['green'] if basket_pnl >= 0 else self.C['red']
+            if is_trailing: pnl_col = self.C['blue']
+            self.grid_cards['peak_val'].configure(text=f"${basket_pnl:,.2f}", text_color=pnl_col)
 
             # Safety Level: Spread Guard status OR Trailing Status
             if is_trailing:
-                self.grid_cards['lock_val'].config(text="TRAILING", fg="#58a6ff")
+                self.grid_cards['lock_val'].configure(text="TRAILING", text_color=self.C['blue'])
             else:
                 tick = mt5.symbol_info_tick(symbol)
                 if tick:
                     spread = abs(tick.ask - tick.bid)
                     limit = atr * 0.1
                     if spread > limit:
-                        self.grid_cards['lock_val'].config(text="PAUSED", fg="#ffa726")
+                        self.grid_cards['lock_val'].configure(text="PAUSED", text_color=self.C['orange'])
                     else:
-                        self.grid_cards['lock_val'].config(text="SAFE", fg="#00e676")
+                        self.grid_cards['lock_val'].configure(text="SAFE", text_color=self.C['green'])
         except Exception as e:
             print(f"Grid Status Update error: {e}")
 
     def _draw_dca_bar(self, level_cnt, max_lvl):
         try:
-            self.dca_bar.delete("all")
-            w = self.dca_bar.winfo_width()
-            h = self.dca_bar.winfo_height()
-            if w < 20:
-                return
             max_lvl = max(1, int(max_lvl))
             level_cnt = max(0, int(level_cnt))
-            step = (w - 8) / max_lvl
-            for i in range(max_lvl):
-                x1 = 4 + i * step
-                x2 = x1 + step - 3
-                filled = i < level_cnt
-                self.dca_bar.create_rectangle(
-                    x1, 2, x2, h - 2, fill=self.C['green'] if filled else self.C['border'],
-                    outline=self.C['bg'])
+            self.dca_bar.set(min(1.0, level_cnt / max_lvl))
         except Exception as e:
             print(f"DCA bar error: {e}")
 
@@ -1294,15 +1508,15 @@ class LivePortfolioDashboard:
                 
             new_lines = content[self._last_log_pos:]
             if new_lines:
-                self.log_text.config(state=tk.NORMAL)
+                self.log_text.configure(state="normal")
                 for line in new_lines:
                     tag = "INFO"
                     if "WARNING" in line: tag = "WARNING"
                     elif "ERROR" in line: tag = "ERROR"
-                    self.log_text.insert(tk.END, line + "\n", tag)
+                    self.log_text.insert("end", line + "\n", tag)
                 
-                self.log_text.see(tk.END)
-                self.log_text.config(state=tk.DISABLED)
+                self.log_text.see("end")
+                self.log_text.configure(state="disabled")
                 self._last_log_pos = len(content)
         except Exception as e:
             print(f"Log console update error: {e}")
@@ -1335,7 +1549,7 @@ class LivePortfolioDashboard:
         seconds = elapsed % 60
         time_str = f"{days}D {hours}H {minutes}M {seconds}S"
         if 'season_timer' in self.grid_cards:
-            self.grid_cards['season_timer'].config(text=time_str, fg="#00e676")
+            self.grid_cards['season_timer'].configure(text=time_str, text_color=self.C['green'])
 
         deals = mt5.history_deals_get(from_date, to_date)
         if deals:
@@ -1381,12 +1595,12 @@ class LivePortfolioDashboard:
                     'profit_factor': profit_factor, 'max_drawdown': max_dd_pct
                 }
                 
-                self.metric_labels['total_trades'].config(text=str(len(profits)))
-                self.metric_labels['win_rate'].config(text=f"{win_rate:.1%}")
-                pnl_color = "#00ff00" if total_pnl >= 0 else "#ff5252"
-                self.metric_labels['total_pnl'].config(text=f"${total_pnl:,.2f}", foreground=pnl_color)
-                self.metric_labels['profit_factor'].config(text=f"{profit_factor:.2f}")
-                self.metric_labels['max_drawdown'].config(text=f"{max_dd_pct:.2f}%")
+                self.metric_labels['total_trades'].configure(text=str(len(profits)))
+                self.metric_labels['win_rate'].configure(text=f"{win_rate:.1%}")
+                pnl_color = self.C['green'] if total_pnl >= 0 else self.C['red']
+                self.metric_labels['total_pnl'].configure(text=f"${total_pnl:,.2f}", text_color=pnl_color)
+                self.metric_labels['profit_factor'].configure(text=f"{profit_factor:.2f}")
+                self.metric_labels['max_drawdown'].configure(text=f"{max_dd_pct:.2f}%")
             else:
                 self._reset_labels_to_zero()
         else:
@@ -1394,11 +1608,11 @@ class LivePortfolioDashboard:
 
     def _reset_labels_to_zero(self):
         """Helper to ensure UI labels show zeroed state when no history exists"""
-        self.metric_labels['total_trades'].config(text="0")
-        self.metric_labels['win_rate'].config(text="0.0%")
-        self.metric_labels['total_pnl'].config(text="$0.00", foreground="#00e676")
-        self.metric_labels['profit_factor'].config(text="0.00")
-        self.metric_labels['max_drawdown'].config(text="0.00%")
+        self.metric_labels['total_trades'].configure(text="0")
+        self.metric_labels['win_rate'].configure(text="0.0%")
+        self.metric_labels['total_pnl'].configure(text="$0.00", text_color=self.C['green'])
+        self.metric_labels['profit_factor'].configure(text="0.00")
+        self.metric_labels['max_drawdown'].configure(text="0.00%")
         self.metrics = {
             'total_trades': 0, 'win_rate': 0.0, 'total_pnl': 0.0,
             'profit_factor': 0.0, 'max_drawdown': 0.0
@@ -1410,6 +1624,15 @@ class LivePortfolioDashboard:
 
     def _on_closing(self):
         self.running = False
+        for job in (self._flash_job, self._dot_job, self._ticker_job, self._chart_resize_job, self._chart_anim_job):
+            if job is not None:
+                try:
+                    self.root.after_cancel(job)
+                except Exception:
+                    pass
+        self._flash_job = self._dot_job = self._ticker_job = self._chart_resize_job = self._chart_anim_job = None
+        self._pulse_marker = None
+        self._pulse_glow = None
         self.root.destroy()
 
     def run(self):

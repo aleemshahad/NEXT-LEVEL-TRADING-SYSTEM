@@ -52,6 +52,7 @@ class LiveTradingSystem:
         self._current_biases = {}
         self.basket_trailing = {}
         self.ict_trailing: Dict[str, dict] = {}
+        self.ict_tp_levels: Dict[str, dict] = self._load_ict_tp_state()
         self._last_collision_log: Dict[str, float] = {}
         
         self.discord = DiscordNotifier()
@@ -68,6 +69,113 @@ class LiveTradingSystem:
 
     def _circuit_cooldown_sec(self) -> float:
         return float(self.config.get('risk', {}).get('circuit_breaker_cooldown_min', 120)) * 60.0
+
+    def _ict_tp_state_path(self) -> Path:
+        return Path("logs/ict_tp_levels.json")
+
+    def _load_ict_tp_state(self) -> Dict[str, dict]:
+        """Load persisted ICT TP1/TP2/TP3 plans keyed by position ticket"""
+        try:
+            p = self._ict_tp_state_path()
+            if p.exists():
+                with open(p, 'r', encoding='utf-8') as f:
+                    return json.load(f) or {}
+        except Exception as e:
+            logger.error(f"Failed to load ICT TP state: {e}")
+        return {}
+
+    def _save_ict_tp_state(self) -> None:
+        try:
+            p = self._ict_tp_state_path()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            with open(p, 'w', encoding='utf-8') as f:
+                json.dump(self.ict_tp_levels, f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save ICT TP state: {e}")
+
+    def _register_ict_tp_levels(self, ticket: int, symbol: str, action: str,
+                                entry_price: float, tp_levels: Dict) -> None:
+        """Persist TP1/TP2/TP3 for a freshly opened ICT position"""
+        try:
+            if not tp_levels: return
+            levels = {}
+            for name in ('tp1', 'tp2', 'tp3'):
+                val = float(tp_levels.get(name) or 0)
+                if val > 0:
+                    levels[name] = self.broker.round_price(symbol, val)
+            if not levels: return
+            self.ict_tp_levels[str(ticket)] = {
+                'symbol': symbol,
+                'action': action,
+                'entry': self.broker.round_price(symbol, float(entry_price)),
+                'levels': levels,
+                'hit': [],
+            }
+            self._save_ict_tp_state()
+            plan = ", ".join(f"{k.upper()}={v}" for k, v in levels.items())
+            logger.info(f"🎯 ICT TP plan #{ticket}: {plan}")
+        except Exception as e:
+            logger.error(f"Failed to register ICT TP levels: {e}")
+
+    def _prune_ict_tp_state(self, live_tickets: set) -> None:
+        stale = [t for t in self.ict_tp_levels if t not in live_tickets]
+        if stale:
+            for t in stale:
+                del self.ict_tp_levels[t]
+            self._save_ict_tp_state()
+
+    def _manage_ict_tp_exits(self, symbol: str, direction: str,
+                             ict_positions: List[Dict], current_price: float) -> int:
+        """Close slices at TP1/TP2/TP3; move SL to breakeven after TP1"""
+        ict_cfg = self.config.get('ict', {})
+        if not ict_cfg.get('manage_partial_exits', True): return 0
+
+        fractions = {
+            'tp1': float(ict_cfg.get('tp1_close_pct', 40.0)) / 100.0,
+            'tp2': float(ict_cfg.get('tp2_close_pct', 30.0)) / 100.0,
+            'tp3': float(ict_cfg.get('tp3_close_pct', 30.0)) / 100.0,
+        }
+        move_sl_be = bool(ict_cfg.get('move_sl_to_breakeven', True))
+        info = self.broker.get_symbol_info(symbol)
+        vmin = getattr(info, 'volume_min', 0.01) or 0.01
+        closed = 0
+
+        for p in ict_positions:
+            entry = self.ict_tp_levels.get(str(p['ticket']))
+            if not entry or entry.get('symbol') != symbol: continue
+            hit = entry.setdefault('hit', [])
+            remaining = p['volume']
+            dirty = False
+
+            for name in ('tp1', 'tp2', 'tp3'):
+                level = entry.get('levels', {}).get(name)
+                if not level or name in hit: continue
+                reached = current_price >= level if direction == 'BUY' else current_price <= level
+                if not reached: continue
+
+                if name == 'tp3':
+                    if self.broker.close_position(symbol, p['ticket']):
+                        logger.info(f"🎯 ICT TP3 HIT #{p['ticket']} @ {level} | full close")
+                        hit.append(name); dirty = True; closed += 1
+                    continue
+
+                slice_vol = self.broker.normalize_volume(symbol, remaining * fractions[name])
+                if (remaining - slice_vol) < vmin - 1e-8:
+                    if self.broker.close_position(symbol, p['ticket']):
+                        logger.info(f"🎯 ICT {name.upper()} HIT #{p['ticket']} @ {level} | full close (slice below min lot)")
+                        hit.append(name); dirty = True; closed += 1
+                    continue
+
+                if self.broker.close_partial(symbol, p['ticket'], slice_vol):
+                    logger.info(f"🎯 ICT {name.upper()} HIT #{p['ticket']} @ {level} | closed {slice_vol} of {remaining}")
+                    hit.append(name); dirty = True; closed += 1
+                    remaining = round(remaining - slice_vol, 8)
+                    if name == 'tp1' and move_sl_be:
+                        if self.broker.modify_sl_tp(p['ticket'], sl=entry.get('entry', 0), tp=p.get('tp', 0) or 0):
+                            logger.info(f"🔒 SL moved to breakeven #{p['ticket']}")
+
+            if dirty: self._save_ict_tp_state()
+        return closed
 
     def _save_reset_time(self, timestamp):
         try:
@@ -274,9 +382,18 @@ class LiveTradingSystem:
             else:
                 size = self.risk_manager.calculate_position_size(acc.balance, ai_analysis['entry_price'], ai_analysis['stop_loss'], symbol)
 
-            res = self.broker.place_order(symbol=symbol, action=ai_analysis['action'], volume=size, price=ai_analysis['entry_price'], stop_loss=sl_price, take_profit=ai_analysis['take_profit'], use_limit=ai_analysis.get('use_limit', False))
+            tp_levels = ai_analysis.get('tp_levels', {}) or {}
+            manage_partials = bool(self.config.get('ict', {}).get('manage_partial_exits', True))
+
+            tp_price = ai_analysis.get('take_profit', 0)
+            if manage_partials and float(tp_levels.get('tp3') or 0) > 0:
+                tp_price = float(tp_levels['tp3'])
+
+            res = self.broker.place_order(symbol=symbol, action=ai_analysis['action'], volume=size, price=ai_analysis['entry_price'], stop_loss=sl_price, take_profit=tp_price, use_limit=ai_analysis.get('use_limit', False))
             if res['success']:
                 self.trades_today += 1
+                if manage_partials:
+                    self._register_ict_tp_levels(res.get('ticket'), symbol, ai_analysis['action'], ai_analysis['entry_price'], tp_levels)
                 self.ai_brain.remember_trade({'symbol': symbol, 'action': ai_analysis['action'], 'entry_price': ai_analysis['entry_price'], 'confidence': ai_analysis['confidence']})
         except Exception as e: logger.error(f"Trade execution error: {e}")
     
@@ -360,7 +477,6 @@ class LiveTradingSystem:
 
                 count = len(grid_positions)
 
-<<<<<<< HEAD
                 # USD profit target tiered by position count
                 if count <= 3: min_p = target_usd
                 elif count <= 5: min_p = target_usd * 0.6
@@ -370,25 +486,14 @@ class LiveTradingSystem:
                 if count <= 3: dist = atr * 0.8
                 elif count <= 5: dist = atr * 0.5
                 else: dist = atr * 0.1
-=======
-                if count <= 3: dist = atr * 0.8; min_p = target_usd
-                elif count <= 5: dist = atr * 0.5; min_p = target_usd * 0.6
-                else: dist = atr * 0.1; min_p = target_usd * 0.3
-
->>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
                 target_p = waep + dist if direction == 'BUY' else waep - dist
 
                 basket_pnl = sum(p['profit'] + p.get('swap', 0) for p in grid_positions)
-<<<<<<< HEAD
-
                 # FIX: Hard exit ONLY on USD profit target. No ATR-based early exit.
                 at_target = basket_pnl >= min_p
 
                 # Trailing activates earlier (70% of min_p) to protect profits
                 trailing_threshold = min_p * 0.7
-=======
-                at_target = (direction == 'BUY' and cp >= target_p) or (direction == 'SELL' and cp <= target_p) or (basket_pnl >= min_p)
->>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
 
                 if symbol not in self.basket_trailing: self.basket_trailing[symbol] = {}
                 trailing = self.basket_trailing[symbol].get(direction, {'active': False, 'peak': 0.0})
@@ -396,7 +501,6 @@ class LiveTradingSystem:
                 should_exit = False
                 trailing_enabled = self.config.get('grid', {}).get('trailing_enabled', True)
 
-<<<<<<< HEAD
                 # Activate trailing when PnL hits 70% of target
                 if not trailing['active'] and trailing_enabled and basket_pnl >= trailing_threshold:
                     logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
@@ -416,21 +520,6 @@ class LiveTradingSystem:
                 elif not trailing['active'] and basket_pnl < 0:
                     # If no trailing and already underwater, also exit (don't hold losers)
                     pass
-=======
-                if at_target:
-                    if not trailing_enabled:
-                        logger.info(f"🎯 HARD EXIT (Trailing Off) for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
-                        should_exit = True
-                    else:
-                        if not trailing['active']:
-                            logger.info(f"✨ TRAILING ACTIVATED for {symbol} {direction} | PnL: ${basket_pnl:.2f}")
-                            trailing = {'active': True, 'peak': basket_pnl}
-                            self.basket_trailing[symbol][direction] = trailing
-                            if symbol in self.grid_manager.active_grids: self.grid_manager.active_grids[symbol]['is_trailing'] = True; self.grid_manager._save_state()
-                        if basket_pnl > trailing['peak']: trailing['peak'] = basket_pnl; self.basket_trailing[symbol][direction] = trailing
-                        if basket_pnl < trailing['peak'] * 0.85 or basket_pnl < min_p * 0.5: should_exit = True
-                elif trailing['active'] and basket_pnl < min_p * 0.5: should_exit = True
->>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
 
                 # Store target info for dashboard
                 if symbol in self.grid_manager.active_grids:
@@ -447,41 +536,52 @@ class LiveTradingSystem:
                     if symbol in self.grid_manager.active_grids: del self.grid_manager.active_grids[symbol]; self.grid_manager._save_state()
                     if symbol in self.basket_trailing and direction in self.basket_trailing[symbol]: del self.basket_trailing[symbol][direction]
 
-            if not combined_exit:
-                for ict_positions in [buy_ict, sell_ict]:
-                    if not ict_positions: continue
-                    symbol = ict_positions[0]['symbol']
-                    direction = 'BUY' if ict_positions[0]['type'] == 'BUY' else 'SELL'
-                    key = f"{symbol}_{direction}"
+            all_ict = buy_ict + sell_ict
+            self._prune_ict_tp_state({str(p['ticket']) for p in all_ict})
 
-                    ict_pnl = sum(p['profit'] + p.get('swap', 0) for p in ict_positions)
-                    tick = mt5.symbol_info_tick(symbol)
-                    cp = (tick.bid if direction == 'BUY' else tick.ask) if tick else ict_positions[0]['price_open']
+            for ict_positions in [buy_ict, sell_ict]:
+                if not ict_positions: continue
+                symbol = ict_positions[0]['symbol']
+                direction = 'BUY' if ict_positions[0]['type'] == 'BUY' else 'SELL'
 
-                    trailing_key = f"{symbol}_{direction}"
-                    if trailing_key not in self.ict_trailing:
-                        self.ict_trailing[trailing_key] = {'active': False, 'peak': 0.0}
-                    ict_trail = self.ict_trailing[trailing_key]
+                ict_pnl = sum(p['profit'] + p.get('swap', 0) for p in ict_positions)
+                tick = mt5.symbol_info_tick(symbol)
+                cp = (tick.bid if direction == 'BUY' else tick.ask) if tick else ict_positions[0]['price_open']
 
-                    ict_target = self.config.get('risk', {}).get('global_profit_target_usd', 100) * 0.1
-                    ict_min_p = self.config.get('grid', {}).get('profit_target_usd', 3.0) * 0.5
+                tp_closed = self._manage_ict_tp_exits(symbol, direction, ict_positions, cp)
+                if tp_closed:
+                    self.trades_today += tp_closed
+                    self.ai_brain.remember_trade({
+                        'symbol': symbol, 'action': direction, 'entry_price': ict_positions[0]['price_open'],
+                        'confidence': 0, 'exit_reason': 'TP_LADDER'
+                    })
 
-                    ict_should_exit = False
-                    if ict_pnl >= ict_min_p:
-                        if not ict_trail['active']:
-                            logger.info(f"✨ ICT TRAILING ON for {symbol} {direction} | PnL: ${ict_pnl:.2f}")
-                            ict_trail = {'active': True, 'peak': ict_pnl}
-                            self.ict_trailing[trailing_key] = ict_trail
-                        if ict_pnl > ict_trail['peak']: ict_trail['peak'] = ict_pnl; self.ict_trailing[trailing_key] = ict_trail
-                        if ict_pnl < ict_trail['peak'] * 0.80: ict_should_exit = True
-                    elif ict_trail['active'] and ict_pnl < ict_min_p * 0.3:
-                        ict_should_exit = True
+                has_tp_plan = any(str(p['ticket']) in self.ict_tp_levels for p in ict_positions)
+                if combined_exit or has_tp_plan: continue
 
-                    if ict_should_exit:
-                        logger.info(f"🎯 ICT EXIT for {symbol} {direction} | PnL: ${ict_pnl:.2f}")
-                        for p in ict_positions: self.broker.close_position(symbol, p['ticket'])
-                        self.trades_today += len(ict_positions)
-                        del self.ict_trailing[trailing_key]
+                trailing_key = f"{symbol}_{direction}"
+                if trailing_key not in self.ict_trailing:
+                    self.ict_trailing[trailing_key] = {'active': False, 'peak': 0.0}
+                ict_trail = self.ict_trailing[trailing_key]
+
+                ict_min_p = self.config.get('grid', {}).get('profit_target_usd', 3.0) * 0.5
+
+                ict_should_exit = False
+                if ict_pnl >= ict_min_p:
+                    if not ict_trail['active']:
+                        logger.info(f"✨ ICT TRAILING ON for {symbol} {direction} | PnL: ${ict_pnl:.2f}")
+                        ict_trail = {'active': True, 'peak': ict_pnl}
+                        self.ict_trailing[trailing_key] = ict_trail
+                    if ict_pnl > ict_trail['peak']: ict_trail['peak'] = ict_pnl; self.ict_trailing[trailing_key] = ict_trail
+                    if ict_pnl < ict_trail['peak'] * 0.80: ict_should_exit = True
+                elif ict_trail['active'] and ict_pnl < ict_min_p * 0.3:
+                    ict_should_exit = True
+
+                if ict_should_exit:
+                    logger.info(f"🎯 ICT EXIT for {symbol} {direction} | PnL: ${ict_pnl:.2f}")
+                    for p in ict_positions: self.broker.close_position(symbol, p['ticket'])
+                    self.trades_today += len(ict_positions)
+                    del self.ict_trailing[trailing_key]
         except Exception as e: logger.error(f"Monitoring error: {e}")
     
     def display_status(self):

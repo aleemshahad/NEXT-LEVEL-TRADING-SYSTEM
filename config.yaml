@@ -2,68 +2,77 @@
 # NEXT LEVEL TRADING - CONFIGURATION
 # ========================================
 
-# 🟢 GLOBAL SETTINGS
-symbols: ["XAUUSDm"] #thesymbol to trade (MT5 naming)
-strategy: "Hybrid Mode"  # Locked to High-Performance G-Channel + Today's Trend Alignment Grid
-timeframe: "M15"  # Options: M1, M5, M15, M30, H1
+# GLOBAL SETTINGS
+symbols: ["XAUUSDm"]
+strategy: "Hybrid Mode"
+timeframe: "M15"
 
-# 🛡️ RISK MANAGEMENT
+# RISK MANAGEMENT
 risk:
-  max_risk_per_trade: 0.02 # 2% per trade
-  max_daily_loss: 0.05     # 5% daily drawdown limit
-  max_drawdown: 0.50       # 50% hard account drawdown limit
-
-  global_profit_target_usd: 100 # EXIT ALL when total profit hits this
-
-  # 🚨 CIRCUIT BREAKER (emergency floating-loss protection)
-  # Martingale/DCA recovers in normal ranges; this only triggers on the rare
-  # black-swan / sustained-trend case. Closes everything + pauses the bot.
-  circuit_breaker_loss_pct: 5.0     # % equity floating loss that triggers the close
-  circuit_breaker_cooldown_min: 120 # minutes paused after a breach
-
-  # 🔴 STOP LOSS TOGGLE
-  # true  = SL lagega har ICT/SMC trade pe (ATR-based)
-  # false = SL nahi lagega (Grid basket PnL manage karega)
+  max_risk_per_trade: 0.02
+  max_daily_loss: 0.05
+  max_drawdown: 0.50
+  global_profit_target_usd: 100
+  circuit_breaker_loss_pct: 5.0
+  circuit_breaker_cooldown_min: 120
   use_stop_loss: false
 
-# 📈 GRID / DCA SETTINGS
+# GRID / DCA SETTINGS
 grid:
-  mode: BOTH # Options: BOTH, BUY_ONLY, SELL_ONLY
-  
+  mode: BOTH
   lot_size: 0.05
-  lot_growth: 1.3          # lot multiplier per DCA level (1.0 = flat size)
-  max_order_lot: 0.20      # ceiling for a single grid order
-  max_total_exposure: 0.20 # total committed volume cap (positions + pendings)
-<<<<<<< HEAD
-  profit_target_usd: 10 # Target profit to close a grid basket
-=======
-  profit_target_usd: 5 # Target profit to close a grid basket
->>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
-  profit_target_pct: 0.25 # Relative profit target
-  trailing_enabled: false # true = enable trailing, false = disable trailing
-  volume_flow_filter: true # gate basket direction with volume flow (OBV + surge) before G-Channel entry
-  flow_surge_threshold: 1.5 # latest candle volume >= this x its 20-bar avg to count as a conviction surge
-  flow_obv_short: 5 # OBV short MA for flow trend
-  flow_obv_long: 20 # OBV long MA for flow trend
-  flow_min_score: 0.6 # entry chahiye to min flow score (0.6 = OBV must align; surge optional boost). 0 = sirf direction check
+  lot_growth: 1.3
+  max_order_lot: 0.20
+  max_total_exposure: 0.20
+  profit_target_usd: 10
+  profit_target_pct: 0.25
+  trailing_enabled: false
+  volume_flow_filter: true
+  flow_surge_threshold: 1.5
+  flow_obv_short: 5
+  flow_obv_long: 20
+  flow_min_score: 0.6
 
-# 📐 FIBONACCI-ANCHORED DCA ENGINE
-# Replaces the legacy ATR-pip / fixed-dollar floor DCA (spacing, level_distances_usd,
-# floor_reference_price, use_d1_pivot, max_dca_levels, batch_size) with structural
-# swing-based Fibonacci DCA levels + M1 micro-rejection confluence.
+# FIBONACCI-ANCHORED DCA ENGINE
 fib_dca:
-  enabled: true             # false = DCA off entirely (Layer 0 only)
-  lookback_bars: 40         # M15 closed bars scanned to detect the impulsive swing
-  max_open_layers: 3        # max DCA layers on top of the initial trade (50% / 61.8% / 78.6%)
-  proximity_tolerance: 0.40 # ± price tolerance zone around the fib target that counts as a "tap"
-  body_ratio_limit: 0.70    # M1 candle body ratio that blocks a DCA against momentum (knife filter)
-  wick_ratio_min: 0.20      # required bottom (BUY) / top (SELL) wick share of the M1 range for rejection
-  freeze_on_gchannel_flip: true # freeze DCA if M15 G-Channel flips against the basket
+  enabled: true
+  lookback_bars: 40
+  max_open_layers: 3
+  proximity_tolerance: 0.40
+  body_ratio_limit: 0.70
+  wick_ratio_min: 0.20
+  freeze_on_gchannel_flip: true
 
-# 🕒 NEWS SETTINGS
+# NEWS SETTINGS
 news:
-  block_window_min: 30  # Minutes BEFORE high-impact USD news to block trading (post = half this value, min 15)
-  download_interval_h: 1 # Refresh news data every X hours
+  block_window_min: 30
+  download_interval_h: 1
 
+# ICT SMART MONEY CONFIGURATION
+ict:
+  enabled: true
+  risk_percent: 0.5
+  lookback_bars: 50
+  choch_lookback: 20
+  ob_lookback: 30
+  fvg_lookback: 30
+  min_confluence: 3
+  kill_zones:
+    london:
+      start: "02:00"
+      end: "05:00"
+    new_york:
+      start: "07:00"
+      end: "10:00"
+  sweep_min_wick_ratio: 0.3
+  sweep_confirm_bars: 2
+  sl_atr_mult: 1.5
+  tp_min_risk_reward: 2.0
+  tp_prefer_rr: 3.0
 
-
+  # TP LADDER — code-managed partial exits (levels come from trading_brain)
+  manage_partial_exits: true
+  tp1_close_pct: 40.0
+  tp2_close_pct: 30.0
+  tp3_close_pct: 30.0
+  move_sl_to_breakeven: true

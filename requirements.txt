@@ -7,3 +7,5 @@ python-dotenv
 requests
 matplotlib
 plotly
+customtkinter
+pywinstyles

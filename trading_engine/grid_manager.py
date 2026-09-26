@@ -53,6 +53,7 @@ class GridManager:
         self.last_pivots: Dict[str, dict] = {}
         self.last_flow: Dict[str, dict] = {}
         self.grid_frozen: Dict[str, str] = {}
+        self.last_ict_status: Dict[str, dict] = {}  # Store last ICT analysis per symbol
 
         self.TIMEFRAME_MAP = {
             "M1": mt5.TIMEFRAME_M1,
@@ -80,6 +81,10 @@ class GridManager:
                 flw = self.last_flow.get(sym)
                 if flw:
                     self.active_grids[sym]["volume_flow"] = flw
+                # Save ICT status from last analysis
+                ict = self.last_ict_status.get(sym)
+                if ict:
+                    self.active_grids[sym]["ict_status"] = ict
             with open(self.state_file, "w", encoding="utf-8") as f:
                 json.dump(self.active_grids, f, indent=2)
         except Exception as e:
@@ -480,6 +485,46 @@ class GridManager:
                     signals.append("GCHANNEL_SLOPE_DOWN")
                     details["slope"] = round(gavg_slope, 2)
 
+            # Signal 7: Liquidity Sweep Detection (ICT Smart Money)
+            # Detects price wicking beyond swing points then closing back inside
+            if len(df_closed) >= 10:
+                highs = df_closed["high"].values
+                lows = df_closed["low"].values
+                closes = df_closed["close"].values
+                n = len(df_closed)
+                
+                # Check for BUY-side sweep (wick above recent high, close back inside)
+                for i in range(n - 3):
+                    current_high = float(highs[i])
+                    current_close = float(closes[i])
+                    prev_highs = highs[:i]
+                    if len(prev_highs) > 0:
+                        recent_high = prev_highs.max()
+                        # Wick must extend beyond previous high
+                        if current_high > recent_high * 1.001:
+                            # Next bar must close below the swept high (confirmation)
+                            if i + 1 < n and float(closes[i + 1]) < current_high:
+                                signals.append("LIQUIDITY_SWEEP")
+                                details["sweep_side"] = "BUY_SIDE"
+                                details["sweep_level"] = round(float(recent_high), 2)
+                                break
+                
+                # Check for SELL-side sweep (wick below recent low, close back inside)
+                for i in range(n - 3):
+                    current_low = float(lows[i])
+                    current_close = float(closes[i])
+                    prev_lows = lows[:i]
+                    if len(prev_lows) > 0:
+                        recent_low = prev_lows.min()
+                        # Wick must extend below previous low
+                        if current_low < recent_low * 0.999:
+                            # Next bar must close above the swept low (confirmation)
+                            if i + 1 < n and float(closes[i + 1]) > current_low:
+                                signals.append("LIQUIDITY_SWEEP")
+                                details["sweep_side"] = "SELL_SIDE"
+                                details["sweep_level"] = round(float(recent_low), 2)
+                                break
+
             score = len(signals)
             if score >= 5:
                 stage = "EXTENDED"
@@ -513,7 +558,12 @@ class GridManager:
             return False
 
         if stage == "WARNING":
-            logger.info(f"⚠️ [SHIFT WARNING] {len(shift['signals'])} signals for {symbol}: {shift['signals']}")
+            # Rate limit: log WARNING stage at most once per 60 seconds
+            _warn_key = f"{symbol}_warning"
+            _now = time.time()
+            if _now - self._last_grid_log.get(_warn_key, 0) > 60:
+                logger.info(f"⚠️ [SHIFT WARNING] {len(shift['signals'])} signals for {symbol}: {shift['signals']}")
+                self._last_grid_log[_warn_key] = _now
             return False
 
         if stage == "CONFIRMED":
@@ -566,6 +616,7 @@ class GridManager:
     async def update(self, symbol: str, current_price: float, bias: str, balance: float):
         """Processes tick update, manages trailing pending orders, and adjusts basket TP."""
         try:
+            now_t = time.time()  # Define early for all downstream code
             tf = self.TIMEFRAME_MAP.get(self.time_frame_str, mt5.TIMEFRAME_M5)
             rates = mt5.copy_rates_from_pos(symbol, tf, 0, 150)
 
@@ -663,11 +714,15 @@ class GridManager:
                         flow_dir_ok = flow["bullish"] if gchannel_bullish else not flow["bullish"]
                         if not flow_dir_ok or flow["score"] < self.flow_min_score:
                             reason = ("direction mismatch" if not flow_dir_ok else f"low conviction (score {flow['score']:.2f} < {self.flow_min_score:.2f})")
-                            logger.info(
-                                f"⏳ [Flow Gate] {symbol} G-Channel {'BULLISH' if gchannel_bullish else 'BEARISH'} "
-                                f"but volume flow {'BEARISH' if gchannel_bullish else 'BULLISH'} "
-                                f"(score {flow['score']:.2f}, surge x{flow['surge_ratio']:.2f}) — blocked: {reason}"
-                            )
+                            # Rate limit: log once per 30 seconds
+                            _flow_key = f"{symbol}_flow"
+                            if now_t - self._last_grid_log.get(_flow_key, 0) > 30:
+                                logger.info(
+                                    f"⏳ [Flow Gate] {symbol} G-Channel {'BULLISH' if gchannel_bullish else 'BEARISH'} "
+                                    f"but volume flow {'BEARISH' if gchannel_bullish else 'BULLISH'} "
+                                    f"(score {flow['score']:.2f}, surge x{flow['surge_ratio']:.2f}) — blocked: {reason}"
+                                )
+                                self._last_grid_log[_flow_key] = now_t
                             self._save_state()
                             return
 
@@ -705,6 +760,8 @@ class GridManager:
                     # Calculate price move needed to hit profit_target_usd with current total volume
                     target_usd = self.config.get('grid', {}).get('profit_target_usd', 10)
                     total_vol = sum(p['volume'] for p in active_pos) if active_pos else self.base_lot
+                    # WAEP = Weighted Average Entry Price of all positions
+                    waep = sum(p['price_open'] * p['volume'] for p in active_pos) / total_vol if total_vol > 0 else current_price
                     # Contract size: Gold=100oz, Crypto=~1 unit, Silver=5000oz, Forex=100000
                     if 'XAU' in symbol or 'XAG' in symbol:
                         contract_size = 100 if 'XAU' in symbol else 5000
@@ -729,16 +786,20 @@ class GridManager:
                     # D1 pivots still published for the shared dashboard state bridge
                     self.last_pivots[symbol] = self._get_daily_pivots(symbol)
 
-<<<<<<< HEAD
                     # --- MARKET SHIFT DETECTION (proactive multi-signal) ---
                     shift = self._detect_market_shift(symbol, active_type, rates, df, df_closed)
                     if shift["stage"] != "NONE":
-                        logger.info(
-                            f"📡 [SHIFT DETECTED] {symbol} | Stage: {shift['stage']} | "
-                            f"Signals: {shift['signals']} | Score: {shift['score']}/6"
-                        )
-                        # Always clear frozen state for fresh decision
-                        self.grid_frozen.pop(symbol, None)
+                        _shift_key = f"{symbol}_shift"
+                        _last_shift = self._last_grid_log.get(_shift_key, 0)
+                        # Log shift detection at most once per 60 seconds
+                        if now_t - _last_shift > 60:
+                            logger.info(
+                                f"📡 [SHIFT DETECTED] {symbol} | Stage: {shift['stage']} | "
+                                f"Signals: {shift['signals']} | Score: {shift['score']}/6"
+                            )
+                            self._last_grid_log[_shift_key] = now_t
+                        # Store stage for adaptive response
+                        self.grid_frozen[symbol] = shift["stage"]
 
                         # Adaptive response based on shift stage
                         response_taken = self._adaptive_response(
@@ -746,8 +807,7 @@ class GridManager:
                         )
                         if response_taken:
                             return  # Response handled the position; exit this cycle
-
-                    # --- STRUCTURAL INVALIDATION + DCA (if no shift or WARNING only) ---
+                    m15_df = self._get_m15_closed_df(symbol)
                     if self.fib_freeze_on_flip and m15_df is not None and len(m15_df) >= 20:
                         try:
                             m15_ctx = self._add_gchannel_indicators(m15_df.copy())
@@ -781,44 +841,6 @@ class GridManager:
                                         )
                         except Exception as e:
                             logger.debug(f"M15 flip check failed for {symbol}: {e}")
-=======
-                    m15_df = self._get_m15_closed_df(symbol)
-
-                    # M15 G-Channel flip guard -> FROZEN (no averaging into a flipped structure)
-                    frozen = False
-                    if self.fib_freeze_on_flip and m15_df is not None and len(m15_df) >= 20:
-                        try:
-                            m15_ctx = self._add_gchannel_indicators(m15_df.copy())
-                            m15_bull = bool(m15_ctx["gchannel_bullish"].iloc[-1])
-                            frozen = (active_type == "BUY" and not m15_bull) or (active_type == "SELL" and m15_bull)
-                        except Exception as e:
-                            logger.debug(f"M15 flip check failed for {symbol}: {e}")
-
-                    if frozen:
-                        self.grid_frozen[symbol] = "FROZEN"
-                        logger.info(
-                            f"🧊 [FROZEN] {symbol} M15 G-Channel flipped against {active_type} basket — no averaging."
-                        )
-                        self._save_state()
-                    else:
-                        self.grid_frozen.pop(symbol, None)
-                        # Structural invalidation: price beyond 100% of the swing -> freeze DCA layers
-                        swing = self._get_swing_range(m15_df)
-                        if swing:
-                            if (active_type == "BUY" and current_price < swing["swing_low"]) or \
-                               (active_type == "SELL" and current_price > swing["swing_high"]):
-                                self.grid_frozen[symbol] = "FROZEN"
-                                logger.info(
-                                    f"🧊 [FROZEN] {symbol} price {current_price:.2f} broke the 100% swing "
-                                    f"({'swing_low' if active_type == 'BUY' else 'swing_high'}) — no blind layers."
-                                )
-                                self._save_state()
-                            else:
-                                await self._try_place_dca_layer(
-                                    symbol, active_type, current_price, atr, now_t, magic,
-                                    active_pos, grid_open_vol
-                                )
->>>>>>> d4311f4dd10b349a4361e53fe24657ccbf86c61b
                 return
 
             # -------------------------------------------------------------
