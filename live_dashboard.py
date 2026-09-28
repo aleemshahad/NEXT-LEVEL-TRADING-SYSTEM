@@ -17,7 +17,6 @@ from dotenv import load_dotenv
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import FuncFormatter
-from matplotlib.colors import LinearSegmentedColormap, to_rgba
 
 # Load environment variables
 load_dotenv()
@@ -56,10 +55,23 @@ class LivePortfolioDashboard:
         self.equity_history = self._load_chart_history() # Load persistent history
         self._last_chart_append = 0
         self._chart_anim_job = None
-        self._pulse_phase = 0
-        self._pulse_marker = None
-        self._pulse_glow = None
-        self._chart_growing = True
+        self._growing = False
+
+        # --- Enhanced curve state ---
+        self._anim_mode = None          # "grow" | "pulse" | None
+        self._pulse_frame = 0
+        self._grow_n = 0                # display points currently revealed
+        self._grow_from = 0
+        self._grow_to = 0
+        self._grow_frame = 0
+        self._grow_frames = 12
+        self._live_dot = None           # pulsating live-price marker
+        self._live_glow = None          # soft halo behind it
+        self._disp = None               # sampled display series (np array)
+        self._base = 0.0                # start-balance baseline
+        self._ylo = 0.0
+        self._yhi = 0.0
+        self._last_sig = None           # (len, last) used to skip no-op redraws
 
         self._flash_job = None
         self._flash_label = None
@@ -529,6 +541,9 @@ class LivePortfolioDashboard:
         self.trade_history = []
         self.equity_history = [self.start_balance]
         self._save_chart_history()
+        self._grow_n = 0
+        self._last_sig = None
+        self._disp = None
         self.metrics = {
             'total_trades': 0, 'win_rate': 0.0, 'total_pnl': 0.0,
             'profit_factor': 0.0, 'max_drawdown': 0.0
@@ -1092,15 +1107,18 @@ class LivePortfolioDashboard:
                 self.cards['margin_val'].configure(text=margin_pct)
                 
                 # Track Chart History (Persistent & Long-Term)
+                # Equity (balance + floating P&L) keeps the curve alive intraday
+                # instead of a flat realized-balance staircase.
                 now = time.time()
                 if not self.equity_history:
-                    self.equity_history.append(self.start_balance)
+                    self.equity_history.append(self.start_balance or equity)
                 
-                # Append every 60 seconds OR if balance changed significantly
+                # Append every ~5s when equity moved, else heartbeat every 60s
                 last_point = self.equity_history[-1]
-                if now - self._last_chart_append > 60 or abs(balance - last_point) > 0.01:
-                    self.equity_history.append(balance)
-                    if len(self.equity_history) > 200: self.equity_history.pop(0)
+                delta_sufficient = abs(equity - last_point) > 0.005
+                if (now - self._last_chart_append > 5 and delta_sufficient) or now - self._last_chart_append > 60:
+                    self.equity_history.append(round(equity, 2))
+                    if len(self.equity_history) > 300: self.equity_history.pop(0)
                     self._last_chart_append = now
                     self._save_chart_history()
 
@@ -1114,7 +1132,7 @@ class LivePortfolioDashboard:
             
             self.cards['drawdown_val'].configure(text=f"${self.session_max_drawdown:,.2f}")
             
-            self._draw_chart()
+            self._draw_chart(animate=True)
             self._update_risk_calculator(positions)
             self._update_positions_tree(positions)
             self._update_full_history()
@@ -1159,122 +1177,224 @@ class LivePortfolioDashboard:
             except Exception:
                 pass
             self._chart_anim_job = None
+        self._anim_mode = None
 
-    def _start_chart_anim(self):
-        self._stop_chart_anim()
-        if self._pulse_marker is None:
-            return
-        self._chart_anim_job = self.root.after(55, self._tick_chart_anim)
+    def _schedule_anim(self, delay_ms, mode):
+        """Cancel any pending anim job and schedule a new one with the given mode."""
+        if self._chart_anim_job is not None:
+            try:
+                self.root.after_cancel(self._chart_anim_job)
+            except Exception:
+                pass
+            self._chart_anim_job = None
+        self._anim_mode = mode
+        self._chart_anim_job = self.root.after(delay_ms, self._tick_anim)
 
-    def _tick_chart_anim(self):
+    def _tick_anim(self):
         self._chart_anim_job = None
+        if not self.running:
+            self._anim_mode = None
+            return
+        mode = self._anim_mode
+        self._anim_mode = None
         try:
-            self._pulse_phase += 1
-            t = (self._pulse_phase % 34) / 34.0
-            wave = (1.0 - math.cos(t * 2.0 * math.pi)) / 2.0
+            if mode == "grow":
+                # Smooth eased reveal of the freshly appended points.
+                self._grow_frame += 1
+                t = self._grow_frame / float(self._grow_frames)
+                ease = 1.0 - (1.0 - t) ** 3  # easeOutCubic
+                n = self._grow_from + int(round((self._grow_to - self._grow_from) * ease))
+                if n >= self._grow_to or self._grow_frame >= self._grow_frames:
+                    n = self._grow_to
+                self._grow_n = n
+                self._render_curve()
+                if n >= self._grow_to:
+                    self._growing = False
+                    self._start_pulse_anim()
+                else:
+                    self._schedule_anim(50, "grow")
+            elif mode == "pulse":
+                self._pulse_frame += 1
+                self._step_pulse_render()
+                self._schedule_anim(72, "pulse")
+        except Exception as e:
+            print(f"Chart anim error: {e}")
+            self._anim_mode = None
+            self._chart_anim_job = None
 
-            if self._pulse_marker is not None:
-                self._pulse_marker.set_markersize(3.4 + wave * 3.2)
-                self._pulse_marker.set_alpha(0.55 + wave * 0.45)
-            if self._pulse_glow is not None:
-                self._pulse_glow.set_markersize(7.0 + wave * 13.0)
-                self._pulse_glow.set_alpha(0.34 * (1.0 - wave))
+    def _start_pulse_anim(self):
+        """Breathing halo on the live dot (continuous but cheap & smooth)."""
+        if self._live_dot is None:
+            return
+        self._schedule_anim(72, "pulse")
 
-            self.chart_agg.draw_idle()
-            self._start_chart_anim()
-        except Exception:
-            self._pulse_marker = None
-            self._pulse_glow = None
+    def _step_pulse_render(self):
+        if self._live_dot is None:
+            self._anim_mode = None
+            return
+        t = (self._pulse_frame % 26) / 26.0
+        wave = (1.0 - math.cos(t * 2.0 * math.pi)) / 2.0
+        if self._live_glow is not None:
+            self._live_glow.set_markersize(9.0 + wave * 12.0)
+            self._live_glow.set_alpha(0.30 * (1.0 - wave * 0.6))
+        if self._live_dot is not None:
+            self._live_dot.set_markersize(4.6 + wave * 1.1)
+        self.chart_agg.draw_idle()
 
-    def _draw_chart(self):
+    def _sample_series(self, points, target=160):
+        """Downsample a long point list to `target` evenly spaced samples,
+        always keeping the very last (live) point intact."""
+        n = len(points)
+        if n <= target:
+            return np.asarray(points, dtype=float)
+        idx = np.linspace(0, n - 1, target).round().astype(int)
+        idx[-1] = n - 1
+        return np.asarray(np.take(points, idx), dtype=float)
+
+    def _render_empty(self):
+        ax = self.chart_ax
+        ax.clear()
+        ax.set_xticks([]); ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.text(0.5, 0.56, "COLLECTING EQUITY DATA", transform=ax.transAxes,
+                ha="center", va="center", color=self.C['dim'], fontsize=8, family="Consolas")
+        ax.text(0.5, 0.44, "appending from MT5 every few seconds", transform=ax.transAxes,
+                ha="center", va="center", color=self.C['chip'], fontsize=6.5, family="Consolas")
+        self.chart_fig.patch.set_facecolor(self.C['card'])
+        self.chart_agg.draw_idle()
+
+    def _render_curve(self):
+        """Professional equity curve: glowing gradient line, area fill to the
+        start-balance baseline, muted grid and a pulsating live dot."""
+        ax = self.chart_ax
+        ax.clear()
+        ax.set_facecolor(self.C['card'])
+        self._live_dot = None
+        self._live_glow = None
+
+        disp = self._disp
+        if disp is None or len(disp) < 2:
+            self._render_empty()
+            return
+
+        n = max(2, min(self._grow_n, len(disp)))
+        xs = np.arange(n, dtype=float)
+        ys = disp[:n]
+
+        ax.set_xlim(0, len(disp) - 1)
+        ax.set_ylim(self._ylo, self._yhi)
+
+        up = ys[-1] >= self._base
+        col = self.C['green'] if up else self.C['red']
+
+        # Start-balance dashed baseline + label
+        ax.axhline(self._base, color=self.C['border'], lw=0.9, ls=(0, (4, 3)), zorder=1)
+        ax.text(0.006, 0.02, f"START ${self._base:,.0f}", transform=ax.transAxes,
+                color=self.C['muted'], fontsize=6.5, family="Consolas",
+                va="bottom", ha="left", zorder=2)
+
+        # Soft area fill under the curve down to the baseline
+        ax.fill_between(xs, ys, self._base, color=col, alpha=0.12,
+                        linewidth=0, zorder=2)
+
+        # Glow pass (wide, translucent) + crisp core line
+        ax.plot(xs, ys, color=col, linewidth=5.0, alpha=0.16,
+                solid_capstyle="round", zorder=3)
+        ax.plot(xs, ys, color=col, linewidth=2.0,
+                solid_capstyle="round", zorder=4)
+
+        # Live dot + halo
+        (self._live_glow,) = ax.plot([xs[-1]], [ys[-1]], marker="o", linestyle="none",
+                                     markersize=13, color=col, alpha=0.30, zorder=5)
+        (self._live_dot,) = ax.plot([xs[-1]], [ys[-1]], marker="o", linestyle="none",
+                                    markersize=5, color=self.C['mint'],
+                                    markeredgecolor=col, markeredgewidth=1.2, zorder=6)
+
+        # Grid + spines + dims
+        ax.grid(True, axis="y", linestyle=":", linewidth=0.7, color=self.C['chip'])
+        ax.set_axisbelow(True)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(True)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_color(self.C['border'])
+        ax.spines['bottom'].set_color(self.C['border'])
+        ax.tick_params(colors=self.C['dim'], labelsize=7, length=0)
+        for lbl in ax.get_xticklabels():
+            lbl.set_color(self.C['dim'])
+        for lbl in ax.get_yticklabels():
+            lbl.set_color(self.C['dim'])
+            lbl.set_fontfamily("Consolas")
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:,.0f}"))
+        ax.set_xticks([])
+
+        # Live value + session-change badge (anchored to the top-right)
+        arrow = "▲" if up else "▼"
+        chg = ys[-1] - self._base
+        pct = (chg / self._base * 100.0) if self._base else 0.0
+        ax.text(0.985, 0.93, f"{arrow} {ys[-1]:,.2f}", transform=ax.transAxes,
+                color=col, fontsize=8, weight="bold", family="Consolas",
+                va="top", ha="right", zorder=7)
+        ax.text(0.985, 0.80, f"{chg:+,.2f}  ({pct:+.2f}%)", transform=ax.transAxes,
+                color=self.C['muted'], fontsize=6.5, family="Consolas",
+                va="top", ha="right", zorder=7)
+
+        # Animated hint during grow
+        if self._growing and n < len(disp):
+            ax.text(0.5, 0.97, "REPLAYING…", transform=ax.transAxes,
+                    color=self.C['mint'], fontsize=6, family="Consolas",
+                    va="top", ha="center", zorder=8)
+
+        self.chart_fig.patch.set_facecolor(self.C['card'])
+        self.chart_agg.draw_idle()
+
+    def _draw_chart(self, animate=False):
         try:
-            self._stop_chart_anim()
-            ax = self.chart_ax
-            ax.clear()
-            ax.set_facecolor(self.C['card'])
-            self._pulse_marker = None
-            self._pulse_glow = None
-
             points = self.equity_history
+            sig = (len(points), points[-1] if points else None)
+            if self._last_sig == sig:
+                return
+            self._last_sig = sig
+
+            self._stop_chart_anim()
             if not points or len(points) < 2:
-                ax.text(0.5, 0.5, "COLLECTING EQUITY DATA", transform=ax.transAxes,
-                        ha="center", va="center", color=self.C['dim'],
-                        fontsize=8, family="Consolas")
-                ax.set_xticks([]); ax.set_yticks([])
-                for spine in ax.spines.values():
-                    spine.set_visible(False)
-                self.chart_fig.patch.set_facecolor(self.C['card'])
-                self.chart_agg.draw_idle()
+                self._grow_n = 0
+                self._render_empty()
                 return
 
-            min_val = min(points)
-            max_val = max(points)
+            # Downsample for display and anchor the y-range so the curve always
+            # breathes visibly around the baseline (no dead space / flat lines).
+            disp = self._sample_series(points, 160)
+            base = float(self.start_balance) if self.start_balance else float(points[0])
 
-            val_range = max_val - min_val
-            if val_range < 0.1:
-                val_range = 10.0
-                min_val = max_val - 5.0
-                max_val = max_val + 5.0
-            else:
-                padding = val_range * 0.05
-                min_val -= padding
-                max_val += padding
-                val_range = max_val - min_val
+            lo = min(float(disp.min()), base)
+            hi = max(float(disp.max()), base)
+            raw = hi - lo
+            pad = max(raw * 0.10, max(lo * 0.002, 25.0))
+            self._ylo, self._yhi = lo - pad, hi + pad
 
-            x = list(range(len(points)))
+            prev_n = self._grow_n if self._grow_to == len(disp) else max(2, self._grow_n)
+            self._disp = disp
+            self._base = base
+            self._grow_to = len(disp)
 
-            ax.set_xlim(0, len(points) - 1)
-            ax.set_ylim(min_val, max_val)
+            if animate and self._grow_to > prev_n:
+                self._grow_from = max(2, prev_n)
+                self._grow_frame = 0
+                span = self._grow_to - self._grow_from
+                self._grow_frames = min(max(int(span * 0.45), 10), 26)
+                self._grow_n = self._grow_from
+                self._anim_mode = "grow"
+                self._growing = True
+                self._render_curve()
+                self._schedule_anim(50, "grow")
+                return
 
-            base_rgba = to_rgba(self.C['green'])
-            grad = np.linspace(0.0, 1.0, 256).reshape(-1, 1)
-            ax.imshow(grad, extent=[0, len(points) - 1, min_val, max_val],
-                      aspect='auto', origin='lower', interpolation='bilinear',
-                      cmap=LinearSegmentedColormap.from_list(
-                          'equity_fill', [(0, (0, 0, 0, 0)), (1, base_rgba)]),
-                      alpha=0.30, zorder=0)
-
-            ax.step(x, points, where="post", color=self.C['green'], linewidth=2.0,
-                    marker="o", markersize=3.2, markerfacecolor=self.C['card'],
-                    markeredgecolor=self.C['green'], markeredgewidth=1.2, zorder=3)
-
-            (self._pulse_glow,) = ax.plot([x[-1]], [points[-1]], marker="o", linestyle="none",
-                                          markersize=14, color=self.C['green'],
-                                          alpha=0.30, zorder=4)
-            (self._pulse_marker,) = ax.plot([x[-1]], [points[-1]], marker="o", linestyle="none",
-                                            markersize=5, color=self.C['mint'], zorder=5)
-
-            ax.grid(True, linestyle=":", linewidth=0.7, color=self.C['chip'])
-            ax.set_axisbelow(True)
-
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            for side in ('left', 'bottom'):
-                ax.spines[side].set_color(self.C['border'])
-            ax.tick_params(colors=self.C['dim'], labelsize=7)
-            for lbl in ax.get_xticklabels():
-                lbl.set_color(self.C['dim'])
-            for lbl in ax.get_yticklabels():
-                lbl.set_color(self.C['dim'])
-                lbl.set_fontfamily("Consolas")
-
-            ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:,.0f}"))
-
-            span = points[-1] - points[0]
-            trend_up = span >= 0
-            trend_col = self.C['green'] if trend_up else self.C['red']
-            arrow = "▲" if trend_up else "▼"
-            ax.text(0.985, 0.93, f"{arrow} LIVE", transform=ax.transAxes,
-                    color=trend_col, fontsize=7, family="Consolas",
-                    va="top", ha="right", zorder=6)
-            ax.text(0.01, 0.96, f"{max_val:,.0f}", transform=ax.transAxes, color=self.C['muted'],
-                    fontsize=7, family="Consolas", va="top", ha="left", zorder=6)
-            ax.text(0.01, 0.04, f"{min_val:,.0f}", transform=ax.transAxes, color=self.C['muted'],
-                    fontsize=7, family="Consolas", va="bottom", ha="left", zorder=6)
-
-            self.chart_fig.patch.set_facecolor(self.C['card'])
-            self.chart_agg.draw_idle()
-            self._start_chart_anim()
+            self._grow_n = self._grow_to
+            self._growing = False
+            self._render_curve()
+            self._start_pulse_anim()
         except Exception as e:
             print(f"Chart draw error: {e}")
 
@@ -1631,8 +1751,8 @@ class LivePortfolioDashboard:
                 except Exception:
                     pass
         self._flash_job = self._dot_job = self._ticker_job = self._chart_resize_job = self._chart_anim_job = None
-        self._pulse_marker = None
-        self._pulse_glow = None
+        self._live_dot = None
+        self._live_glow = None
         self.root.destroy()
 
     def run(self):
