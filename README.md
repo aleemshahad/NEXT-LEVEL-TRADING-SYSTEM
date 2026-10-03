@@ -102,4 +102,4 @@ python backtesting.py             # backtest + reports
 - Modern dashboard UI (clock, equity gradient, DCA bar, flow chip)
 
 ---
-*NEXT LEVEL TRADING SYSTEM · SC-RIG-D v2.1 · G-Channel Hybrid Engine*
+*Nexus TRADING SYSTEM · SC-RIG-D v2.1 · G-Channel Hybrid Engine*
