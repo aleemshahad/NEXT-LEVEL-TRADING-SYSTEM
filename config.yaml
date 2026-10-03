@@ -7,6 +7,14 @@ symbols: ["XAUUSDm"]
 strategy: "Hybrid Mode"
 timeframe: "M15"
 
+# BACKTESTER COST / TIMEZONE SETTINGS (backtesting.py only)
+backtest:
+  starting_balance: 100000.0
+  risk_per_trade: 0.03          # fraction of equity risked per trade
+  commission_per_lot: 0.0       # round-turn commission per lot (0 = broker free)
+  server_to_est_offset_hours: 0 # MT5 bars are BROKER SERVER time; subtract this to get NY time
+                                # e.g. GMT+2/+3 broker => 7 ; GMT+0 => 5 (US summer), 4 (US winter)
+
 # RISK MANAGEMENT
 risk:
   max_risk_per_trade: 0.02
@@ -24,6 +32,7 @@ grid:
   lot_growth: 1.3
   max_order_lot: 0.20
   max_total_exposure: 0.20
+  max_open_layers: 6            # backtester caps simultaneous grid layers at this
   profit_target_usd: 10
   profit_target_pct: 0.25
   trailing_enabled: false

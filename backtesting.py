@@ -31,9 +31,13 @@ logger.add("logs/backtest_{time:YYYY-MM-DD}.log", rotation="1 day")
 class BacktestEngine:
     """Backtesting Engine with AI Training"""
     
+    # Broker minimum lot — trades sized below this are not sendable
+    MIN_LOT = 0.01
+    
     def __init__(self):
         self.trades = []
-        self.balance = 100000.0  # Starting balance
+        self.initial_balance = 100000.0  # Starting balance
+        self.balance = self.initial_balance
         self.equity_curve = []
         self.ai_memories = []
         # Tunable parameters (adjust to your preference)
@@ -42,25 +46,98 @@ class BacktestEngine:
         self.crypto_max_lots = 0.5      # allow larger crypto position sizes
         self.forex_max_lots = 0.1       # allow larger forex/metals sizes
         self.use_time_filter = True     # Enable ICT Silver Bullet time restriction
+        # MT5 returns bars in BRO SERVER time, not UTC/EST. Offset converts
+        # server -> New York so the Silver Bullet windows land where intended.
+        self.server_to_est_offset_hours = 0
+        # Round-turn commission in account currency per lot (0 = broker free)
+        self.commission_per_lot = 0.0
+        # Live bid/ask captured once per backtest so fills pay the real spread
+        self._quote = {'bid': None, 'ask': None, 'spread': 0.0}
+    
+    def _contract_spec(self, symbol: str) -> Tuple[float, float]:
+        """
+        Return (contract_multiplier, max_lots) for a symbol.
+        The SAME multiplier must be used for sizing, floating PnL and realized
+        PnL, otherwise risk and PnL disagree by orders of magnitude.
+        """
+        s = (symbol or '').upper()
+        if 'BTC' in s or 'ETH' in s:
+            return 1.0, getattr(self, 'crypto_max_lots', 0.5)
+        if 'XAU' in s or 'XAG' in s:
+            return 100.0, getattr(self, 'forex_max_lots', 0.1)
+        return 100000.0, getattr(self, 'forex_max_lots', 0.1)
+    
+    def _pnl_for_move(self, symbol: str, price_diff: float, size: float) -> float:
+        """Convert a price move into account-currency PnL using the contract size."""
+        multiplier, _ = self._contract_spec(symbol)
+        return price_diff * size * multiplier
+    
+    def _capture_quote(self, symbol: str):
+        """Snapshot live bid/ask so backtest fills pay the real spread."""
+        self._quote = {'bid': None, 'ask': None, 'spread': 0.0}
+        try:
+            tick = mt5.symbol_info_tick(symbol)
+            if tick and tick.bid and tick.ask:
+                self._quote = {
+                    'bid': float(tick.bid),
+                    'ask': float(tick.ask),
+                    'spread': float(tick.ask - tick.bid)
+                }
+                logger.info(f"📐 Quote snapshot for {symbol}: bid={tick.bid} ask={tick.ask} spread={tick.ask - tick.bid:.5f}")
+        except Exception as e:
+            logger.warning(f"Could not snapshot quote for {symbol} ({e}); using bar close prices")
+    
+    def _cost_basis(self, symbol: str, size: float) -> float:
+        """Round-trip commission for a given size."""
+        return abs(size) * self.commission_per_lot
+    
+    def _load_backtest_config(self):
+        """Load backtest-specific cost/timezone settings from config.yaml."""
+        defaults = {
+            'server_to_est_offset_hours': 0,
+            'commission_per_lot': 0.0,
+            'starting_balance': 100000.0,
+            'risk_per_trade': 0.03,
+        }
+        try:
+            with open('config.yaml', 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f) or {}
+            bt = config.get('backtest', {}) or {}
+            for key in defaults:
+                if key in bt:
+                    defaults[key] = bt[key]
+        except Exception as e:
+            logger.warning(f"Could not read backtest config ({e}); using defaults")
+        
+        self.server_to_est_offset_hours = int(defaults['server_to_est_offset_hours'])
+        self.commission_per_lot = float(defaults['commission_per_lot'])
+        self.risk_per_trade = float(defaults['risk_per_trade'])
+        self.initial_balance = float(defaults['starting_balance'])
+        self.balance = self.initial_balance
+        
+        logger.info(
+            f"⚙️ Backtest Config: Balance=${self.initial_balance:,.2f} Risk={self.risk_per_trade:.1%} "
+            f"Commission=${self.commission_per_lot}/lot Server->NY={self.server_to_est_offset_hours}h"
+        )
 
     def _is_silver_bullet_time(self, timestamp: datetime) -> bool:
         """
-        Check if time is within ICT Silver Bullet windows (EST based).
+        Check if time is within ICT Silver Bullet windows (New York time).
         Windows: 3-4 AM (London), 10-11 AM (NY AM), 2-3 PM (NY PM).
+
+        MT5 copy_rates_range returns BROKER SERVER time, which is almost never
+        New York time. Without converting, every "kill zone" check lands on the
+        wrong hour and silently filters out the wrong bars. The server->EST
+        offset is configurable via server_to_est_offset_hours.
         """
-        # Convert to EST (Assuming input is UTC or Server time, adjust accordingly)
-        # For simplicity, we'll assume the data timestamp is aligned or we check hours directly.
-        # If data is UTC, London 3 AM is 8 AM UTC. NY 10 AM is 3 PM UTC.
-        
-        # Using raw hours (assuming data is in NY time or adjusting for it):
-        h = timestamp.hour
-        m = timestamp.minute
+        # Convert server time -> New York time before testing the windows
+        ny_hour = (timestamp.hour - self.server_to_est_offset_hours) % 24
         
         # Silver Bullet Hours (Strict 1 hour windows)
         # 03:00 - 04:00
         # 10:00 - 11:00
         # 14:00 - 15:00
-        if h in [3, 10, 14]:
+        if ny_hour in [3, 10, 14]:
             return True
             
         return False
@@ -166,8 +243,8 @@ class BacktestEngine:
                     pass
 
             if self.use_time_filter and not self._is_silver_bullet_time(current_time):
-                # logger.debug(f"Skipped {current_time} - Not SB hour ({current_time.hour})")
-                return {'signal': 'HOLD', 'confidence': 0.0, 'reason': f'Outside Silver Bullet Hours ({current_time.hour})'}
+                ny_hour = (current_time.hour - self.server_to_est_offset_hours) % 24
+                return {'signal': 'HOLD', 'confidence': 0.0, 'reason': f'Outside Silver Bullet Hours ({ny_hour} NY)'}
             
             # Get market structure analysis
             market_bias = self._determine_market_bias(df, index)
@@ -516,38 +593,40 @@ class BacktestEngine:
     
     def calculate_position_size(self, balance: float, entry_price: float, stop_loss: float, symbol: str, risk_per_trade: float = 0.02) -> float:
         """Calculate position size based on risk"""
-        # use instance tunables by default
-        risk_amount = balance * (self.risk_per_trade if hasattr(self, 'risk_per_trade') else risk_per_trade)
+        multiplier, max_lots = self._contract_spec(symbol)
+        risk_per_trade = getattr(self, 'risk_per_trade', risk_per_trade)
+        risk_amount = balance * risk_per_trade
         price_diff = abs(entry_price - stop_loss)
         
-        if price_diff == 0:
-            return 0.01
+        # No stop distance means no defined risk — size it at zero rather than
+        # falling back to the broker minimum, which would risk far more than intended.
+        if price_diff <= 0:
+            return 0.0
         
-        # Adjust for different asset types
-        if 'BTC' in symbol or 'ETH' in symbol:
-            # For crypto, use smaller position sizes
-            position_size = min(risk_amount / (price_diff * 10), getattr(self, 'crypto_max_lots', 0.1))
-        elif 'XAU' in symbol or 'XAG' in symbol:
-            # For metals
-            position_size = min(risk_amount / price_diff, getattr(self, 'forex_max_lots', 1.0))
-        else:
-            # For forex
-            position_size = min(risk_amount / (price_diff * 100000), getattr(self, 'forex_max_lots', 1.0))
+        # Size so that hitting the stop loses exactly risk_amount. Uses the same
+        # contract multiplier as PnL, so sizing and PnL can never disagree.
+        raw_size = risk_amount / (price_diff * multiplier)
+        position_size = min(raw_size, max_lots)
+        position_size = round(position_size, 2)
         
-        return max(0.01, position_size)
+        # Below the broker minimum lot the trade simply cannot be placed.
+        if position_size < self.MIN_LOT:
+            return 0.0
+        
+        return position_size
     
     def run_grid_backtest(self, symbol: str, start_date: datetime, end_date: datetime, timeframe: str = "M5", mode: str = "BOTH") -> Dict:
         """Run grid strategy backtest with mode: BOTH, BUY_ONLY, SELL_ONLY"""
         try:
             logger.info(f"🕸️ Running Grid Backtest ({mode}) for {symbol}")
             data = self.get_historical_data(symbol, start_date, end_date, timeframe)
-            if data.empty: return {'error': 'No data'}
+            if data.empty:
+                return self._empty_metrics(symbol, 'No data')
 
-            # Use existing balance if available
-            initial_balance = getattr(self, 'balance', 100000.0)
-            if initial_balance == 0: initial_balance = 100000.0
-            
-            self.balance = initial_balance
+            # Reset per run. Inheriting the previous run's ending balance made
+            # repeated GUI runs compound off each other and report a return
+            # that no single run could have produced.
+            self._load_backtest_config()
             self.trades = []
             self.equity_curve = [self.balance]
             
@@ -555,6 +634,7 @@ class BacktestEngine:
             open_positions = []
             
             # Use settings from config if possible, else defaults
+            target_usd = 10.0
             try:
                 import yaml
                 with open('config.yaml', 'r') as f:
@@ -563,54 +643,75 @@ class BacktestEngine:
                 grid_size = grid_cfg.get('size', 300)
                 spacing = grid_cfg.get('spacing', 1.0)
                 lot_size = grid_cfg.get('lot_size', 0.01)
-                target_pct = grid_cfg.get('profit_target_pct', 0.25)
-            except:
+                target_usd = float(grid_cfg.get('profit_target_usd', 10))
+                max_open_layers = int(grid_cfg.get('max_open_layers', 6))
+            except Exception:
                 grid_size = 300
                 spacing = 1.0
                 lot_size = 0.01
-                target_pct = 0.25
+                target_usd = 10.0
+                max_open_layers = 6
 
-            logger.info(f"⚙️ Grid Config: Size={grid_size}, Spacing={spacing}, Lot={lot_size}, Target={target_pct:.0%}")
+            logger.info(f"⚙️ Grid Config: Size={grid_size}, Spacing={spacing}, Lot={lot_size}, Target=${target_usd:.2f}, MaxLayers={max_open_layers}")
+            
+            # Snapshot live bid/ask once so fills pay the real spread
+            self._capture_quote(symbol)
+            spread = self._quote['spread']
 
             for i in range(50, len(data)):
                 current_bar = data.iloc[i]
                 current_time = data.index[i]
                 
+                # Mark floating PnL at the side we would exit at, not at close
+                exit_ref_buy = float(current_bar['close']) - (spread / 2)
+                exit_ref_sell = float(current_bar['close']) + (spread / 2)
+                
                 # 1. Check profit targets
                 buy_pos = [p for p in open_positions if p['type'] == 'BUY']
                 sell_pos = [p for p in open_positions if p['type'] == 'SELL']
                 
-                buy_profit = sum(self._calculate_floating_pnl(p, current_bar['close'], symbol) for p in buy_pos)
-                sell_profit = sum(self._calculate_floating_pnl(p, current_bar['close'], symbol) for p in sell_pos)
+                buy_profit = sum(self._calculate_floating_pnl(p, exit_ref_buy, symbol) for p in buy_pos)
+                sell_profit = sum(self._calculate_floating_pnl(p, exit_ref_sell, symbol) for p in sell_pos)
                 
-                target_amt = initial_balance * target_pct # Target based on starting balance
+                # Target must match the LIVE bot. It used balance * profit_target_pct
+                # ($100k * 25% = $25,000) while live trading banks $10, so the
+                # backtest could essentially never reach target and every run
+                # ended as one forced liquidation.
+                target_amt = target_usd
                 
                 if buy_pos and buy_profit >= target_amt:
                     logger.info(f"🎯 Buy Grid target hit at {current_time}! Profit: ${buy_profit:.2f}")
                     for p in buy_pos:
-                        trade = self._close_position(p, current_bar['close'], current_time, 'Grid Target')
+                        trade = self._close_position(p, exit_ref_buy, current_time, 'Grid Target')
                         self.trades.append(trade)
                         self.balance += trade['pnl']
                     open_positions = [p for p in open_positions if p['type'] != 'BUY']
                     pending_orders = [o for o in pending_orders if o['type'] != 'BUY']
-                    self.equity_curve.append(self.balance)
-
+                
                 if sell_pos and sell_profit >= target_amt:
                     logger.info(f"🎯 Sell Grid target hit at {current_time}! Profit: ${sell_profit:.2f}")
                     for p in sell_pos:
-                        trade = self._close_position(p, current_bar['close'], current_time, 'Grid Target')
+                        trade = self._close_position(p, exit_ref_sell, current_time, 'Grid Target')
                         self.trades.append(trade)
                         self.balance += trade['pnl']
                     open_positions = [p for p in open_positions if p['type'] != 'SELL']
                     pending_orders = [o for o in pending_orders if o['type'] != 'SELL']
-                    self.equity_curve.append(self.balance)
 
                 # 2. Check pending hits
                 for order in pending_orders[:]:
                     if (order['type'] == 'BUY' and current_bar['low'] <= order['price']) or \
                        (order['type'] == 'SELL' and current_bar['high'] >= order['price']):
+                        # Live trading caps open layers (fib_dca.max_open_layers)
+                        # and total exposure. Without a cap here the grid opens
+                        # every one of its 300 levels in a deep move, which the
+                        # live bot would never be allowed to do.
+                        if len(open_positions) >= max_open_layers:
+                            pending_orders.remove(order)
+                            continue
+                        # Fill at the level plus half-spread on the wrong side
+                        fill = order['price'] + (spread / 2 if order['type'] == 'BUY' else -spread / 2)
                         order['entry_time'] = current_time
-                        order['entry_price'] = order['price']
+                        order['entry_price'] = fill
                         open_positions.append(order)
                         pending_orders.remove(order)
 
@@ -622,31 +723,41 @@ class BacktestEngine:
                     if bias == 'BULLISH' and not any(o['type'] == 'SELL' for o in pending_orders) and not any(p['type'] == 'SELL' for p in open_positions):
                         logger.info(f"🚀 Placing SELL grid at {current_time} (Price: {current_bar['close']})")
                         for j in range(1, grid_size + 1):
-                            pending_orders.append({'type': 'SELL', 'price': current_bar['close'] + (j * spacing), 'position_size': lot_size, 'symbol': symbol})
+                            pending_orders.append({'type': 'SELL', 'price': current_bar['close'] + (j * spacing), 'position_size': lot_size, 'symbol': symbol, 'confidence': 1.0})
                 
                 if mode in ['BOTH', 'BUY_ONLY']:
                     if bias == 'BEARISH' and not any(o['type'] == 'BUY' for o in pending_orders) and not any(p['type'] == 'BUY' for p in open_positions):
                         logger.info(f"🚀 Placing BUY grid at {current_time} (Price: {current_bar['close']})")
                         for j in range(1, grid_size + 1):
-                            pending_orders.append({'type': 'BUY', 'price': current_bar['close'] - (j * spacing), 'position_size': lot_size, 'symbol': symbol})
+                            pending_orders.append({'type': 'BUY', 'price': current_bar['close'] - (j * spacing), 'position_size': lot_size, 'symbol': symbol, 'confidence': 1.0})
 
-                if i % 100 == 0:
-                    current_equity = self.balance + buy_profit + sell_profit
-                    self.equity_curve.append(current_equity)
+                # 4. Sample equity ONCE per bar, always as realized + open risk.
+                # The old code appended raw realized balance on some bars and
+                # realized+floating on others, so drawdown and Sharpe were
+                # computed over a series that jumped by phantom amounts.
+                floating_now = sum(
+                    self._calculate_floating_pnl(
+                        p,
+                        exit_ref_buy if p['type'] == 'BUY' else exit_ref_sell,
+                        symbol
+                    ) for p in open_positions
+                )
+                self.equity_curve.append(self.balance + floating_now)
 
-            # 4. Force close all remaining positions at end of backtest
+            # 5. Force close all remaining positions at end of backtest
             if open_positions:
                 logger.info(f"🏁 Closing {len(open_positions)} remaining positions at end of backtest")
+                final_close = float(data.iloc[-1]['close'])
                 for p in open_positions:
-                    trade = self._close_position(p, data.iloc[-1]['close'], data.index[-1], 'End of Backtest')
+                    exit_ref = final_close - (spread / 2 if p['type'] == 'BUY' else -spread / 2)
+                    trade = self._close_position(p, exit_ref, data.index[-1], 'End of Backtest')
                     self.trades.append(trade)
                     self.balance += trade['pnl']
             
-            self.equity_curve.append(self.balance)
             return self._calculate_performance_metrics(symbol)
         except Exception as e:
             logger.error(f"Grid backtest error: {e}")
-            return {'error': str(e)}
+            return self._empty_metrics(symbol, str(e))
 
     def run_backtest(self, symbol: str, start_date: datetime, end_date: datetime, timeframe: str = "M5") -> Dict:
         """Run backtest on historical data"""
@@ -664,11 +775,17 @@ class BacktestEngine:
             logger.info(f"⏰ Unique hours in data: {unique_hours}")
             logger.info(f"🎯 Target Silver Bullet Hours: [3, 10, 14]")
             
-            # Initialize backtest variables
-            self.balance = 100000.0
+            # Initialize backtest variables — reset EVERY run so repeated GUI
+            # runs on the same engine instance don't compound off each other.
+            self._load_backtest_config()
             self.trades = []
+            self.ai_memories = []
             self.equity_curve = [self.balance]
             position = None
+            
+            # Snapshot live bid/ask once so fills pay the real spread
+            self._capture_quote(symbol)
+            spread = self._quote['spread']
             
             # Run through historical data
             for i in range(50, len(data)):
@@ -682,8 +799,18 @@ class BacktestEngine:
                 
                 # Check for entry signals
                 if position is None and signal in ['BUY', 'SELL'] and confidence >= self.min_confidence:
-                    # Entry price (use next bar open for realism)
-                    entry_price = current_bar['close']
+                    # Entry fills at the NEXT bar's open. Entering at the signal
+                    # bar's close is look-ahead: the signal is derived from that
+                    # bar's close/high/low, which are not knowable until it has
+                    # closed. The last bar has no next open, so it cannot be used.
+                    if i + 1 >= len(data):
+                        continue
+                    
+                    next_open = float(data.iloc[i + 1]['open'])
+                    
+                    # Pay the spread on entry: buy lifts the ask, sell hits the bid
+                    entry_price = next_open + (spread / 2 if signal == 'BUY' else -spread / 2)
+                    entry_time = data.index[i + 1]
                     
                     # Use ICT-based stop loss and take profit if available
                     if 'stop_loss' in signal_data and 'take_profit' in signal_data:
@@ -699,12 +826,25 @@ class BacktestEngine:
                             stop_loss = entry_price + (atr * 2)
                             take_profit = entry_price - (atr * 3)
                     
+                    # Validate levels point the right way before sizing
+                    if signal == 'BUY':
+                        levels_valid = stop_loss < entry_price < take_profit
+                    else:
+                        levels_valid = take_profit < entry_price < stop_loss
+                    
+                    if not levels_valid:
+                        logger.debug(f"Discarded {signal} setup at {current_time}: SL/TP not bracketing entry")
+                        continue
+                    
                     # Calculate position size
                     position_size = self.calculate_position_size(self.balance, entry_price, stop_loss, symbol)
                     
+                    if position_size < self.MIN_LOT:
+                        continue
+                    
                     position = {
                         'type': signal,
-                        'entry_time': current_time,
+                        'entry_time': entry_time,
                         'entry_price': entry_price,
                         'position_size': position_size,
                         'stop_loss': stop_loss,
@@ -712,6 +852,9 @@ class BacktestEngine:
                         'confidence': confidence,
                         'symbol': symbol
                     }
+                    
+                    # Mark equity immediately so the curve reflects open risk
+                    self.equity_curve.append(self.balance)
                 
                 # Check for exit conditions
                 elif position is not None:
@@ -719,32 +862,41 @@ class BacktestEngine:
                     exit_price = current_bar['close']
                     exit_reason = 'Time'
                     
-                    # Check stop loss
-                    if position['type'] == 'BUY' and current_bar['low'] <= position['stop_loss']:
-                        exit_price = position['stop_loss']
-                        exit_reason = 'Stop Loss'
-                        exit_triggered = True
-                    elif position['type'] == 'SELL' and current_bar['high'] >= position['stop_loss']:
-                        exit_price = position['stop_loss']
-                        exit_reason = 'Stop Loss'
-                        exit_triggered = True
+                    hit_stop = False
+                    hit_target = False
                     
-                    # Check take profit
-                    elif position['type'] == 'BUY' and current_bar['high'] >= position['take_profit']:
-                        exit_price = position['take_profit']
-                        exit_reason = 'Take Profit'
+                    if position['type'] == 'BUY':
+                        hit_stop = current_bar['low'] <= position['stop_loss']
+                        hit_target = current_bar['high'] >= position['take_profit']
+                    else:
+                        hit_stop = current_bar['high'] >= position['stop_loss']
+                        hit_target = current_bar['low'] <= position['take_profit']
+                    
+                    # When a single bar spans BOTH the stop and the target the
+                    # intrabar sequence is unknowable from OHLC alone. Resolve to
+                    # the pessimistic (stop-loss) outcome instead of silently
+                    # picking whichever branch happened to be tested first.
+                    if hit_stop:
+                        exit_price = position['stop_loss']
+                        exit_reason = 'Stop Loss'
                         exit_triggered = True
-                    elif position['type'] == 'SELL' and current_bar['low'] <= position['take_profit']:
+                    elif hit_target:
                         exit_price = position['take_profit']
                         exit_reason = 'Take Profit'
                         exit_triggered = True
                     
                     # Time-based exit (hold for max 72 hours)
                     elif (current_time - position['entry_time']).total_seconds() / 3600 > 72:
+                        exit_price = current_bar['close']
+                        exit_reason = 'Time Exit'
                         exit_triggered = True
                     
                     # Execute exit
                     if exit_triggered:
+                        # Pay the spread on exit: buy sells into the bid, sell lifts the ask
+                        if exit_reason in ('Stop Loss', 'Take Profit'):
+                            exit_price = exit_price - (spread / 2 if position['type'] == 'BUY' else -spread / 2)
+                        
                         trade = self._close_position(position, exit_price, current_time, exit_reason)
                         self.trades.append(trade)
                         
@@ -763,11 +915,27 @@ class BacktestEngine:
                             'confidence': position['confidence'],
                             'market_conditions': {
                                 'rsi': current_bar.get('rsi', 50),
-                                'trend': 'bullish' if current_bar['close'] > current_bar['sma_20'] else 'bearish'
+                                # .get() with a close-price fallback: a bare
+                                # ['sma_20'] raised KeyError and aborted the
+                                # whole backtest whenever indicators were absent
+                                'trend': 'bullish' if current_bar['close'] > current_bar.get('sma_20', current_bar['close']) else 'bearish'
                             }
                         })
                         
                         position = None
+            
+            # Force-close anything still open at the end of the run. Without
+            # this the last trade's PnL was dropped on the floor, because the
+            # position never hit SL/TP/time-exit inside the loop and simply
+            # stopped existing — biasing every result.
+            if position is not None:
+                logger.info(f"🏁 Closing open {position['type']} position at end of backtest")
+                final_close = float(data.iloc[-1]['close'])
+                final_exit = final_close - (spread / 2 if position['type'] == 'BUY' else -spread / 2)
+                trade = self._close_position(position, final_exit, data.index[-1], 'End of Backtest')
+                self.trades.append(trade)
+                self.balance += trade['pnl']
+                self.equity_curve.append(self.balance)
             
             # Calculate performance metrics
             results = self._calculate_performance_metrics(symbol)
@@ -788,18 +956,25 @@ class BacktestEngine:
             if index < period:
                 return 0.01
             
-            high = data['high'].iloc[index-period:index]
-            low = data['low'].iloc[index-period:index]
-            close = data['close'].iloc[index-period-1:index-1]
+            # True Range needs the PREVIOUS bar's close. Slicing close one row
+            # further back than high/low aligns it correctly; slicing it the same
+            # way compares each bar against its own close, which throws away the
+            # bar-to-bar move and understates volatility (=> stops far too tight).
+            window = data.iloc[index-period:index]
+            prev_close = data['close'].iloc[index-period-1:index]
+            
+            high = window['high']
+            low = window['low']
             
             tr1 = high - low
-            tr2 = abs(high - close)
-            tr3 = abs(low - close)
+            tr2 = (high - prev_close).abs()
+            tr3 = (low - prev_close).abs()
             
             true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-            return true_range.mean()
+            atr = float(true_range.mean())
+            return atr if atr > 0 else 0.01
             
-        except:
+        except Exception:
             return 0.01
     
     def _calculate_floating_pnl(self, position: Dict, current_price: float, symbol: str) -> float:
@@ -810,15 +985,11 @@ class BacktestEngine:
             
             price_diff = current_price - entry_price if position['type'] == 'BUY' else entry_price - current_price
             
-            if 'BTC' in symbol or 'ETH' in symbol:
-                pnl = price_diff * position_size
-            elif 'XAU' in symbol or 'XAG' in symbol:
-                pnl = price_diff * position_size * 100
-            else:
-                pnl = price_diff * position_size * 100000
-                
+            pnl = self._pnl_for_move(symbol, price_diff, position_size)
+            pnl -= self._cost_basis(symbol, position_size)
+            
             return pnl
-        except:
+        except Exception:
             return 0.0
 
     def _close_position(self, position: Dict, exit_price: float, exit_time: datetime, exit_reason: str) -> Dict:
@@ -828,18 +999,11 @@ class BacktestEngine:
             position_size = position['position_size']
             symbol = position.get('symbol', '')
             
-            # Calculate P&L based on asset type
             price_diff = exit_price - entry_price if position['type'] == 'BUY' else entry_price - exit_price
             
-            if 'BTC' in symbol or 'ETH' in symbol:
-                # For crypto: P&L = price_diff * position_size
-                pnl = price_diff * position_size
-            elif 'XAU' in symbol or 'XAG' in symbol:
-                # For metals: P&L = price_diff * position_size * 100
-                pnl = price_diff * position_size * 100
-            else:
-                # For forex: P&L = price_diff * position_size * 100000
-                pnl = price_diff * position_size * 100000
+            gross_pnl = self._pnl_for_move(symbol, price_diff, position_size)
+            commission = self._cost_basis(symbol, position_size)
+            pnl = gross_pnl - commission
             
             return {
                 'entry_time': position['entry_time'],
@@ -848,6 +1012,8 @@ class BacktestEngine:
                 'entry_price': entry_price,
                 'exit_price': exit_price,
                 'position_size': position_size,
+                'gross_pnl': gross_pnl,
+                'commission': commission,
                 'pnl': pnl,
                 'exit_reason': exit_reason,
                 'duration': (exit_time - position['entry_time']).total_seconds() / 3600 if 'entry_time' in position else 0,
@@ -858,16 +1024,37 @@ class BacktestEngine:
             logger.error(f"Position close error: {e}")
             return {}
     
+    def _empty_metrics(self, symbol: str, reason: str) -> Dict:
+        """Zeroed-but-complete result so callers can format without KeyError."""
+        return {
+            'symbol': symbol,
+            'error': reason,
+            'total_trades': 0,
+            'winning_trades': 0,
+            'losing_trades': 0,
+            'win_rate': 0.0,
+            'total_pnl': 0.0,
+            'avg_win': 0.0,
+            'avg_loss': 0.0,
+            'profit_factor': 0.0,
+            'expectancy': 0.0,
+            'max_drawdown': 0.0,
+            'sharpe_ratio': 0.0,
+            'final_balance': self.balance,
+            'return_pct': 0.0,
+            'trades': []
+        }
+    
     def _calculate_performance_metrics(self, symbol: str) -> Dict:
         """Calculate backtest performance metrics"""
         try:
             if not self.trades:
-                return {'error': 'No trades executed'}
+                return self._empty_metrics(symbol, 'No trades executed')
             
             # Basic metrics
             total_trades = len(self.trades)
             winning_trades = len([t for t in self.trades if t['pnl'] > 0])
-            losing_trades = total_trades - winning_trades
+            losing_trades = len([t for t in self.trades if t['pnl'] < 0])
             
             win_rate = winning_trades / total_trades if total_trades > 0 else 0
             
@@ -875,20 +1062,45 @@ class BacktestEngine:
             avg_win = np.mean([t['pnl'] for t in self.trades if t['pnl'] > 0]) if winning_trades > 0 else 0
             avg_loss = np.mean([t['pnl'] for t in self.trades if t['pnl'] < 0]) if losing_trades > 0 else 0
             
-            profit_factor = abs(avg_win * winning_trades / (avg_loss * losing_trades)) if avg_loss != 0 and losing_trades > 0 else 0
+            # Profit factor = gross profit / gross loss. With zero losses it is
+            # undefined (infinite), NOT 0 — reporting 0 made a 100%-win run
+            # look like the worst possible outcome.
+            gross_profit = sum(t['pnl'] for t in self.trades if t['pnl'] > 0)
+            gross_loss = abs(sum(t['pnl'] for t in self.trades if t['pnl'] < 0))
+            if gross_loss > 0:
+                profit_factor = gross_profit / gross_loss
+            else:
+                profit_factor = float('inf') if gross_profit > 0 else 0.0
+            
+            # Expectancy = average PnL per trade
+            expectancy = total_pnl / total_trades if total_trades > 0 else 0.0
             
             # Drawdown calculation
             peak = self.equity_curve[0]
-            max_drawdown = 0
+            max_drawdown = 0.0
             for equity in self.equity_curve:
                 if equity > peak:
                     peak = equity
-                drawdown = (peak - equity) / peak
-                max_drawdown = max(max_drawdown, drawdown)
+                if peak > 0:
+                    drawdown = (peak - equity) / peak
+                    max_drawdown = max(max_drawdown, drawdown)
             
-            # Sharpe ratio (simplified)
-            returns = np.diff(self.equity_curve) / self.equity_curve[:-1]
-            sharpe_ratio = np.mean(returns) / np.std(returns) * np.sqrt(252) if np.std(returns) > 0 else 0
+            # Sharpe on per-trade returns. Annualising M5-bar deltas by sqrt(252)
+            # was meaningless (252 is a daily-bar constant), so the exponent is
+            # taken from the number of observations instead.
+            sharpe_ratio = 0.0
+            if len(self.equity_curve) > 2:
+                curve = np.array(self.equity_curve, dtype=float)
+                prev = curve[:-1]
+                mask = prev != 0
+                returns = np.diff(curve)[mask] / prev[mask]
+                if len(returns) > 1 and np.std(returns) > 0:
+                    sharpe_ratio = float(np.mean(returns) / np.std(returns) * np.sqrt(len(returns)))
+            
+            # Return is measured against the balance THIS run started with.
+            # It was hardcoded against 10000 while the engine starts at 100000,
+            # which turned a +5% run into a reported +950%.
+            return_pct = ((self.balance - self.initial_balance) / self.initial_balance) if self.initial_balance else 0.0
             
             return {
                 'symbol': symbol,
@@ -900,16 +1112,17 @@ class BacktestEngine:
                 'avg_win': avg_win,
                 'avg_loss': avg_loss,
                 'profit_factor': profit_factor,
+                'expectancy': expectancy,
                 'max_drawdown': max_drawdown,
                 'sharpe_ratio': sharpe_ratio,
                 'final_balance': self.balance,
-                'return_pct': (self.balance - 10000) / 10000,
+                'return_pct': return_pct,
                 'trades': self.trades
             }
             
         except Exception as e:
             logger.error(f"Performance calculation error: {e}")
-            return {'error': str(e)}
+            return self._empty_metrics(symbol, str(e))
     
     def _train_ai_with_results(self):
         """Train AI with backtest results"""
@@ -947,9 +1160,11 @@ class BacktestEngine:
             print(f"Total P&L: ${results['total_pnl']:.2f}")
             print(f"Return: {results['return_pct']:.1%}")
             print(f"Profit Factor: {results['profit_factor']:.2f}")
+            print(f"Expectancy: ${results['expectancy']:.2f}/trade")
             print(f"Max Drawdown: {results['max_drawdown']:.1%}")
             print(f"Sharpe Ratio: {results['sharpe_ratio']:.2f}")
-            print(f"Final Balance: ${results['final_balance']:.2f}")
+            print(f"Starting Balance: ${self.initial_balance:,.2f}")
+            print(f"Final Balance: ${results['final_balance']:,.2f}")
             
             if results['total_trades'] > 0:
                 print(f"\nAverage Win: ${results['avg_win']:.2f}")
@@ -1167,9 +1382,9 @@ class TradingDashboard:
         
         # Buttons
         ttk.Button(control_frame, text="🚀 Run Backtest", 
-                  command=self.run_backtest_gui).grid(row=0, column=8, padx=10)
+                  command=self.run_backtest_gui).grid(row=1, column=0, columnspan=2, padx=10, pady=(8, 0))
         ttk.Button(control_frame, text="📊 Show Chart", 
-                  command=self.show_chart).grid(row=0, column=7, padx=5)
+                  command=self.show_chart).grid(row=1, column=2, columnspan=2, padx=10, pady=(8, 0))
         
         # Results Frame
         results_frame = ttk.LabelFrame(main_frame, text="Backtest Results", padding="10")
@@ -1274,8 +1489,10 @@ Win Rate: {results['win_rate']:.1%}
 Total P&L: ${results['total_pnl']:.2f}
 Average Win: ${results['avg_win']:.2f}
 Average Loss: ${results['avg_loss']:.2f}
+Expectancy: ${results['expectancy']:.2f}/trade
 Profit Factor: {results['profit_factor']:.2f}
-Return: {results['return_pct']:.1%}
+Return: {results['return_pct']:.2%}
+Starting Balance: ${self.backtest_engine.initial_balance:,.2f}
 
 📈 RISK METRICS:
 {'='*30}
