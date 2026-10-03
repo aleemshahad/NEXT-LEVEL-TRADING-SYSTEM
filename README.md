@@ -1,4 +1,4 @@
-# 🧠 NEXT LEVEL TRADING SYSTEM — SC-RIG-D v2.1 (G-Channel)
+# 🧠 Nexus TRADING SYSTEM — SC-RIG-D v2.1 (G-Channel)
 
 MetaTrader 5 ke liye ek **High-Performance Multi-Timeframe Trend-Locked DCA Grid Trading Bot** (Windows-only).
 
