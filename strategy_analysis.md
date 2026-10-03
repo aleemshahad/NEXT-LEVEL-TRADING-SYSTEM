@@ -1,4 +1,4 @@
-# 📈 Next Level Trading System - Strategy Analysis (G-Channel)
+# 📈 Nexus Trading System - Strategy Analysis (G-Channel)
 
 **Strategy Type:** Indicator-Based Trend Grid
 **Core Logic:** Uses the custom "G-Channel" PineScript indicator to align with the daily trend before deploying a grid.

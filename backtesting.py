@@ -1,6 +1,6 @@
 
 """
-NEXT LEVEL BRAIN - Backtesting System
+NEXUS TRADING SYSTEM - Backtesting System
 All-in-one backtesting and AI training
 Created by: Aleem Shahzad | AI Partner: Claude (Anthropic)
 """
@@ -939,7 +939,7 @@ class BacktestEngine:
         """Generate backtest report"""
         try:
             print("\n" + "="*70)
-            print("🧠 NEXT LEVEL BRAIN - BACKTEST REPORT")
+            print("🧠 NEXUS TRADING SYSTEM - BACKTEST REPORT")
             print("="*70)
             print(f"Symbol: {results['symbol']}")
             print(f"Total Trades: {results['total_trades']}")
@@ -1089,7 +1089,7 @@ class BacktestEngine:
             
             # Update layout
             fig.update_layout(
-                title=f'🧠 NEXT LEVEL BRAIN - {symbol} Analysis',
+                title=f'🧠 NEXUS TRADING SYSTEM - {symbol} Analysis',
                 xaxis_rangeslider_visible=False,
                 height=800,
                 showlegend=True
@@ -1112,7 +1112,7 @@ class TradingDashboard:
     
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("🧠 NEXT LEVEL BRAIN - Trading Dashboard")
+        self.root.title("🧠 NEXUS TRADING SYSTEM - Trading Dashboard")
         self.root.geometry("1000x700")
         self.root.configure(bg='#2b2b2b')
         
@@ -1133,7 +1133,7 @@ class TradingDashboard:
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Title
-        title_label = ttk.Label(main_frame, text="🧠 NEXT LEVEL BRAIN - AI Trading Dashboard", 
+        title_label = ttk.Label(main_frame, text="🧠 NEXUS TRADING SYSTEM - AI Trading Dashboard", 
                                font=('Arial', 16, 'bold'))
         title_label.grid(row=0, column=0, columnspan=4, pady=10)
         
@@ -1203,7 +1203,7 @@ class TradingDashboard:
         results_frame.rowconfigure(0, weight=1)
         
         # Initial message
-        self.update_results_display("🧠 NEXT LEVEL BRAIN Dashboard Ready!\n\nSelect your parameters and click 'Run Backtest' to begin analysis.\n\n📊 Features:\n- ICT/SMC Strategy Analysis\n- Interactive Charts\n- Real-time Performance Metrics\n- Multi-timeframe Support\n\n🎯 Created by: Aleem Shahzad | AI Partner: Claude")
+        self.update_results_display("🧠 NEXUS TRADING SYSTEM Dashboard Ready!\n\nSelect your parameters and click 'Run Backtest' to begin analysis.\n\n📊 Features:\n- ICT/SMC Strategy Analysis\n- Interactive Charts\n- Real-time Performance Metrics\n- Multi-timeframe Support\n\n🎯 Created by: Aleem Shahzad | AI Partner: Claude")
     
     def update_results_display(self, text):
         """Update the results display"""
@@ -1256,7 +1256,7 @@ class TradingDashboard:
                 if 'error' not in results:
                     # Format results
                     result_text = f"""
-🧠 NEXT LEVEL BRAIN - BACKTEST RESULTS
+🧠 NEXUS TRADING SYSTEM - BACKTEST RESULTS
 {'='*50}
 Symbol: {symbol}
 Timeframe: {timeframe}
@@ -1356,7 +1356,7 @@ Trade {i}: {trade['type']} {pnl_emoji}
 def select_backtest_options():
     """Select backtesting options"""
     print("\n" + "="*60)
-    print("🧠 NEXT LEVEL BRAIN - BACKTESTING SYSTEM")
+    print("🧠 NEXUS TRADING SYSTEM - BACKTESTING SYSTEM")
     print("Created by: Aleem Shahzad | AI Partner: Claude (Anthropic)")
     print("="*60)
     print("Select backtesting period:")
@@ -1435,7 +1435,7 @@ def main():
         Path("charts").mkdir(exist_ok=True)
         
         # Launch GUI Dashboard directly
-        print("🚀 Launching NEXT LEVEL BRAIN Backtesting Dashboard...")
+        print("🚀 Launching NEXUS TRADING SYSTEM Backtesting Dashboard...")
         dashboard = TradingDashboard()
         dashboard.run()
         return

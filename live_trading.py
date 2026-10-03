@@ -268,7 +268,7 @@ class LiveTradingSystem:
     
     async def initialize(self) -> bool:
         try:
-            logger.info("🧠 Initializing NEXT LEVEL BRAIN Live Trading System...")
+            logger.info("🧠 Initializing NEXUS TRADING SYSTEM Live Trading System...")
             if not await self.broker.connect(): return False
             acc = mt5.account_info()
             if acc:
@@ -670,7 +670,7 @@ class LiveTradingSystem:
 
 def select_trade_setup():
     import argparse
-    parser = argparse.ArgumentParser(description="NEXT LEVEL BRAIN Live Trading System")
+    parser = argparse.ArgumentParser(description="NEXUS TRADING SYSTEM Live Trading System")
     parser.add_argument("--strategy", type=str, help="Trading strategy to use")
     parser.add_argument("--timeframe", type=str, help="Timeframe to use (e.g., M1, M5, M15)")
     parser.add_argument("--cron", action="store_true", help="Run in non-interactive mode using config defaults")
@@ -696,7 +696,7 @@ def select_trade_setup():
         strategy = config.get('strategy', 'Hybrid Mode')
     elif args.auto_start:
         print("\n" + "=" * 50)
-        print("      🚀 NEXT LEVEL TRADING CONFIGURATION")
+        print("      🚀 NEXUS TRADING SYSTEM CONFIGURATION")
         print("=" * 50)
         print("\n [1] Choose Strategy:")
         time.sleep(1)
@@ -705,7 +705,7 @@ def select_trade_setup():
 
     if not strategy:
         print("\n" + "=" * 50)
-        print("      🚀 NEXT LEVEL TRADING CONFIGURATION")
+        print("      🚀 NEXUS TRADING SYSTEM CONFIGURATION")
         print("=" * 50)
         print("\n [1] Choose Strategy:")
         for i, s in enumerate(strats):
